@@ -40,7 +40,7 @@
   <main class="dash-main">
 
     <div class="cab-pane" data-cab="overview">
-      <div class="dash-head"><div><h1>Кабінет роботодавця</h1><div class="sub">AdHouse Digital — демо-акаунт</div></div><a class="btn btn-primary" href="post-vacancy.html">+ Додати вакансію</a></div>
+      <div class="dash-head"><div><h1>Кабінет роботодавця</h1><div class="sub" id="employer-sub">AdHouse Digital — демо-акаунт</div></div><a class="btn btn-primary" href="post-vacancy.html">+ Додати вакансію</a></div>
       <div class="kpi-grid">
         <div class="stat-tile"><div class="val">3</div><div class="lbl">активні вакансії</div></div>
         <div class="stat-tile"><div class="val">128</div><div class="lbl">переглядів за тиждень</div></div>
@@ -137,6 +137,8 @@
 <script>
 if (requireAuth("employer")) {
   setRole("employer");
+  const empName = (getProfileName() || "").split(" ")[0];
+  if (empName) document.getElementById("employer-sub").textContent = `AdHouse Digital · ${empName}`;
   document.querySelectorAll(".dash-side button").forEach((b) => b.addEventListener("click", () => {
     document.querySelectorAll(".dash-side button").forEach((x) => x.classList.remove("active"));
     b.classList.add("active");

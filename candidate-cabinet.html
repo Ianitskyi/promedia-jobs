@@ -41,7 +41,7 @@
   <main class="dash-main">
 
     <div class="cab-pane" data-cab="overview">
-      <div class="dash-head"><div><h1>Вітаємо, Маріє 👋</h1><div class="sub">Ваш кабінет кандидата — демо-акаунт</div></div><a class="btn btn-primary" href="create-resume.html">+ Нове резюме</a></div>
+      <div class="dash-head"><div><h1 id="greeting">Вітаємо 👋</h1><div class="sub">Ваш кабінет кандидата — демо-акаунт</div></div><a class="btn btn-primary" href="create-resume.html">+ Нове резюме</a></div>
       <div class="kpi-grid">
         <div class="stat-tile"><div class="val">1</div><div class="lbl">активне резюме</div></div>
         <div class="stat-tile"><div class="val">4</div><div class="lbl">збережені вакансії</div></div>
@@ -140,6 +140,8 @@
 <script>
 if (requireAuth("candidate")) {
   setRole("candidate");
+  const firstName = (getProfileName() || "").split(" ")[0];
+  document.getElementById("greeting").textContent = firstName ? `Вітаємо, ${firstName} 👋` : "Вітаємо 👋";
   document.querySelectorAll(".dash-side button").forEach((b) => b.addEventListener("click", () => {
     document.querySelectorAll(".dash-side button").forEach((x) => x.classList.remove("active"));
     b.classList.add("active");

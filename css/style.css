@@ -276,6 +276,10 @@ img, svg { max-width: 100%; display: block; }
 .auth-tabs { display: flex; background: var(--paper); border-radius: var(--radius-pill); padding: 4px; margin-bottom: 20px; }
 .auth-tabs button { flex: 1; border: none; background: transparent; padding: 9px; border-radius: 99px; font: 700 13px var(--sans); color: var(--muted); cursor: pointer; }
 .auth-tabs button.active { background: var(--card); color: var(--ink); box-shadow: var(--shadow-sm); }
+.auth-divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; margin: 16px 0; }
+.auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.btn-google { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.btn-google svg { flex: none; }
 
 /* ---------- footer ---------- */
 .site-footer { background: var(--ink); color: #c7c6ea; margin-top: 40px; padding: 44px 0 26px; }

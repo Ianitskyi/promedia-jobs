@@ -11,6 +11,8 @@ const LS = {
   applications: "pmj_applications",
   role: "pmj_role", // 'candidate' | 'employer'
   authed: "pmj_authed",
+  profileName: "pmj_profile_name",
+  profileEmail: "pmj_profile_email",
 };
 
 function lsGet(key, fallback) {
@@ -488,6 +490,12 @@ function initRoleGate() {
 function isAuthed() { return lsGet(LS.authed, false); }
 function setAuthed(v) { lsSet(LS.authed, v); }
 
+function getProfileName() { return lsGet(LS.profileName, ""); }
+function setProfile(name, email) {
+  if (name) lsSet(LS.profileName, name);
+  if (email) lsSet(LS.profileEmail, email);
+}
+
 // Викликати першим рядком на кожній сторінці, доступній лише зареєстрованим.
 // Повертає false і одразу веде на логін, якщо людина ще не "увійшла".
 function requireAuth(defaultRole) {
@@ -496,6 +504,14 @@ function requireAuth(defaultRole) {
   const next = location.pathname.split("/").pop();
   location.href = `login.html?role=${role}&next=${next}`;
   return false;
+}
+
+// Виклик з кнопок вибору ролі на головній: людина, що вже увійшла раніше,
+// одразу потрапляє у свій кабінет — без повторної реєстрації чи входу.
+function goToRole(role) {
+  setRole(role);
+  const cabinet = role === "employer" ? "employer-cabinet.html" : "candidate-cabinet.html";
+  location.href = isAuthed() ? cabinet : `login.html?role=${role}&next=${cabinet}`;
 }
 
 /* ---------------- Загальна ініціалізація шапки ---------------- */
