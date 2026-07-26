@@ -9,22 +9,10 @@
 </head>
 <body>
 
-<div class="utility-bar"><a class="home-btn" href="https://promedia.report">← ПроМедіа</a></div>
-
-<header class="site-header">
-  <div class="wrap header-inner">
-    <a class="logo" href="index.html">ProMedia <span class="logo-jobs">Jobs</span></a>
-    <nav class="main-nav">
-      <a href="vacancies.html">Вакансії</a>
-      <a href="resumes.html">Резюме</a>
-      <a href="pricing.html">Тарифи</a>
-    </nav>
-    <div class="header-cta">
-      <div class="role-switch"><button class="candidate" data-role="candidate">🔎 Кандидат</button><button class="employer" data-role="employer">💼 Роботодавець</button></div>
-      <div style="position:relative"><button class="icon-btn" id="notif-bell" type="button">🔔<span class="dot"></span></button><div class="notif-panel" id="notif-panel"></div></div>
-    </div>
-  </div>
-</header>
+<div class="utility-bar">
+  <a class="home-btn" href="https://promedia.report">← ПроМедіа</a>
+  <a class="home-btn" href="index.html" style="margin-left:auto">← На головну</a>
+</div>
 
 <div class="dash-layout">
   <aside class="dash-side employer">
@@ -33,9 +21,8 @@
     <button data-pane="synergy">Синергія <span class="badge-count">4</span></button>
     <button data-pane="saved">Збережені резюме</button>
     <button data-pane="subscriptions">Підписки на резюме</button>
-    <button data-pane="stats">Статистика</button>
-    <button data-pane="payments">Платежі</button>
     <button data-pane="company">Профіль компанії</button>
+    <a class="dash-link" href="resumes.html" style="margin-top:10px;border-top:1px solid var(--border);padding-top:16px">Каталог резюме →</a>
   </aside>
 
   <main class="dash-main">
@@ -58,7 +45,7 @@
           <thead><tr><th>Вакансія</th><th>Статус</th><th>Перегляди</th><th>Відгуки</th><th>Завершується</th><th></th></tr></thead>
           <tbody>
             <tr><td class="strong">SMM-менеджер(ка)</td><td><span class="status-pill st-good">Активна</span></td><td class="num">64</td><td class="num">6</td><td>2026-08-21</td>
-              <td style="display:flex;gap:6px"><button class="btn btn-light btn-sm">Редагувати</button><button class="btn btn-light btn-sm">Дублювати</button><button class="btn btn-accent btn-sm" onclick="location.href='pricing.html'">Просунути</button></td></tr>
+              <td style="display:flex;gap:6px"><button class="btn btn-light btn-sm">Редагувати</button><button class="btn btn-light btn-sm">Дублювати</button></td></tr>
             <tr><td class="strong">Копірайтер(ка)</td><td><span class="status-pill st-new">На модерації</span></td><td class="num">—</td><td class="num">—</td><td>—</td>
               <td><button class="btn btn-light btn-sm">Редагувати чернетку</button></td></tr>
             <tr><td class="strong">Маркетинг-аналітик(иня)</td><td><span class="status-pill st-bad">Архівовано</span></td><td class="num">41</td><td class="num">3</td><td>2026-07-10</td>
@@ -92,30 +79,6 @@
             <tr><td class="strong">SMM-кандидати, дистанційно</td><td>SMM · Junior/Middle · Дистанційно</td><td><span class="status-pill st-good">Активна</span></td>
               <td style="display:flex;gap:6px"><button class="btn btn-light btn-sm" onclick="toast('Демо: підписку призупинено')">Призупинити</button><button class="btn btn-light btn-sm" onclick="toast('Демо: підписку видалено')">Видалити</button></td></tr>
           </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="cab-pane" data-cab="stats" style="display:none">
-      <div class="dash-head"><div><h1>Статистика вакансій</h1></div></div>
-      <div class="panel">
-        <p style="color:var(--muted);font-size:13.5px">Порівняння показів до і під час платного просування — приклад для вакансії «SMM-менеджер(ка)».</p>
-        <table class="tbl">
-          <thead><tr><th>Період</th><th>Покази</th><th>Перегляди</th><th>Відгуки</th></tr></thead>
-          <tbody>
-            <tr><td>До просування (7 днів)</td><td class="num">210</td><td class="num">38</td><td class="num">2</td></tr>
-            <tr><td class="strong">Під час просування (7 днів)</td><td class="num">540</td><td class="num">96</td><td class="num">6</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="cab-pane" data-cab="payments" style="display:none">
-      <div class="dash-head"><div><h1>Історія платежів</h1></div></div>
-      <div class="panel">
-        <table class="tbl">
-          <thead><tr><th>Послуга</th><th>Дата</th><th>Сума</th><th>Статус</th></tr></thead>
-          <tbody><tr><td>Просування вакансії — 7 днів</td><td>2026-07-18</td><td class="num">349 ₴</td><td><span class="status-pill st-good">Оплачено</span></td></tr></tbody>
         </table>
       </div>
     </div>

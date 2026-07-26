@@ -9,22 +9,10 @@
 </head>
 <body>
 
-<div class="utility-bar"><a class="home-btn" href="https://promedia.report">← ПроМедіа</a></div>
-
-<header class="site-header">
-  <div class="wrap header-inner">
-    <a class="logo" href="index.html">ProMedia <span class="logo-jobs">Jobs</span></a>
-    <nav class="main-nav">
-      <a href="vacancies.html">Вакансії</a>
-      <a href="resumes.html">Резюме</a>
-      <a href="pricing.html">Тарифи</a>
-    </nav>
-    <div class="header-cta">
-      <div class="role-switch"><button class="candidate" data-role="candidate">🔎 Кандидат</button><button class="employer" data-role="employer">💼 Роботодавець</button></div>
-      <div style="position:relative"><button class="icon-btn" id="notif-bell" type="button">🔔<span class="dot"></span></button><div class="notif-panel" id="notif-panel"></div></div>
-    </div>
-  </div>
-</header>
+<div class="utility-bar">
+  <a class="home-btn" href="https://promedia.report">← ПроМедіа</a>
+  <a class="home-btn" href="index.html" style="margin-left:auto">← На головну</a>
+</div>
 
 <div class="dash-layout">
   <aside class="dash-side candidate">
@@ -35,8 +23,8 @@
     <button data-pane="applications">Мої відгуки</button>
     <button data-pane="subscriptions">Підписки</button>
     <button data-pane="notifications">Сповіщення</button>
-    <button data-pane="payments">Платежі</button>
     <button data-pane="settings">Налаштування акаунта</button>
+    <a class="dash-link" href="vacancies.html" style="margin-top:10px;border-top:1px solid var(--border);padding-top:16px">Каталог вакансій →</a>
   </aside>
 
   <main class="dash-main">
@@ -59,7 +47,7 @@
           <thead><tr><th>Резюме</th><th>Статус</th><th>Опубліковано</th><th>Завершується</th><th></th></tr></thead>
           <tbody>
             <tr><td class="strong">SMM-менеджерка</td><td><span class="status-pill st-good">Активне</span></td><td>2026-07-20</td><td>2026-08-19</td>
-              <td style="display:flex;gap:6px"><button class="btn btn-light btn-sm">Редагувати</button><button class="btn btn-light btn-sm">Приховати</button><button class="btn btn-accent btn-sm" onclick="location.href='pricing.html'">Просунути</button></td></tr>
+              <td style="display:flex;gap:6px"><button class="btn btn-light btn-sm">Редагувати</button><button class="btn btn-light btn-sm">Приховати</button></td></tr>
           </tbody>
         </table>
       </div>
@@ -117,11 +105,6 @@
         </div>
         <button class="btn btn-primary" style="margin-top:10px" onclick="toast('Налаштування збережено')">Зберегти</button>
       </div>
-    </div>
-
-    <div class="cab-pane" data-cab="payments" style="display:none">
-      <div class="dash-head"><div><h1>Історія платежів</h1></div></div>
-      <div class="panel"><div class="empty-state">Платежів поки не було. Тут з'являться продовження публікацій та просування резюме.</div></div>
     </div>
 
     <div class="cab-pane" data-cab="settings" style="display:none">
