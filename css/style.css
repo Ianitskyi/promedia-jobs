@@ -76,6 +76,36 @@ img, svg { max-width: 100%; display: block; }
 .role-toggle button { border: none; background: transparent; font: 700 13.5px var(--sans); color: var(--text); padding: 10px 18px; border-radius: var(--radius-pill); cursor: pointer; }
 .role-toggle button.active { background: var(--ink); color: #fff; }
 
+/* ---------- рольова система: кандидат (зелений) / роботодавець (синій) ---------- */
+.role-switch { display: inline-flex; background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius-pill); padding: 3px; gap: 2px; }
+.role-switch button { border: none; background: transparent; font: 700 12px var(--sans); color: var(--muted); padding: 7px 13px; border-radius: var(--radius-pill); cursor: pointer; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.role-switch button.active.candidate { background: var(--green); color: #fff; }
+.role-switch button.active.employer { background: var(--ink); color: #fff; }
+.role-switch button:not(.active):hover { color: var(--text); }
+
+.role-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: 4px 10px; border-radius: var(--radius-pill); }
+.role-badge.candidate { background: var(--green-tint); color: var(--green); }
+.role-badge.employer { background: rgba(13, 12, 92, .08); color: var(--ink); }
+
+.btn-candidate { background: var(--green); color: #fff; box-shadow: 0 8px 20px -8px rgba(28, 154, 86, .45); }
+.btn-candidate:hover { background: #167e46; }
+
+/* ---------- перший крок: вибір ролі ---------- */
+.role-gate { background: linear-gradient(180deg, #fdfdff 0%, var(--paper) 100%); border-bottom: 1px solid var(--border); padding: 54px 0; text-align: center; }
+.role-gate .eyebrow { text-align: center; }
+.role-gate h1 { text-align: center; }
+.role-gate .lede { text-align: center; margin-left: auto; margin-right: auto; }
+.role-gate-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 640px; margin: 0 auto; }
+.role-gate-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 34px 22px; border-radius: var(--radius-lg); border: 2px solid var(--border); background: var(--card); cursor: pointer; transition: transform .15s, box-shadow .15s, border-color .15s; text-align: center; }
+.role-gate-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.role-gate-card .rg-ico { font-size: 38px; line-height: 1; }
+.role-gate-card .rg-title { font-family: var(--serif); font-size: 19px; font-weight: 700; }
+.role-gate-card .rg-sub { color: var(--muted); font-size: 13px; }
+.role-gate-card.candidate:hover, .role-gate-card.candidate.chosen { border-color: var(--green); }
+.role-gate-card.candidate.chosen { background: var(--green-tint); }
+.role-gate-card.employer:hover, .role-gate-card.employer.chosen { border-color: var(--ink); }
+.role-gate-card.employer.chosen { background: rgba(13, 12, 92, .06); }
+
 .search-card { background: var(--card); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 10px; display: grid; grid-template-columns: 1.4fr 1fr 1fr auto; gap: 8px; }
 .search-card input, .search-card select { font: 500 14.5px var(--sans); color: var(--text); border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 13px 15px; background: #fff; }
 .search-card input:focus, .search-card select:focus { outline: none; border-color: var(--ink); }
@@ -103,7 +133,9 @@ img, svg { max-width: 100%; display: block; }
 /* ---------- job / resume cards ---------- */
 .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .cards-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
-.job-card, .resume-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 10px; transition: transform .14s, box-shadow .14s; position: relative; }
+.job-card, .resume-card { background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--border); border-radius: var(--radius-md); padding: 18px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 10px; transition: transform .14s, box-shadow .14s; position: relative; }
+.job-card { border-left-color: var(--ink); }
+.resume-card { border-left-color: var(--green); }
 .job-card:hover, .resume-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
 .job-card .promo-badge, .resume-card .promo-badge { position: absolute; top: 14px; right: 14px; background: var(--accent-tint); color: var(--accent-dark); font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: 3px 9px; border-radius: var(--radius-pill); }
 .jc-top { display: flex; gap: 12px; align-items: center; }
@@ -193,6 +225,9 @@ img, svg { max-width: 100%; display: block; }
 .dash-side button, .dash-side a.dash-link { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: transparent; border: none; color: var(--text); cursor: pointer; font: 600 14px var(--sans); padding: 11px 12px; border-radius: 10px; }
 .dash-side button:hover, .dash-side a.dash-link:hover { background: var(--paper); }
 .dash-side button.active, .dash-side a.dash-link.active { background: var(--ink); color: #fff; }
+.dash-side.candidate button.active, .dash-side.candidate a.dash-link.active { background: var(--green); }
+.dash-side.candidate { border-right-color: var(--green-tint); }
+.dash-side.employer { border-right-color: rgba(13, 12, 92, .12); }
 .dash-side .badge-count { margin-left: auto; background: var(--accent); color: #3a2800; font-size: 10.5px; font-weight: 800; border-radius: 99px; padding: 2px 7px; }
 .dash-main { padding: 24px 28px 60px; min-width: 0; }
 .dash-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -294,6 +329,7 @@ img, svg { max-width: 100%; display: block; }
 }
 @media (max-width: 620px) {
   .cards-grid, .cards-grid.cols-2, .stats-row, .kpi-grid, .pricing-grid, .steps { grid-template-columns: 1fr; }
+  .role-gate-cards { grid-template-columns: 1fr; }
   .search-card { grid-template-columns: 1fr; }
   .main-nav { display: none; }
   .footer-grid { grid-template-columns: 1fr; }

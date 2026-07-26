@@ -154,19 +154,7 @@ function initHome() {
     (VACANCIES.filter((v) => !v.salaryHidden).length / VACANCIES.length) * 100
   ) + "%";
 
-  const roleBtns = document.querySelectorAll(".role-toggle button");
-  roleBtns.forEach((b) => b.addEventListener("click", () => {
-    roleBtns.forEach((x) => x.classList.remove("active"));
-    b.classList.add("active");
-    const role = b.dataset.role;
-    lsSet(LS.role, role);
-    document.getElementById("search-form").action = role === "employer" ? "resumes.html" : "vacancies.html";
-    document.querySelector('[name="q"]').placeholder = role === "employer" ? "Посада, навички кандидата…" : "Посада, ключове слово, компанія…";
-    document.getElementById("hero-cta-1").textContent = role === "employer" ? "Додати вакансію" : "Знайти вакансію";
-    document.getElementById("hero-cta-1").href = role === "employer" ? "post-vacancy.html" : "vacancies.html";
-    document.getElementById("hero-cta-2").textContent = role === "employer" ? "Переглянути резюме" : "Додати резюме";
-    document.getElementById("hero-cta-2").href = role === "employer" ? "resumes.html" : "create-resume.html";
-  }));
+  onRoleChange(getRole());
 
   bindSaveButtons();
 }
@@ -469,10 +457,75 @@ function initNotifBell() {
   document.addEventListener("click", () => panel.classList.remove("open"));
 }
 
+/* ---------------- Реакція головної сторінки на вибір ролі ---------------- */
+
+function onRoleChange(role) {
+  const form = document.getElementById("search-form");
+  const q = document.querySelector('[name="q"]');
+  const cta1 = document.getElementById("hero-cta-1");
+  const cta2 = document.getElementById("hero-cta-2");
+  if (form) form.action = role === "employer" ? "resumes.html" : "vacancies.html";
+  if (q) q.placeholder = role === "employer" ? "Посада, навички кандидата…" : "Посада, ключове слово, компанія…";
+  if (cta1) {
+    cta1.textContent = role === "employer" ? "Додати вакансію" : "Знайти вакансію";
+    cta1.href = role === "employer" ? "post-vacancy.html" : "vacancies.html";
+  }
+  if (cta2) {
+    cta2.textContent = role === "employer" ? "Переглянути резюме" : "Додати резюме";
+    cta2.href = role === "employer" ? "resumes.html" : "create-resume.html";
+  }
+  const cabinetLink = document.getElementById("header-cabinet-link");
+  if (cabinetLink) {
+    cabinetLink.href = role === "employer" ? "employer-cabinet.html" : "candidate-cabinet.html";
+    cabinetLink.textContent = role === "employer" ? "Кабінет роботодавця" : role === "candidate" ? "Кабінет кандидата" : "Кабінет";
+    cabinetLink.classList.remove("btn-primary", "btn-candidate", "btn-light");
+    cabinetLink.classList.add(role === "employer" ? "btn-primary" : role === "candidate" ? "btn-candidate" : "btn-light");
+  }
+}
+
+/* ---------------- Роль: кандидат чи роботодавець ---------------- */
+
+function getRole() { return lsGet(LS.role, null); }
+
+function setRole(role) {
+  lsSet(LS.role, role);
+  applyRole(role);
+  const path = location.pathname.split("/").pop();
+  if (role === "employer" && path === "candidate-cabinet.html") location.href = "employer-cabinet.html";
+  if (role === "candidate" && path === "employer-cabinet.html") location.href = "candidate-cabinet.html";
+}
+
+function applyRole(role) {
+  document.body.dataset.role = role || "";
+  document.querySelectorAll("[data-role-section]").forEach((el) => {
+    const want = el.dataset.roleSection;
+    el.style.display = (want === "both" || want === role || !role) ? "" : "none";
+  });
+  document.querySelectorAll(".role-switch button").forEach((b) => {
+    b.classList.toggle("active", b.dataset.role === role);
+  });
+  const gate = document.getElementById("role-gate");
+  if (gate) gate.style.display = role ? "none" : "";
+  const gateNote = document.getElementById("role-gate-note");
+  if (gateNote) gateNote.style.display = role ? "" : "none";
+  onRoleChange(role);
+}
+
+function initRoleGate() {
+  document.querySelectorAll(".role-gate-card").forEach((c) => {
+    c.addEventListener("click", () => setRole(c.dataset.role));
+  });
+  document.querySelectorAll(".role-switch button").forEach((b) => {
+    b.addEventListener("click", () => setRole(b.dataset.role));
+  });
+  applyRole(getRole());
+}
+
 /* ---------------- Загальна ініціалізація шапки ---------------- */
 
 function initChrome() {
   initNotifBell();
   bindSaveButtons();
+  initRoleGate();
 }
 document.addEventListener("DOMContentLoaded", initChrome);

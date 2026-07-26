@@ -19,14 +19,14 @@
       <a href="pricing.html">Тарифи</a>
     </nav>
     <div class="header-cta">
+      <div class="role-switch"><button class="candidate" data-role="candidate">🔎 Кандидат</button><button class="employer" data-role="employer">💼 Роботодавець</button></div>
       <div style="position:relative"><button class="icon-btn" id="notif-bell" type="button">🔔<span class="dot"></span></button><div class="notif-panel" id="notif-panel"></div></div>
-      <a class="btn btn-light btn-sm" href="candidate-cabinet.html">Кабінет кандидата</a>
     </div>
   </div>
 </header>
 
 <div class="dash-layout">
-  <aside class="dash-side">
+  <aside class="dash-side employer">
     <button class="active" data-pane="overview">Огляд</button>
     <button data-pane="vacancies">Мої вакансії</button>
     <button data-pane="synergy">Синергія <span class="badge-count">4</span></button>
@@ -135,6 +135,7 @@
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script>
+  setRole("employer");
   document.querySelectorAll(".dash-side button").forEach((b) => b.addEventListener("click", () => {
     document.querySelectorAll(".dash-side button").forEach((x) => x.classList.remove("active"));
     b.classList.add("active");

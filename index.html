@@ -26,26 +26,45 @@
       <a href="how-it-works.html">Як це працює</a>
     </nav>
     <div class="header-cta">
+      <div class="role-switch" id="header-role-switch">
+        <button class="candidate" data-role="candidate">🔎 Кандидат</button>
+        <button class="employer" data-role="employer">💼 Роботодавець</button>
+      </div>
       <div style="position:relative">
         <button class="icon-btn" id="notif-bell" type="button">🔔<span class="dot"></span></button>
         <div class="notif-panel" id="notif-panel"></div>
       </div>
       <a class="btn btn-light btn-sm" href="login.html">Увійти</a>
-      <a class="btn btn-primary btn-sm" href="post-vacancy.html">Додати вакансію</a>
+      <a class="btn btn-sm" id="header-cabinet-link" href="candidate-cabinet.html">Кабінет</a>
     </div>
   </div>
 </header>
+
+<section class="role-gate" id="role-gate">
+  <div class="wrap">
+    <div class="eyebrow">Крок 1 з 1 — це все, що треба вирішити зараз</div>
+    <h1>Ви шукаєте роботу чи шукаєте працівника?</h1>
+    <p class="lede">Оберіть — і ми покажемо лише те, що вам потрібно: вакансії й «Синергію» для кандидата, або резюме й публікацію вакансії для роботодавця. Змінити вибір можна будь-коли перемикачем угорі.</p>
+    <div class="role-gate-cards">
+      <div class="role-gate-card candidate" data-role="candidate">
+        <div class="rg-ico">🔎</div>
+        <div class="rg-title">Я шукаю роботу</div>
+        <div class="rg-sub">Резюме, каталог вакансій, рекомендації «Синергія»</div>
+      </div>
+      <div class="role-gate-card employer" data-role="employer">
+        <div class="rg-ico">💼</div>
+        <div class="rg-title">Я шукаю працівника</div>
+        <div class="rg-sub">Вакансія, каталог резюме, підбір кандидатів</div>
+      </div>
+    </div>
+  </div>
+</section>
 
 <section class="hero">
   <div class="wrap">
     <div class="eyebrow">Медіа · Журналістика · Маркетинг · PR · Контент</div>
     <h1>Робота і люди для медіа-індустрії України</h1>
     <p class="lede">ProMedia Jobs об'єднує вакансії роботодавців, вакансії з перевірених джерел і резюме спеціалістів — з автоматичним підбором «Синергія» та прозорим просуванням оголошень.</p>
-
-    <div class="role-toggle">
-      <button class="active" data-role="candidate">Шукаю роботу</button>
-      <button data-role="employer">Шукаю працівника</button>
-    </div>
 
     <form class="search-card" id="search-form" action="vacancies.html" method="get">
       <input type="text" name="q" placeholder="Посада, ключове слово, компанія…" />
@@ -83,15 +102,15 @@
 
 <main class="wrap">
 
-  <section class="section">
+  <section class="section" data-role-section="candidate">
     <div class="section-head">
-      <div><h2>Просунуті вакансії</h2><p class="sub">Позначені роботодавцем для більшої видимості — ротуються прозоро й показуються лише серед релевантних результатів.</p></div>
+      <div><h2><span class="role-badge employer">Вакансії роботодавців</span></h2><h2 style="margin-top:6px">Просунуті вакансії</h2><p class="sub">Позначені роботодавцем для більшої видимості — ротуються прозоро й показуються лише серед релевантних результатів.</p></div>
       <a class="btn btn-ghost btn-sm" href="vacancies.html">Усі вакансії →</a>
     </div>
     <div class="cards-grid" id="promoted-vacancies"></div>
   </section>
 
-  <section class="section" style="padding-top:0">
+  <section class="section" style="padding-top:0" data-role-section="candidate">
     <div class="section-head">
       <div><h2>Нові вакансії</h2></div>
       <a class="btn btn-ghost btn-sm" href="vacancies.html">Усі вакансії →</a>
@@ -99,20 +118,20 @@
     <div class="cards-grid" id="new-vacancies"></div>
   </section>
 
-  <section class="section" style="padding-top:0">
+  <section class="section" style="padding-top:0" data-role-section="employer">
     <div class="section-head">
-      <div><h2>Нові резюме</h2></div>
+      <div><h2><span class="role-badge candidate">Резюме кандидатів</span></h2><h2 style="margin-top:6px">Нові резюме</h2></div>
       <a class="btn btn-ghost btn-sm" href="resumes.html">Усі резюме →</a>
     </div>
     <div class="cards-grid cols-2" id="new-resumes"></div>
   </section>
 
-  <section class="section" style="padding-top:0">
+  <section class="section" style="padding-top:0" data-role-section="both">
     <div class="section-head"><div><h2>Популярні категорії</h2></div></div>
     <div class="chip-cloud" id="cat-cloud"></div>
   </section>
 
-  <section class="section" style="padding-top:0">
+  <section class="section" style="padding-top:0" data-role-section="both">
     <div class="panel">
       <h2>Як працює «Синергія»</h2>
       <p>Після створення чи оновлення резюме або вакансії система порівнює категорію, навички, рівень посади, формат роботи, мову та інші поля — і показує рівень відповідності з поясненням, а не «чорну скриньку». «Синергія» ніколи не враховує стать, вік, фото чи інші особисті ознаки і не приймає рішень про найм — лише радить.</p>
