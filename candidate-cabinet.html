@@ -138,6 +138,7 @@
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script>
+if (requireAuth("candidate")) {
   setRole("candidate");
   document.querySelectorAll(".dash-side button").forEach((b) => b.addEventListener("click", () => {
     document.querySelectorAll(".dash-side button").forEach((x) => x.classList.remove("active"));
@@ -174,6 +175,7 @@
     <td>${v.deadline || "—"}</td></tr>`).join("")
     : '<tr><td colspan="4" class="empty-state">Ще немає збережених вакансій — натисніть ☆ на будь-якій картці.</td></tr>';
   bindSaveButtons();
+}
 </script>
 </body>
 </html>

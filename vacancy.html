@@ -53,6 +53,6 @@
 
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
-<script>initVacancyDetail();</script>
+<script>if (requireAuth("candidate")) initVacancyDetail();</script>
 </body>
 </html>

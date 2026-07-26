@@ -131,7 +131,7 @@
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script>
-  setRole("candidate");
+  if (requireAuth("candidate")) setRole("candidate");
   function goStep(n) {
     document.querySelectorAll(".wizard-step").forEach((s) => {
       const sn = +s.dataset.step;

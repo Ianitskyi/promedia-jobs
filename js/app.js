@@ -10,6 +10,7 @@ const LS = {
   subsR: "pmj_subscriptions_resumes",
   applications: "pmj_applications",
   role: "pmj_role", // 'candidate' | 'employer'
+  authed: "pmj_authed",
 };
 
 function lsGet(key, fallback) {
@@ -480,6 +481,21 @@ function initRoleGate() {
     b.addEventListener("click", () => setRole(b.dataset.role));
   });
   applyRole(getRole());
+}
+
+/* ---------------- Автентифікація (демо) ---------------- */
+
+function isAuthed() { return lsGet(LS.authed, false); }
+function setAuthed(v) { lsSet(LS.authed, v); }
+
+// Викликати першим рядком на кожній сторінці, доступній лише зареєстрованим.
+// Повертає false і одразу веде на логін, якщо людина ще не "увійшла".
+function requireAuth(defaultRole) {
+  if (isAuthed()) return true;
+  const role = getRole() || defaultRole || "candidate";
+  const next = location.pathname.split("/").pop();
+  location.href = `login.html?role=${role}&next=${next}`;
+  return false;
 }
 
 /* ---------------- Загальна ініціалізація шапки ---------------- */

@@ -135,6 +135,7 @@
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script>
+if (requireAuth("employer")) {
   setRole("employer");
   document.querySelectorAll(".dash-side button").forEach((b) => b.addEventListener("click", () => {
     document.querySelectorAll(".dash-side button").forEach((x) => x.classList.remove("active"));
@@ -171,6 +172,7 @@
     <td><input type="text" placeholder="Приватна нотатка (не бачить кандидат)" style="border:1px solid var(--border);border-radius:8px;padding:6px 8px;width:100%"/></td></tr>`).join("")
     : '<tr><td colspan="4" class="empty-state">Ще немає збережених резюме — натисніть ☆ у каталозі резюме.</td></tr>';
   bindSaveButtons();
+}
 </script>
 </body>
 </html>

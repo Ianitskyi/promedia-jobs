@@ -25,35 +25,34 @@
 <main class="wrap">
   <div class="auth-card">
     <div class="auth-tabs">
-      <button class="active" id="tab-login" type="button">Увійти</button>
+      <button id="tab-login" type="button">Увійти</button>
       <button id="tab-register" type="button">Реєстрація</button>
     </div>
 
-    <div id="pane-login">
+    <div id="pane-login" style="display:none">
       <h1>З поверненням</h1>
-      <p class="sub">Демо-вхід — акаунт не створюється насправді</p>
-      <form onsubmit="event.preventDefault(); location.href='candidate-cabinet.html';">
+      <p class="sub" id="login-sub">Демо-вхід — акаунт не створюється насправді</p>
+      <form id="login-form">
         <div class="field"><label>Електронна пошта</label><input type="email" required placeholder="you@example.com" /></div>
         <div class="field"><label>Пароль</label><input type="password" required placeholder="••••••••" /></div>
-        <button class="btn btn-primary btn-block" type="submit">Увійти як кандидат</button>
-        <button class="btn btn-light btn-block" style="margin-top:8px" type="button" onclick="location.href='employer-cabinet.html'">Увійти як роботодавець</button>
+        <button class="btn btn-primary btn-block" type="button" onclick="completeLogin()">Увійти</button>
       </form>
       <p style="text-align:center;margin-top:16px"><a href="#" style="font-size:13px;color:var(--ink)" onclick="alert('Демо: лист для відновлення пароля не надсилається');return false">Забули пароль?</a></p>
     </div>
 
-    <div id="pane-register" style="display:none">
+    <div id="pane-register">
       <h1>Створити акаунт</h1>
-      <p class="sub">Підтвердження електронної пошти в демо не потрібне</p>
-      <form onsubmit="event.preventDefault(); toast('Демо: акаунт умовно створено'); setTimeout(()=>location.href='candidate-cabinet.html',600);">
+      <p class="sub" id="register-sub">Підтвердження електронної пошти в демо не потрібне</p>
+      <form id="register-form">
         <div class="field"><label>Ім'я</label><input type="text" required placeholder="Ваше ім'я" /></div>
         <div class="field"><label>Електронна пошта</label><input type="email" required placeholder="you@example.com" /></div>
         <div class="field"><label>Пароль</label><input type="password" required placeholder="Мінімум 8 символів" /></div>
         <div class="field">
           <label>Я реєструюся як</label>
-          <select><option>Кандидат</option><option>Роботодавець</option></select>
+          <select id="reg-role"><option value="candidate">Кандидат — шукаю роботу</option><option value="employer">Роботодавець — шукаю працівників</option></select>
         </div>
         <div class="check-row"><input type="checkbox" required id="consent"><label for="consent">Погоджуюся з <a href="privacy.html">обробкою персональних даних</a> і правилами публікації</label></div>
-        <button class="btn btn-primary btn-block" style="margin-top:14px" type="submit">Зареєструватися</button>
+        <button class="btn btn-primary btn-block" style="margin-top:14px" type="button" onclick="completeRegister()">Зареєструватися</button>
       </form>
     </div>
   </div>
@@ -66,6 +65,37 @@
   const pl = document.getElementById("pane-login"), pr = document.getElementById("pane-register");
   tl.addEventListener("click", () => { tl.classList.add("active"); tr.classList.remove("active"); pl.style.display = ""; pr.style.display = "none"; });
   tr.addEventListener("click", () => { tr.classList.add("active"); tl.classList.remove("active"); pr.style.display = ""; pl.style.display = "none"; });
+
+  const preRole = qs("role"); // 'candidate' | 'employer', якщо прийшли з головної сторінки
+  if (preRole === "employer" || preRole === "candidate") {
+    document.getElementById("reg-role").value = preRole;
+    const roleLabel = preRole === "employer" ? "роботодавця" : "кандидата";
+    document.getElementById("register-sub").textContent = `Реєстрація як ${roleLabel} — далі одразу в кабінет`;
+    document.getElementById("login-sub").textContent = `Вхід як ${roleLabel}`;
+    tr.click(); // нові люди з головної йдуть одразу в реєстрацію
+  } else {
+    tl.click();
+  }
+
+  function redirectAfterAuth(role) {
+    setAuthed(true);
+    setRole(role);
+    location.href = qs("next") || (role === "employer" ? "employer-cabinet.html" : "candidate-cabinet.html");
+  }
+
+  function completeLogin() {
+    const form = document.getElementById("login-form");
+    if (!form.reportValidity()) return;
+    redirectAfterAuth(preRole || getRole() || "candidate");
+  }
+
+  function completeRegister() {
+    const form = document.getElementById("register-form");
+    if (!form.reportValidity()) return;
+    const role = document.getElementById("reg-role").value;
+    toast("Демо: акаунт умовно створено");
+    setTimeout(() => redirectAfterAuth(role), 500);
+  }
 </script>
 </body>
 </html>

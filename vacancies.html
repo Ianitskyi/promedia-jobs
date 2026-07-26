@@ -80,6 +80,6 @@
 
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
-<script>initVacanciesPage();</script>
+<script>if (requireAuth("candidate")) initVacanciesPage();</script>
 </body>
 </html>
