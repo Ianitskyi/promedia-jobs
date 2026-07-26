@@ -14,8 +14,6 @@
   <a class="home-btn" href="https://promedia.report">← ПроМедіа</a>
 </div>
 
-<div class="note-banner">Клікабельний прототип розділу ProMedia Jobs (майбутній jobs.promedia.report). Дані вигадані, форми нічого не надсилають насправді. Зауваження — на <a href="mailto:info@promedia.report">info@promedia.report</a></div>
-
 <header class="site-header">
   <div class="wrap header-inner">
     <a class="logo" href="index.html">ProMedia <span class="logo-jobs">Jobs</span></a>
@@ -40,105 +38,11 @@
   </div>
 </header>
 
-<section class="role-gate" id="role-gate">
-  <div class="wrap">
-    <div class="eyebrow">Крок 1 з 1 — це все, що треба вирішити зараз</div>
-    <h1>Ви шукаєте роботу чи шукаєте працівника?</h1>
-    <p class="lede">Оберіть — і ми покажемо лише те, що вам потрібно: вакансії й «Синергію» для кандидата, або резюме й публікацію вакансії для роботодавця. Змінити вибір можна будь-коли перемикачем угорі.</p>
-    <div class="role-gate-cards">
-      <div class="role-gate-card candidate" data-role="candidate">
-        <div class="rg-ico">🔎</div>
-        <div class="rg-title">Я шукаю роботу</div>
-        <div class="rg-sub">Резюме, каталог вакансій, рекомендації «Синергія»</div>
-      </div>
-      <div class="role-gate-card employer" data-role="employer">
-        <div class="rg-ico">💼</div>
-        <div class="rg-title">Я шукаю працівника</div>
-        <div class="rg-sub">Вакансія, каталог резюме, підбір кандидатів</div>
-      </div>
-    </div>
+<main class="first-screen">
+  <div class="first-screen-buttons">
+    <button class="choice-btn candidate" onclick="setRole('candidate'); location.href='vacancies.html';">Шукаю роботу в медіа та комунікаціях</button>
+    <button class="choice-btn employer" onclick="setRole('employer'); location.href='resumes.html';">Шукаю працівників у медіа та комунікаціях</button>
   </div>
-</section>
-
-<section class="hero">
-  <div class="wrap">
-    <div class="eyebrow">Медіа · Журналістика · Маркетинг · PR · Контент</div>
-    <h1>Робота і люди для медіа-індустрії України</h1>
-    <p class="lede">ProMedia Jobs об'єднує вакансії роботодавців, вакансії з перевірених джерел і резюме спеціалістів — з автоматичним підбором «Синергія» та прозорим просуванням оголошень.</p>
-
-    <form class="search-card" id="search-form" action="vacancies.html" method="get">
-      <input type="text" name="q" placeholder="Посада, ключове слово, компанія…" />
-      <select name="category">
-        <option value="">Усі категорії</option>
-      </select>
-      <select name="format">
-        <option value="">Будь-який формат</option>
-        <option value="office">Офіс</option>
-        <option value="remote">Дистанційно</option>
-        <option value="hybrid">Гібридно</option>
-      </select>
-      <button class="btn btn-accent" type="submit">Шукати</button>
-    </form>
-
-    <div class="trust-row">
-      <span>✔ Єдиний стандарт для прямих і імпортованих вакансій</span>
-      <span>🧭 «Синергія» — прозорий підбір із поясненням</span>
-      <span>🔒 Кандидат керує видимістю контактів</span>
-    </div>
-
-    <div class="stats-row">
-      <div class="stat-tile"><div class="val" id="stat-vacancies">—</div><div class="lbl">активних вакансій</div></div>
-      <div class="stat-tile"><div class="val" id="stat-resumes">—</div><div class="lbl">відкритих резюме</div></div>
-      <div class="stat-tile"><div class="val" id="stat-companies">—</div><div class="lbl">компаній</div></div>
-      <div class="stat-tile"><div class="val" id="stat-salary">—</div><div class="lbl">вакансій із зарплатою</div></div>
-    </div>
-
-    <div style="display:flex;gap:12px;flex-wrap:wrap">
-      <a class="btn btn-primary" id="hero-cta-1" href="vacancies.html">Знайти вакансію</a>
-      <a class="btn btn-ghost" id="hero-cta-2" href="create-resume.html">Додати резюме</a>
-    </div>
-  </div>
-</section>
-
-<main class="wrap">
-
-  <section class="section" data-role-section="candidate">
-    <div class="section-head">
-      <div><h2><span class="role-badge employer">Вакансії роботодавців</span></h2><h2 style="margin-top:6px">Просунуті вакансії</h2><p class="sub">Позначені роботодавцем для більшої видимості — ротуються прозоро й показуються лише серед релевантних результатів.</p></div>
-      <a class="btn btn-ghost btn-sm" href="vacancies.html">Усі вакансії →</a>
-    </div>
-    <div class="cards-grid" id="promoted-vacancies"></div>
-  </section>
-
-  <section class="section" style="padding-top:0" data-role-section="candidate">
-    <div class="section-head">
-      <div><h2>Нові вакансії</h2></div>
-      <a class="btn btn-ghost btn-sm" href="vacancies.html">Усі вакансії →</a>
-    </div>
-    <div class="cards-grid" id="new-vacancies"></div>
-  </section>
-
-  <section class="section" style="padding-top:0" data-role-section="employer">
-    <div class="section-head">
-      <div><h2><span class="role-badge candidate">Резюме кандидатів</span></h2><h2 style="margin-top:6px">Нові резюме</h2></div>
-      <a class="btn btn-ghost btn-sm" href="resumes.html">Усі резюме →</a>
-    </div>
-    <div class="cards-grid cols-2" id="new-resumes"></div>
-  </section>
-
-  <section class="section" style="padding-top:0" data-role-section="both">
-    <div class="section-head"><div><h2>Популярні категорії</h2></div></div>
-    <div class="chip-cloud" id="cat-cloud"></div>
-  </section>
-
-  <section class="section" style="padding-top:0" data-role-section="both">
-    <div class="panel">
-      <h2>Як працює «Синергія»</h2>
-      <p>Після створення чи оновлення резюме або вакансії система порівнює категорію, навички, рівень посади, формат роботи, мову та інші поля — і показує рівень відповідності з поясненням, а не «чорну скриньку». «Синергія» ніколи не враховує стать, вік, фото чи інші особисті ознаки і не приймає рішень про найм — лише радить.</p>
-      <a class="btn btn-ghost btn-sm" href="how-it-works.html#synergy">Детальніше про «Синергію» →</a>
-    </div>
-  </section>
-
 </main>
 
 <footer class="site-footer">
@@ -167,6 +71,5 @@
 
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
-<script>initHome();</script>
 </body>
 </html>

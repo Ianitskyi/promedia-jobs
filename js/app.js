@@ -134,31 +134,6 @@ function resumeCardHtml(r) {
   </a>`;
 }
 
-/* ---------------- Головна ---------------- */
-
-function initHome() {
-  const newV = [...VACANCIES].filter((v) => v.active).sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)).slice(0, 6);
-  const newR = [...RESUMES].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3);
-  const promoted = VACANCIES.filter((v) => v.promoted);
-  document.getElementById("new-vacancies").innerHTML = newV.map(jobCardHtml).join("");
-  document.getElementById("new-resumes").innerHTML = newR.map(resumeCardHtml).join("");
-  document.getElementById("promoted-vacancies").innerHTML = promoted.map(jobCardHtml).join("");
-  document.getElementById("cat-cloud").innerHTML = CATEGORIES.slice(0, 14).map(
-    (c) => `<a class="cat-chip" href="vacancies.html?category=${c.id}">${c.label}</a>`
-  ).join("");
-
-  document.getElementById("stat-vacancies").textContent = VACANCIES.filter((v) => v.active).length;
-  document.getElementById("stat-resumes").textContent = RESUMES.length;
-  document.getElementById("stat-companies").textContent = COMPANIES.length;
-  document.getElementById("stat-salary").textContent = Math.round(
-    (VACANCIES.filter((v) => !v.salaryHidden).length / VACANCIES.length) * 100
-  ) + "%";
-
-  onRoleChange(getRole());
-
-  bindSaveButtons();
-}
-
 /* ---------------- Каталог вакансій ---------------- */
 
 function initVacanciesFilters(list) {
@@ -457,23 +432,9 @@ function initNotifBell() {
   document.addEventListener("click", () => panel.classList.remove("open"));
 }
 
-/* ---------------- Реакція головної сторінки на вибір ролі ---------------- */
+/* ---------------- Реакція шапки на вибір ролі ---------------- */
 
 function onRoleChange(role) {
-  const form = document.getElementById("search-form");
-  const q = document.querySelector('[name="q"]');
-  const cta1 = document.getElementById("hero-cta-1");
-  const cta2 = document.getElementById("hero-cta-2");
-  if (form) form.action = role === "employer" ? "resumes.html" : "vacancies.html";
-  if (q) q.placeholder = role === "employer" ? "Посада, навички кандидата…" : "Посада, ключове слово, компанія…";
-  if (cta1) {
-    cta1.textContent = role === "employer" ? "Додати вакансію" : "Знайти вакансію";
-    cta1.href = role === "employer" ? "post-vacancy.html" : "vacancies.html";
-  }
-  if (cta2) {
-    cta2.textContent = role === "employer" ? "Переглянути резюме" : "Додати резюме";
-    cta2.href = role === "employer" ? "resumes.html" : "create-resume.html";
-  }
   const cabinetLink = document.getElementById("header-cabinet-link");
   if (cabinetLink) {
     cabinetLink.href = role === "employer" ? "employer-cabinet.html" : "candidate-cabinet.html";
