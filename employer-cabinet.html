@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Кабінет роботодавця · ProMedia Jobs</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="utility-bar"><a class="home-btn" href="https://promedia.report">← ПроМедіа</a></div>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="index.html">ProMedia <span class="logo-jobs">Jobs</span></a>
+    <nav class="main-nav">
+      <a href="vacancies.html">Вакансії</a>
+      <a href="resumes.html">Резюме</a>
+      <a href="pricing.html">Тарифи</a>
+    </nav>
+    <div class="header-cta">
+      <div style="position:relative"><button class="icon-btn" id="notif-bell" type="button">🔔<span class="dot"></span></button><div class="notif-panel" id="notif-panel"></div></div>
+      <a class="btn btn-light btn-sm" href="candidate-cabinet.html">Кабінет кандидата</a>
+    </div>
+  </div>
+</header>
+
+<div class="dash-layout">
+  <aside class="dash-side">
+    <button class="active" data-pane="overview">Огляд</button>
+    <button data-pane="vacancies">Мої вакансії</button>
+    <button data-pane="synergy">Синергія <span class="badge-count">4</span></button>
+    <button data-pane="saved">Збережені резюме</button>
+    <button data-pane="subscriptions">Підписки на резюме</button>
+    <button data-pane="stats">Статистика</button>
+    <button data-pane="payments">Платежі</button>
+    <button data-pane="company">Профіль компанії</button>
+  </aside>
+
+  <main class="dash-main">
+
+    <div class="cab-pane" data-cab="overview">
+      <div class="dash-head"><div><h1>Кабінет роботодавця</h1><div class="sub">AdHouse Digital — демо-акаунт</div></div><a class="btn btn-primary" href="post-vacancy.html">+ Додати вакансію</a></div>
+      <div class="kpi-grid">
+        <div class="stat-tile"><div class="val">3</div><div class="lbl">активні вакансії</div></div>
+        <div class="stat-tile"><div class="val">128</div><div class="lbl">переглядів за тиждень</div></div>
+        <div class="stat-tile"><div class="val">14</div><div class="lbl">відгуків</div></div>
+        <div class="stat-tile"><div class="val">6</div><div class="lbl">рекомендацій «Синергія»</div></div>
+      </div>
+      <div class="panel"><h2>Топ рекомендованих кандидатів</h2><div class="cards-grid cols-2" id="ov-synergy"></div></div>
+    </div>
+
+    <div class="cab-pane" data-cab="vacancies" style="display:none">
+      <div class="dash-head"><div><h1>Мої вакансії</h1></div><a class="btn btn-primary" href="post-vacancy.html">+ Додати вакансію</a></div>
+      <div class="panel">
+        <table class="tbl">
+          <thead><tr><th>Вакансія</th><th>Статус</th><th>Перегляди</th><th>Відгуки</th><th>Завершується</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="strong">SMM-менеджер(ка)</td><td><span class="status-pill st-good">Активна</span></td><td class="num">64</td><td class="num">6</td><td>2026-08-21</td>
+              <td style="display:flex;gap:6px"><button class="btn btn-light btn-sm">Редагувати</button><button class="btn btn-light btn-sm">Дублювати</button><button class="btn btn-accent btn-sm" onclick="location.href='pricing.html'">Просунути</button></td></tr>
+            <tr><td class="strong">Копірайтер(ка)</td><td><span class="status-pill st-new">На модерації</span></td><td class="num">—</td><td class="num">—</td><td>—</td>
+              <td><button class="btn btn-light btn-sm">Редагувати чернетку</button></td></tr>
+            <tr><td class="strong">Маркетинг-аналітик(иня)</td><td><span class="status-pill st-bad">Архівовано</span></td><td class="num">41</td><td class="num">3</td><td>2026-07-10</td>
+              <td><button class="btn btn-light btn-sm" onclick="toast('Демо: чернетку відновлено з архіву')">Відновити</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="synergy" style="display:none">
+      <div class="dash-head"><div><h1>Рекомендації «Синергія»</h1><div class="sub">На основі вакансії «SMM-менеджер(ка)». Ви бачите лише дані, які кандидат дозволив показувати.</div></div></div>
+      <div class="cards-grid cols-2" id="synergy-list"></div>
+    </div>
+
+    <div class="cab-pane" data-cab="saved" style="display:none">
+      <div class="dash-head"><div><h1>Збережені резюме</h1></div></div>
+      <div class="panel">
+        <table class="tbl">
+          <thead><tr><th>Кандидат(ка)</th><th>Статус</th><th>Прив'язано до вакансії</th><th>Нотатка</th></tr></thead>
+          <tbody id="saved-resumes-tbl"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="subscriptions" style="display:none">
+      <div class="dash-head"><div><h1>Підписки на резюме</h1></div><button class="btn btn-primary" onclick="toast('Демо: нову підписку створено')">+ Нова підписка</button></div>
+      <div class="panel">
+        <table class="tbl">
+          <thead><tr><th>Назва</th><th>Фільтри</th><th>Стан</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="strong">SMM-кандидати, дистанційно</td><td>SMM · Junior/Middle · Дистанційно</td><td><span class="status-pill st-good">Активна</span></td>
+              <td style="display:flex;gap:6px"><button class="btn btn-light btn-sm" onclick="toast('Демо: підписку призупинено')">Призупинити</button><button class="btn btn-light btn-sm" onclick="toast('Демо: підписку видалено')">Видалити</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="stats" style="display:none">
+      <div class="dash-head"><div><h1>Статистика вакансій</h1></div></div>
+      <div class="panel">
+        <p style="color:var(--muted);font-size:13.5px">Порівняння показів до і під час платного просування — приклад для вакансії «SMM-менеджер(ка)».</p>
+        <table class="tbl">
+          <thead><tr><th>Період</th><th>Покази</th><th>Перегляди</th><th>Відгуки</th></tr></thead>
+          <tbody>
+            <tr><td>До просування (7 днів)</td><td class="num">210</td><td class="num">38</td><td class="num">2</td></tr>
+            <tr><td class="strong">Під час просування (7 днів)</td><td class="num">540</td><td class="num">96</td><td class="num">6</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="payments" style="display:none">
+      <div class="dash-head"><div><h1>Історія платежів</h1></div></div>
+      <div class="panel">
+        <table class="tbl">
+          <thead><tr><th>Послуга</th><th>Дата</th><th>Сума</th><th>Статус</th></tr></thead>
+          <tbody><tr><td>Просування вакансії — 7 днів</td><td>2026-07-18</td><td class="num">349 ₴</td><td><span class="status-pill st-good">Оплачено</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="company" style="display:none">
+      <div class="dash-head"><div><h1>Профіль компанії</h1></div></div>
+      <div class="panel">
+        <div class="field"><label>Назва компанії</label><input type="text" value="AdHouse Digital" /></div>
+        <div class="field"><label>Опис</label><textarea rows="3">Перформанс-маркетинг та діджитал-реклама для e-commerce.</textarea></div>
+        <div class="field-row-2"><div class="field"><label>Сайт</label><input type="text" value="adhouse.agency" /></div><div class="field"><label>Місто</label><input type="text" value="Дніпро" /></div></div>
+        <button class="btn btn-primary" onclick="toast('Профіль компанії збережено')">Зберегти зміни</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  document.querySelectorAll(".dash-side button").forEach((b) => b.addEventListener("click", () => {
+    document.querySelectorAll(".dash-side button").forEach((x) => x.classList.remove("active"));
+    b.classList.add("active");
+    document.querySelectorAll(".cab-pane").forEach((p) => p.style.display = p.dataset.cab === b.dataset.pane ? "" : "none");
+  }));
+
+  const myVacancy = VACANCIES.find((v) => v.id === "v2"); // SMM-менеджер(ка), AdHouse
+  const matches = RESUMES.map((r) => ({ r, m: computeMatch(r, myVacancy) })).filter((x) => x.m).sort((a, b) => b.m.pct - a.m.pct);
+  function matchCardHtml(r, m) {
+    return `<div class="resume-card">
+      <div class="jc-top"><div class="jc-logo" style="background:#0d0c5c">${r.name[0]}</div>
+      <div><div class="jc-title">${r.name} ${r.visibility === "employers_only" ? "🔒" : ""}</div><div class="jc-company">${r.title} · ${r.city}</div></div></div>
+      <span class="match-badge match-${m.level}">${MATCH_LABELS[m.level]} · ${m.pct}%</span>
+      <div class="synergy-box" style="margin-top:0"><p>${m.reasons.slice(0,2).map(x=>"• "+x).join("<br>")}</p>${m.gaps.length ? `<p class="sy-gap">${m.gaps[0]}</p>`:""}</div>
+      <div class="jc-foot"><a href="resume.html?id=${r.id}" style="font-weight:700;color:var(--ink)">Переглянути →</a>
+      <span style="display:flex;gap:10px">
+        <button class="save-btn" data-type="resume" data-id="${r.id}" onclick="return false">☆</button>
+        <button class="btn btn-light btn-sm" onclick="toast('Позначено як нерелевантну')">Не релевантно</button>
+      </span></div>
+    </div>`;
+  }
+  document.getElementById("synergy-list").innerHTML = matches.map((x) => matchCardHtml(x.r, x.m)).join("");
+  document.getElementById("ov-synergy").innerHTML = matches.slice(0, 2).map((x) => matchCardHtml(x.r, x.m)).join("");
+
+  const savedIds = lsGet(LS.savedR, []);
+  const savedRows = RESUMES.filter((r) => savedIds.includes(r.id));
+  document.getElementById("saved-resumes-tbl").innerHTML = savedRows.length ? savedRows.map((r) => `
+    <tr><td class="strong"><a href="resume.html?id=${r.id}">${r.name}</a><div style="color:var(--muted);font-size:12px">${r.title}</div></td>
+    <td><select class="btn-sm" style="border:1px solid var(--border);border-radius:8px;padding:6px">
+      <option>Потенційний кандидат</option><option>Потрібно зв'язатися</option><option>Зв'язалися</option><option>Співбесіда</option><option>Тестове завдання</option><option>Фінальний етап</option><option>Пропозиція</option><option>Найнято</option><option>Відмовлено</option>
+    </select></td>
+    <td><select style="border:1px solid var(--border);border-radius:8px;padding:6px"><option>—</option><option>SMM-менеджер(ка)</option><option>Копірайтер(ка)</option></select></td>
+    <td><input type="text" placeholder="Приватна нотатка (не бачить кандидат)" style="border:1px solid var(--border);border-radius:8px;padding:6px 8px;width:100%"/></td></tr>`).join("")
+    : '<tr><td colspan="4" class="empty-state">Ще немає збережених резюме — натисніть ☆ у каталозі резюме.</td></tr>';
+  bindSaveButtons();
+</script>
+</body>
+</html>

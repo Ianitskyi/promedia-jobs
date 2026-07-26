@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Вакансія · ProMedia Jobs</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="utility-bar"><a class="home-btn" href="https://promedia.report">← ПроМедіа</a></div>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="index.html">ProMedia <span class="logo-jobs">Jobs</span></a>
+    <nav class="main-nav">
+      <a href="vacancies.html" class="active">Вакансії</a>
+      <a href="resumes.html">Резюме</a>
+      <a href="pricing.html">Тарифи</a>
+      <a href="how-it-works.html">Як це працює</a>
+    </nav>
+    <div class="header-cta">
+      <div style="position:relative"><button class="icon-btn" id="notif-bell" type="button">🔔<span class="dot"></span></button><div class="notif-panel" id="notif-panel"></div></div>
+      <a class="btn btn-light btn-sm" href="login.html">Увійти</a>
+      <a class="btn btn-primary btn-sm" href="candidate-cabinet.html">Кабінет</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" style="padding:26px 24px 70px">
+  <a class="back-link" href="vacancies.html" style="color:var(--muted);font-weight:700;font-size:13.5px">← До каталогу вакансій</a>
+  <div class="detail-layout">
+    <div id="vacancy-detail"></div>
+    <div>
+      <div id="apply-panel" class="apply-panel"></div>
+      <div id="synergy-box"></div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div><div class="footer-brand">ProMedia Jobs</div><p style="font-size:13px;max-width:34ch">Ініціатива ГО «ПроМедіа».</p></div>
+      <div><h4>Кандидатам</h4><a href="vacancies.html">Каталог вакансій</a><a href="create-resume.html">Створити резюме</a><a href="candidate-cabinet.html">Кабінет кандидата</a></div>
+      <div><h4>Роботодавцям</h4><a href="post-vacancy.html">Додати вакансію</a><a href="resumes.html">Каталог резюме</a><a href="pricing.html">Тарифи</a></div>
+      <div><h4>Інформація</h4><a href="how-it-works.html">Як це працює</a><a href="privacy.html">Конфіденційність</a><a href="report.html">Поскаржитися</a></div>
+    </div>
+    <div class="footer-note"><span>© 2026 ГО «ПроМедіа» · Прототип</span></div>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>initVacancyDetail();</script>
+</body>
+</html>

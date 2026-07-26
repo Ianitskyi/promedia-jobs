@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Увійти або зареєструватися · ProMedia Jobs</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="utility-bar"><a class="home-btn" href="https://promedia.report">← ПроМедіа</a></div>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="index.html">ProMedia <span class="logo-jobs">Jobs</span></a>
+    <nav class="main-nav">
+      <a href="vacancies.html">Вакансії</a>
+      <a href="resumes.html">Резюме</a>
+      <a href="pricing.html">Тарифи</a>
+      <a href="how-it-works.html">Як це працює</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="active" id="tab-login" type="button">Увійти</button>
+      <button id="tab-register" type="button">Реєстрація</button>
+    </div>
+
+    <div id="pane-login">
+      <h1>З поверненням</h1>
+      <p class="sub">Демо-вхід — акаунт не створюється насправді</p>
+      <form onsubmit="event.preventDefault(); location.href='candidate-cabinet.html';">
+        <div class="field"><label>Електронна пошта</label><input type="email" required placeholder="you@example.com" /></div>
+        <div class="field"><label>Пароль</label><input type="password" required placeholder="••••••••" /></div>
+        <button class="btn btn-primary btn-block" type="submit">Увійти як кандидат</button>
+        <button class="btn btn-light btn-block" style="margin-top:8px" type="button" onclick="location.href='employer-cabinet.html'">Увійти як роботодавець</button>
+      </form>
+      <p style="text-align:center;margin-top:16px"><a href="#" style="font-size:13px;color:var(--ink)" onclick="alert('Демо: лист для відновлення пароля не надсилається');return false">Забули пароль?</a></p>
+    </div>
+
+    <div id="pane-register" style="display:none">
+      <h1>Створити акаунт</h1>
+      <p class="sub">Підтвердження електронної пошти в демо не потрібне</p>
+      <form onsubmit="event.preventDefault(); toast('Демо: акаунт умовно створено'); setTimeout(()=>location.href='candidate-cabinet.html',600);">
+        <div class="field"><label>Ім'я</label><input type="text" required placeholder="Ваше ім'я" /></div>
+        <div class="field"><label>Електронна пошта</label><input type="email" required placeholder="you@example.com" /></div>
+        <div class="field"><label>Пароль</label><input type="password" required placeholder="Мінімум 8 символів" /></div>
+        <div class="field">
+          <label>Я реєструюся як</label>
+          <select><option>Кандидат</option><option>Роботодавець</option></select>
+        </div>
+        <div class="check-row"><input type="checkbox" required id="consent"><label for="consent">Погоджуюся з <a href="privacy.html">обробкою персональних даних</a> і правилами публікації</label></div>
+        <button class="btn btn-primary btn-block" style="margin-top:14px" type="submit">Зареєструватися</button>
+      </form>
+    </div>
+  </div>
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  const tl = document.getElementById("tab-login"), tr = document.getElementById("tab-register");
+  const pl = document.getElementById("pane-login"), pr = document.getElementById("pane-register");
+  tl.addEventListener("click", () => { tl.classList.add("active"); tr.classList.remove("active"); pl.style.display = ""; pr.style.display = "none"; });
+  tr.addEventListener("click", () => { tr.classList.add("active"); tl.classList.remove("active"); pr.style.display = ""; pl.style.display = "none"; });
+</script>
+</body>
+</html>

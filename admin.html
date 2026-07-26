@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Адмінпанель · ProMedia Jobs</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="utility-bar"><a class="home-btn" href="https://promedia.report">← ПроМедіа</a></div>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="index.html">ProMedia <span class="logo-jobs">Jobs</span></a>
+    <div class="header-cta"><span class="tag ink">Адмін-режим (демо)</span></div>
+  </div>
+</header>
+
+<div class="dash-layout">
+  <aside class="dash-side">
+    <button class="active" data-pane="overview">Огляд</button>
+    <button data-pane="moderation">Модерація вакансій <span class="badge-count">2</span></button>
+    <button data-pane="resumes">Модерація резюме</button>
+    <button data-pane="reports">Скарги <span class="badge-count">1</span></button>
+    <button data-pane="sources">Джерела імпорту</button>
+    <button data-pane="import-log">Журнал імпорту</button>
+    <button data-pane="categories">Категорії</button>
+    <button data-pane="pricing">Ціни й промокоди</button>
+    <button data-pane="payments">Платежі</button>
+    <button data-pane="analytics">Аналітика</button>
+  </aside>
+
+  <main class="dash-main">
+
+    <div class="cab-pane" data-cab="overview">
+      <div class="dash-head"><div><h1>Адмінпанель ProMedia Jobs</h1><div class="sub">Демо-дані — реальної модерації немає</div></div></div>
+      <div class="kpi-grid">
+        <div class="stat-tile"><div class="val" id="a-vac">—</div><div class="lbl">активних вакансій</div></div>
+        <div class="stat-tile"><div class="val" id="a-res">—</div><div class="lbl">активних резюме</div></div>
+        <div class="stat-tile"><div class="val" id="a-comp">—</div><div class="lbl">компаній</div></div>
+        <div class="stat-tile"><div class="val">3</div><div class="lbl">джерела імпорту</div></div>
+      </div>
+      <div class="panel"><h2>Вакансії за джерелами</h2>
+        <table class="tbl"><thead><tr><th>Джерело</th><th>Активні вакансії</th><th>Останнє оновлення</th><th>Розклад</th></tr></thead>
+          <tbody>
+            <tr><td class="strong">Прямі (роботодавці)</td><td class="num" id="a-direct">—</td><td>—</td><td>—</td></tr>
+            <tr><td>Work.ua</td><td class="num">1</td><td>2026-07-25</td><td>Щоденно</td></tr>
+            <tr><td>Robota.ua</td><td class="num">0</td><td>—</td><td>Не підключено</td></tr>
+            <tr><td>Telegram-канали</td><td class="num">0</td><td>—</td><td>Ручна модерація</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="moderation" style="display:none">
+      <div class="dash-head"><div><h1>Модерація вакансій</h1></div></div>
+      <div class="mod-card">
+        <div class="who"><b>Копірайтер(ка) — AdHouse Digital</b><div class="meta">Перша вакансія цього роботодавця · надіслано 2026-07-25</div>
+          <div class="check-row"><span class="tag green">Контакти вказано</span><span class="tag green">Обов'язки заповнені</span><span class="tag">Зарплата прихована</span></div>
+        </div>
+        <div class="mod-actions"><button class="btn btn-primary btn-sm" onclick="toast('Вакансію схвалено')">Схвалити</button><button class="btn btn-danger btn-sm" onclick="toast('Вакансію відхилено')">Відхилити</button></div>
+      </div>
+      <div class="mod-card">
+        <div class="who"><b>Копірайтер(ка) для маркетплейсу — Work.ua (імпорт)</b><div class="meta">Автоматично позначено як сумнівне: відсутній контакт роботодавця</div>
+          <div class="check-row"><span class="tag">Посилання на оригінал є</span><span class="tag" style="background:var(--red-tint);color:var(--red)">Контакт відсутній</span></div>
+        </div>
+        <div class="mod-actions"><button class="btn btn-primary btn-sm" onclick="toast('Вакансію схвалено')">Схвалити</button><button class="btn btn-danger btn-sm" onclick="toast('Вакансію відхилено')">Відхилити</button></div>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="resumes" style="display:none">
+      <div class="dash-head"><div><h1>Модерація резюме</h1></div></div>
+      <div class="panel"><div class="empty-state">Черга порожня — усі резюме пройшли автоматичну перевірку.</div></div>
+    </div>
+
+    <div class="cab-pane" data-cab="reports" style="display:none">
+      <div class="dash-head"><div><h1>Скарги користувачів</h1></div></div>
+      <div class="mod-card">
+        <div class="who"><b>Скарга: «Реклама під виглядом вакансії»</b><div class="meta">На вакансію «Копірайтер(ка) для маркетплейсу» · від анонімного відвідувача</div></div>
+        <div class="mod-actions"><button class="btn btn-primary btn-sm" onclick="toast('Скаргу закрито: порушень не знайдено')">Закрити</button><button class="btn btn-danger btn-sm" onclick="toast('Вакансію знято з публікації')">Зняти вакансію</button></div>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="sources" style="display:none">
+      <div class="dash-head"><div><h1>Джерела імпорту</h1></div><button class="btn btn-primary" onclick="toast('Демо: перевірка правил джерела перед підключенням')">+ Додати джерело</button></div>
+      <div class="panel">
+        <table class="tbl">
+          <thead><tr><th>Джерело</th><th>Спосіб</th><th>Розклад</th><th>Стан</th><th>Правова перевірка</th></tr></thead>
+          <tbody>
+            <tr><td class="strong">Work.ua</td><td>Дозволений парсинг заголовків</td><td>Щоденно</td><td><span class="status-pill st-good">Активне</span></td><td>robots.txt перевірено ✓</td></tr>
+            <tr><td class="strong">Robota.ua</td><td>Очікує на офіційне API/партнерство</td><td>—</td><td><span class="status-pill st-new">Не підключено</span></td><td>Умови використання — на розгляді</td></tr>
+            <tr><td class="strong">Державна служба зайнятості (dcz.gov.ua)</td><td>Відкриті дані (якщо є)</td><td>Щотижня</td><td><span class="status-pill st-progress">Перевіряється</span></td><td>Очікує підтвердження формату даних</td></tr>
+            <tr><td class="strong">Telegram-канали</td><td>Бот для ручного пересилання</td><td>Ручний імпорт</td><td><span class="status-pill st-good">Активне</span></td><td>Публічні канали, ручна модерація</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:12.5px;color:var(--muted);margin-top:10px">Джерело підключається лише після перевірки умов використання, robots.txt, авторських прав і вимог щодо посилання на першоджерело. Наявність API чи дозволу ніколи не вигадується.</p>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="import-log" style="display:none">
+      <div class="dash-head"><div><h1>Журнал імпорту</h1></div></div>
+      <div class="panel">
+        <table class="tbl">
+          <thead><tr><th>Дата</th><th>Джерело</th><th>Нових</th><th>Оновлено</th><th>Дублікатів відхилено</th><th>Помилки</th></tr></thead>
+          <tbody>
+            <tr><td>2026-07-25 06:00</td><td>Work.ua</td><td class="num">3</td><td class="num">5</td><td class="num">1</td><td class="num">0</td></tr>
+            <tr><td>2026-07-24 06:00</td><td>Work.ua</td><td class="num">2</td><td class="num">4</td><td class="num">0</td><td class="num">0</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="categories" style="display:none">
+      <div class="dash-head"><div><h1>Категорії</h1></div><button class="btn btn-primary" onclick="toast('Демо: категорію додано')">+ Нова категорія</button></div>
+      <div class="panel"><div class="chip-cloud" id="admin-cats"></div></div>
+    </div>
+
+    <div class="cab-pane" data-cab="pricing" style="display:none">
+      <div class="dash-head"><div><h1>Ціни й промокоди</h1></div></div>
+      <div class="panel">
+        <table class="tbl">
+          <thead><tr><th>Послуга</th><th>Ціна</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>Продовження вакансії (30 днів)</td><td><input type="number" value="199" style="width:90px;border:1px solid var(--border);border-radius:8px;padding:6px"/> ₴</td><td><button class="btn btn-light btn-sm" onclick="toast('Ціну збережено')">Зберегти</button></td></tr>
+            <tr><td>Просування вакансії (7 днів)</td><td><input type="number" value="349" style="width:90px;border:1px solid var(--border);border-radius:8px;padding:6px"/> ₴</td><td><button class="btn btn-light btn-sm" onclick="toast('Ціну збережено')">Зберегти</button></td></tr>
+            <tr><td>Продовження резюме (30 днів)</td><td><input type="number" value="49" style="width:90px;border:1px solid var(--border);border-radius:8px;padding:6px"/> ₴</td><td><button class="btn btn-light btn-sm" onclick="toast('Ціну збережено')">Зберегти</button></td></tr>
+            <tr><td>Просування резюме (7 днів)</td><td><input type="number" value="99" style="width:90px;border:1px solid var(--border);border-radius:8px;padding:6px"/> ₴</td><td><button class="btn btn-light btn-sm" onclick="toast('Ціну збережено')">Зберегти</button></td></tr>
+          </tbody>
+        </table>
+        <div class="field" style="margin-top:16px"><label>Новий промокод</label><input type="text" placeholder="LAUNCH2026" /></div>
+        <button class="btn btn-primary" onclick="toast('Промокод створено')">Створити промокод</button>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="payments" style="display:none">
+      <div class="dash-head"><div><h1>Платежі</h1></div><button class="btn btn-light" onclick="toast('Демо: файл CSV сформовано б тут')">Експортувати CSV</button></div>
+      <div class="panel">
+        <table class="tbl">
+          <thead><tr><th>Дата</th><th>Користувач</th><th>Послуга</th><th>Сума</th><th>Статус</th></tr></thead>
+          <tbody><tr><td>2026-07-18</td><td>AdHouse Digital</td><td>Просування вакансії</td><td class="num">349 ₴</td><td><span class="status-pill st-good">Оплачено</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="analytics" style="display:none">
+      <div class="dash-head"><div><h1>Аналітика</h1></div><button class="btn btn-light" onclick="toast('Демо: агреговану статистику експортовано в CSV')">Експортувати CSV</button></div>
+      <div class="kpi-grid">
+        <div class="stat-tile"><div class="val" id="an-1">—</div><div class="lbl">частка вакансій із зарплатою</div></div>
+        <div class="stat-tile"><div class="val">3.4%</div><div class="lbl">конверсія перегляду у відгук</div></div>
+        <div class="stat-tile"><div class="val">62%</div><div class="lbl">прийнятих рекомендацій «Синергія»</div></div>
+        <div class="stat-tile"><div class="val">2</div><div class="lbl">дублікати відхилено (тиждень)</div></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  document.querySelectorAll(".dash-side button").forEach((b) => b.addEventListener("click", () => {
+    document.querySelectorAll(".dash-side button").forEach((x) => x.classList.remove("active"));
+    b.classList.add("active");
+    document.querySelectorAll(".cab-pane").forEach((p) => p.style.display = p.dataset.cab === b.dataset.pane ? "" : "none");
+  }));
+  document.getElementById("a-vac").textContent = VACANCIES.filter((v) => v.active).length;
+  document.getElementById("a-res").textContent = RESUMES.length;
+  document.getElementById("a-comp").textContent = COMPANIES.length;
+  document.getElementById("a-direct").textContent = VACANCIES.filter((v) => v.direct).length;
+  document.getElementById("an-1").textContent = Math.round((VACANCIES.filter((v) => !v.salaryHidden).length / VACANCIES.length) * 100) + "%";
+  document.getElementById("admin-cats").innerHTML = CATEGORIES.map((c) => `<span class="cat-chip">${c.label}</span>`).join("");
+</script>
+</body>
+</html>

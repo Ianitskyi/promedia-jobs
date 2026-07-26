@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ProMedia Jobs — робота в медіа, журналістиці, маркетингу та PR</title>
+<meta name="description" content="ProMedia Jobs — вакансії та резюме у сфері медіа, журналістики, маркетингу, реклами, PR, комунікацій і контенту." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='6' fill='%230d0c5c'/><text x='12' y='17' font-size='14' text-anchor='middle' fill='%23ffac33' font-family='Georgia'>PJ</text></svg>" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="utility-bar">
+  <a class="home-btn" href="https://promedia.report">← ПроМедіа</a>
+</div>
+
+<div class="note-banner">Клікабельний прототип розділу ProMedia Jobs (майбутній jobs.promedia.report). Дані вигадані, форми нічого не надсилають насправді. Зауваження — на <a href="mailto:info@promedia.report">info@promedia.report</a></div>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="index.html">ProMedia <span class="logo-jobs">Jobs</span></a>
+    <nav class="main-nav">
+      <a href="vacancies.html">Вакансії</a>
+      <a href="resumes.html">Резюме</a>
+      <a href="pricing.html">Тарифи</a>
+      <a href="how-it-works.html">Як це працює</a>
+    </nav>
+    <div class="header-cta">
+      <div style="position:relative">
+        <button class="icon-btn" id="notif-bell" type="button">🔔<span class="dot"></span></button>
+        <div class="notif-panel" id="notif-panel"></div>
+      </div>
+      <a class="btn btn-light btn-sm" href="login.html">Увійти</a>
+      <a class="btn btn-primary btn-sm" href="post-vacancy.html">Додати вакансію</a>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Медіа · Журналістика · Маркетинг · PR · Контент</div>
+    <h1>Робота і люди для медіа-індустрії України</h1>
+    <p class="lede">ProMedia Jobs об'єднує вакансії роботодавців, вакансії з перевірених джерел і резюме спеціалістів — з автоматичним підбором «Синергія» та прозорим просуванням оголошень.</p>
+
+    <div class="role-toggle">
+      <button class="active" data-role="candidate">Шукаю роботу</button>
+      <button data-role="employer">Шукаю працівника</button>
+    </div>
+
+    <form class="search-card" id="search-form" action="vacancies.html" method="get">
+      <input type="text" name="q" placeholder="Посада, ключове слово, компанія…" />
+      <select name="category">
+        <option value="">Усі категорії</option>
+      </select>
+      <select name="format">
+        <option value="">Будь-який формат</option>
+        <option value="office">Офіс</option>
+        <option value="remote">Дистанційно</option>
+        <option value="hybrid">Гібридно</option>
+      </select>
+      <button class="btn btn-accent" type="submit">Шукати</button>
+    </form>
+
+    <div class="trust-row">
+      <span>✔ Єдиний стандарт для прямих і імпортованих вакансій</span>
+      <span>🧭 «Синергія» — прозорий підбір із поясненням</span>
+      <span>🔒 Кандидат керує видимістю контактів</span>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-tile"><div class="val" id="stat-vacancies">—</div><div class="lbl">активних вакансій</div></div>
+      <div class="stat-tile"><div class="val" id="stat-resumes">—</div><div class="lbl">відкритих резюме</div></div>
+      <div class="stat-tile"><div class="val" id="stat-companies">—</div><div class="lbl">компаній</div></div>
+      <div class="stat-tile"><div class="val" id="stat-salary">—</div><div class="lbl">вакансій із зарплатою</div></div>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <a class="btn btn-primary" id="hero-cta-1" href="vacancies.html">Знайти вакансію</a>
+      <a class="btn btn-ghost" id="hero-cta-2" href="create-resume.html">Додати резюме</a>
+    </div>
+  </div>
+</section>
+
+<main class="wrap">
+
+  <section class="section">
+    <div class="section-head">
+      <div><h2>Просунуті вакансії</h2><p class="sub">Позначені роботодавцем для більшої видимості — ротуються прозоро й показуються лише серед релевантних результатів.</p></div>
+      <a class="btn btn-ghost btn-sm" href="vacancies.html">Усі вакансії →</a>
+    </div>
+    <div class="cards-grid" id="promoted-vacancies"></div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="section-head">
+      <div><h2>Нові вакансії</h2></div>
+      <a class="btn btn-ghost btn-sm" href="vacancies.html">Усі вакансії →</a>
+    </div>
+    <div class="cards-grid" id="new-vacancies"></div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="section-head">
+      <div><h2>Нові резюме</h2></div>
+      <a class="btn btn-ghost btn-sm" href="resumes.html">Усі резюме →</a>
+    </div>
+    <div class="cards-grid cols-2" id="new-resumes"></div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="section-head"><div><h2>Популярні категорії</h2></div></div>
+    <div class="chip-cloud" id="cat-cloud"></div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="panel">
+      <h2>Як працює «Синергія»</h2>
+      <p>Після створення чи оновлення резюме або вакансії система порівнює категорію, навички, рівень посади, формат роботи, мову та інші поля — і показує рівень відповідності з поясненням, а не «чорну скриньку». «Синергія» ніколи не враховує стать, вік, фото чи інші особисті ознаки і не приймає рішень про найм — лише радить.</p>
+      <a class="btn btn-ghost btn-sm" href="how-it-works.html#synergy">Детальніше про «Синергію» →</a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">ProMedia Jobs</div>
+        <p style="font-size:13px;max-width:34ch">Пошук роботи та працівників у медіа, журналістиці, маркетингу, рекламі, PR і суміжних креативних індустріях. Ініціатива ГО «ПроМедіа».</p>
+      </div>
+      <div><h4>Кандидатам</h4>
+        <a href="vacancies.html">Каталог вакансій</a><a href="create-resume.html">Створити резюме</a><a href="candidate-cabinet.html">Кабінет кандидата</a>
+      </div>
+      <div><h4>Роботодавцям</h4>
+        <a href="post-vacancy.html">Додати вакансію</a><a href="resumes.html">Каталог резюме</a><a href="pricing.html">Тарифи та просування</a>
+      </div>
+      <div><h4>Інформація</h4>
+        <a href="how-it-works.html">Як це працює</a><a href="privacy.html">Конфіденційність</a><a href="report.html">Поскаржитися</a>
+      </div>
+    </div>
+    <div class="footer-note">
+      <span>© 2026 ГО «ПроМедіа» · Клікабельний прототип — дані вигадані, оплата й авторизація не реальні</span>
+      <span>Заплановано: jobs.promedia.report</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>initHome();</script>
+</body>
+</html>

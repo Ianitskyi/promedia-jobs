@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Кабінет кандидата · ProMedia Jobs</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="utility-bar"><a class="home-btn" href="https://promedia.report">← ПроМедіа</a></div>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="index.html">ProMedia <span class="logo-jobs">Jobs</span></a>
+    <nav class="main-nav">
+      <a href="vacancies.html">Вакансії</a>
+      <a href="resumes.html">Резюме</a>
+      <a href="pricing.html">Тарифи</a>
+    </nav>
+    <div class="header-cta">
+      <div style="position:relative"><button class="icon-btn" id="notif-bell" type="button">🔔<span class="dot"></span></button><div class="notif-panel" id="notif-panel"></div></div>
+      <a class="btn btn-light btn-sm" href="employer-cabinet.html">Кабінет роботодавця</a>
+    </div>
+  </div>
+</header>
+
+<div class="dash-layout">
+  <aside class="dash-side">
+    <button class="active" data-pane="overview">Огляд</button>
+    <button data-pane="resumes">Мої резюме</button>
+    <button data-pane="saved">Збережені вакансії</button>
+    <button data-pane="synergy">Синергія <span class="badge-count">3</span></button>
+    <button data-pane="applications">Мої відгуки</button>
+    <button data-pane="subscriptions">Підписки</button>
+    <button data-pane="notifications">Сповіщення</button>
+    <button data-pane="payments">Платежі</button>
+    <button data-pane="settings">Налаштування акаунта</button>
+  </aside>
+
+  <main class="dash-main">
+
+    <div class="cab-pane" data-cab="overview">
+      <div class="dash-head"><div><h1>Вітаємо, Маріє 👋</h1><div class="sub">Ваш кабінет кандидата — демо-акаунт</div></div><a class="btn btn-primary" href="create-resume.html">+ Нове резюме</a></div>
+      <div class="kpi-grid">
+        <div class="stat-tile"><div class="val">1</div><div class="lbl">активне резюме</div></div>
+        <div class="stat-tile"><div class="val">4</div><div class="lbl">збережені вакансії</div></div>
+        <div class="stat-tile"><div class="val">3</div><div class="lbl">рекомендації «Синергія»</div></div>
+        <div class="stat-tile"><div class="val">2</div><div class="lbl">надіслані відгуки</div></div>
+      </div>
+      <div class="panel"><h2>Останні рекомендації «Синергія»</h2><div class="cards-grid cols-2" id="ov-synergy"></div></div>
+    </div>
+
+    <div class="cab-pane" data-cab="resumes" style="display:none">
+      <div class="dash-head"><div><h1>Мої резюме</h1></div><a class="btn btn-primary" href="create-resume.html">+ Нове резюме</a></div>
+      <div class="panel">
+        <table class="tbl">
+          <thead><tr><th>Резюме</th><th>Статус</th><th>Опубліковано</th><th>Завершується</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="strong">SMM-менеджерка</td><td><span class="status-pill st-good">Активне</span></td><td>2026-07-20</td><td>2026-08-19</td>
+              <td style="display:flex;gap:6px"><button class="btn btn-light btn-sm">Редагувати</button><button class="btn btn-light btn-sm">Приховати</button><button class="btn btn-accent btn-sm" onclick="location.href='pricing.html'">Просунути</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="saved" style="display:none">
+      <div class="dash-head"><div><h1>Збережені вакансії</h1></div></div>
+      <div class="panel">
+        <table class="tbl">
+          <thead><tr><th>Вакансія</th><th>Статус</th><th>Нотатка</th><th>Дедлайн</th></tr></thead>
+          <tbody id="saved-vacancies-tbl"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="synergy" style="display:none">
+      <div class="dash-head"><div><h1>Рекомендації «Синергія»</h1><div class="sub">На основі резюме «SMM-менеджерка». Кожна рекомендація пояснена — це не автоматичне рішення про найм.</div></div></div>
+      <div class="cards-grid cols-2" id="synergy-list"></div>
+    </div>
+
+    <div class="cab-pane" data-cab="applications" style="display:none">
+      <div class="dash-head"><div><h1>Мої відгуки</h1></div></div>
+      <div class="panel">
+        <table class="tbl">
+          <thead><tr><th>Вакансія</th><th>Компанія</th><th>Дата</th><th>Статус</th></tr></thead>
+          <tbody id="applications-tbl"><tr><td colspan="4" class="empty-state">Відгуків поки немає — знайдіть вакансію в каталозі.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="subscriptions" style="display:none">
+      <div class="dash-head"><div><h1>Підписки на вакансії</h1></div><button class="btn btn-primary" onclick="toast('Демо: нову підписку створено')">+ Нова підписка</button></div>
+      <div class="panel">
+        <table class="tbl">
+          <thead><tr><th>Назва</th><th>Фільтри</th><th>Частота</th><th>Стан</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="strong">SMM / Контент, Київ</td><td>SMM, Контент-менеджмент · Дистанційно</td><td>Раз на день</td><td><span class="status-pill st-good">Активна</span></td>
+              <td style="display:flex;gap:6px"><button class="btn btn-light btn-sm" onclick="toast('Демо: підписку призупинено')">Призупинити</button><button class="btn btn-light btn-sm" onclick="toast('Демо: підписку видалено')">Видалити</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="notifications" style="display:none">
+      <div class="dash-head"><div><h1>Сповіщення</h1></div></div>
+      <div class="panel">
+        <div class="field-row-2">
+          <label class="filter-check"><input type="checkbox" checked> Нова вакансія за підпискою</label>
+          <label class="filter-check"><input type="checkbox" checked> Нова рекомендація «Синергії»</label>
+          <label class="filter-check"><input type="checkbox" checked> Завершення строку публікації</label>
+          <label class="filter-check"><input type="checkbox"> Маркетингові листи ProMedia</label>
+        </div>
+        <div class="field" style="margin-top:16px"><label>Канали сповіщень</label>
+          <select><option>Внутрішні + електронна пошта</option><option>Лише внутрішні</option><option>Лише електронна пошта</option></select>
+        </div>
+        <button class="btn btn-primary" style="margin-top:10px" onclick="toast('Налаштування збережено')">Зберегти</button>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="payments" style="display:none">
+      <div class="dash-head"><div><h1>Історія платежів</h1></div></div>
+      <div class="panel"><div class="empty-state">Платежів поки не було. Тут з'являться продовження публікацій та просування резюме.</div></div>
+    </div>
+
+    <div class="cab-pane" data-cab="settings" style="display:none">
+      <div class="dash-head"><div><h1>Налаштування акаунта</h1></div></div>
+      <div class="panel">
+        <div class="field"><label>Електронна пошта</label><input type="email" value="maria@example.com" /></div>
+        <button class="btn btn-light" onclick="toast('Демо: список активних сесій показано в консолі')">Активні сесії</button>
+        <button class="btn btn-danger" style="margin-top:10px" onclick="if(confirm('Видалити акаунт і всі персональні дані без можливості відновлення?')) toast('Демо: акаунт видалено')">Видалити акаунт і мої дані</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  document.querySelectorAll(".dash-side button").forEach((b) => b.addEventListener("click", () => {
+    document.querySelectorAll(".dash-side button").forEach((x) => x.classList.remove("active"));
+    b.classList.add("active");
+    document.querySelectorAll(".cab-pane").forEach((p) => p.style.display = p.dataset.cab === b.dataset.pane ? "" : "none");
+  }));
+
+  const myResume = RESUMES[0];
+  const matches = VACANCIES.map((v) => ({ v, m: computeMatch(myResume, v) })).filter((x) => x.m).sort((a, b) => b.m.pct - a.m.pct);
+  function matchCardHtml(v, m) {
+    return `<div class="job-card">
+      <div class="jc-top"><div class="jc-logo" style="background:${companyColor(v)}">${companyLetter(v)}</div>
+      <div><div class="jc-title">${v.title}</div><div class="jc-company">${companyName(v)} · ${v.city}</div></div></div>
+      <span class="match-badge match-${m.level}">${MATCH_LABELS[m.level]} · ${m.pct}%</span>
+      <div class="synergy-box" style="margin-top:0"><p>${m.reasons.slice(0,2).map(r=>"• "+r).join("<br>")}</p>${m.gaps.length ? `<p class="sy-gap">${m.gaps[0]}</p>`:""}</div>
+      <div class="jc-foot"><a href="vacancy.html?id=${v.id}" style="font-weight:700;color:var(--ink)">Переглянути →</a>
+      <span style="display:flex;gap:10px">
+        <button class="save-btn" data-type="vacancy" data-id="${v.id}" onclick="return false">☆</button>
+        <button class="btn btn-light btn-sm" onclick="toast('Позначено як нерелевантну')">Не релевантно</button>
+      </span></div>
+    </div>`;
+  }
+  document.getElementById("synergy-list").innerHTML = matches.map((x) => matchCardHtml(x.v, x.m)).join("");
+  document.getElementById("ov-synergy").innerHTML = matches.slice(0, 2).map((x) => matchCardHtml(x.v, x.m)).join("");
+
+  const savedIds = lsGet(LS.savedV, []);
+  const savedRows = VACANCIES.filter((v) => savedIds.includes(v.id));
+  document.getElementById("saved-vacancies-tbl").innerHTML = savedRows.length ? savedRows.map((v) => `
+    <tr><td class="strong"><a href="vacancy.html?id=${v.id}">${v.title}</a><div style="color:var(--muted);font-size:12px">${companyName(v)}</div></td>
+    <td><select class="btn-sm" style="border:1px solid var(--border);border-radius:8px;padding:6px">
+      <option>Хочу відгукнутися</option><option>Готую заявку</option><option>Відгукнувся</option><option>Очікую відповіді</option><option>Запросили на співбесіду</option><option>Тестове завдання</option><option>Отримав пропозицію</option><option>Відмовили</option><option>Неактуально</option>
+    </select></td>
+    <td><input type="text" placeholder="Ваша нотатка…" style="border:1px solid var(--border);border-radius:8px;padding:6px 8px;width:100%"/></td>
+    <td>${v.deadline || "—"}</td></tr>`).join("")
+    : '<tr><td colspan="4" class="empty-state">Ще немає збережених вакансій — натисніть ☆ на будь-якій картці.</td></tr>';
+  bindSaveButtons();
+</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Додати вакансію · ProMedia Jobs</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="utility-bar"><a class="home-btn" href="https://promedia.report">← ПроМедіа</a></div>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="index.html">ProMedia <span class="logo-jobs">Jobs</span></a>
+    <nav class="main-nav">
+      <a href="vacancies.html">Вакансії</a>
+      <a href="resumes.html">Резюме</a>
+      <a href="pricing.html">Тарифи</a>
+      <a href="how-it-works.html">Як це працює</a>
+    </nav>
+    <div class="header-cta"><a class="btn btn-light btn-sm" href="employer-cabinet.html">Кабінет роботодавця</a></div>
+  </div>
+</header>
+
+<main class="wrap" style="padding:26px 24px 70px">
+  <div class="eyebrow">Вакансія</div>
+  <h1 style="font-family:var(--serif);margin:0 0 4px">Нова вакансія</h1>
+  <p style="color:var(--muted)">Перша вакансія нового роботодавця проходить ручну модерацію перед публікацією.</p>
+
+  <div class="wizard">
+    <div class="wizard-steps">
+      <div class="wizard-step active" data-step="1"><span class="n">1</span> Основне</div>
+      <div class="wizard-step" data-step="2"><span class="n">2</span> Вимоги та навички</div>
+      <div class="wizard-step" data-step="3"><span class="n">3</span> Зарплата й умови</div>
+      <div class="wizard-step" data-step="4"><span class="n">4</span> Подача та контакти</div>
+      <div class="wizard-step" data-step="5"><span class="n">5</span> Перегляд і публікація</div>
+    </div>
+
+    <div class="wizard-panel">
+
+      <div class="wizard-pane" data-pane="1">
+        <h2>Основна інформація</h2>
+        <div class="field-row-2">
+          <div class="field"><label>Назва посади *</label><input type="text" id="v-title" placeholder="SMM-менеджер(ка)" required /></div>
+          <div class="field"><label>Компанія *</label><input type="text" id="v-company" placeholder="Назва компанії" required /></div>
+        </div>
+        <div class="field"><label>Професійна категорія *</label><input type="text" id="v-cat" placeholder="SMM, Контент-менеджмент" required /></div>
+        <div class="field-row-3">
+          <div class="field"><label>Місто *</label><input type="text" id="v-city" required /></div>
+          <div class="field"><label>Формат роботи *</label><select id="v-format"><option value="office">Офіс</option><option value="remote">Дистанційно</option><option value="hybrid">Гібридно</option></select></div>
+          <div class="field"><label>Тип зайнятості *</label><select id="v-employment"><option value="full">Повна</option><option value="part">Часткова</option><option value="project">Проєктна</option><option value="freelance">Фриланс</option><option value="temporary">Тимчасова</option><option value="internship">Стажування</option><option value="volunteering">Волонтерство</option></select></div>
+        </div>
+        <div class="field"><label>Рівень посади *</label><select id="v-level"><option value="intern">Стажер</option><option value="junior">Junior</option><option value="middle" selected>Middle</option><option value="senior">Senior</option><option value="lead">Керівник</option><option value="top">Топменеджмент</option></select></div>
+        <div class="wizard-actions"><span></span><button class="btn btn-primary" onclick="goStep(2)">Далі</button></div>
+      </div>
+
+      <div class="wizard-pane" data-pane="2" style="display:none">
+        <h2>Вимоги та навички</h2>
+        <div class="field"><label>Основні обов'язки *</label><textarea rows="3" id="v-resp" placeholder="Кожен пункт з нового рядка"></textarea></div>
+        <div class="field"><label>Обов'язкові вимоги *</label><textarea rows="3" id="v-must" placeholder="Кожен пункт з нового рядка"></textarea></div>
+        <div class="field"><label>Бажані навички</label><textarea rows="2" id="v-nice" placeholder="Необов'язково"></textarea></div>
+        <div class="field-row-2">
+          <div class="field"><label>Необхідний досвід</label><input type="text" id="v-exp" placeholder="Від 1 року" /></div>
+          <div class="field"><label>Рівень освіти <span class="hint">(лише якщо справді потрібен)</span></label><input type="text" id="v-edu" placeholder="Не обов'язкова" /></div>
+        </div>
+        <div class="field"><label>Знання мов</label><input type="text" id="v-lang" placeholder="Українська — рідна, англійська — середній" /></div>
+        <div class="warn-box" id="discrimination-warning" style="display:none">Формулювання «лише жінки/чоловіки», обмеження за віком без обґрунтування — можливі ознаки дискримінаційної вимоги. Перевірте текст перед публікацією.</div>
+        <div class="wizard-actions"><button class="btn btn-light" onclick="goStep(1)">Назад</button><button class="btn btn-primary" onclick="checkDiscrimination()">Далі</button></div>
+      </div>
+
+      <div class="wizard-pane" data-pane="3" style="display:none">
+        <h2>Зарплата та умови</h2>
+        <div class="field-row-3">
+          <div class="field"><label>Зарплата від</label><input type="number" id="v-sal-min" placeholder="20000" /></div>
+          <div class="field"><label>Зарплата до</label><input type="number" id="v-sal-max" placeholder="28000" /></div>
+          <div class="field"><label>Валюта</label><select id="v-curr"><option>UAH</option><option>USD</option><option>EUR</option></select></div>
+        </div>
+        <div class="check-row"><input type="checkbox" id="v-hide-salary"><label for="v-hide-salary">Не показувати зарплату публічно</label></div>
+        <div class="field" style="margin-top:14px"><label>Соціальний пакет та переваги</label><textarea rows="2" id="v-benefits" placeholder="Медстрахування, гнучкий графік…"></textarea></div>
+        <div class="field-row-2">
+          <div class="field"><label>Дата початку роботи</label><input type="date" id="v-start" /></div>
+          <div class="field"><label>Дедлайн подачі</label><input type="date" id="v-deadline" /></div>
+        </div>
+        <div class="wizard-actions"><button class="btn btn-light" onclick="goStep(2)">Назад</button><button class="btn btn-primary" onclick="goStep(4)">Далі</button></div>
+      </div>
+
+      <div class="wizard-pane" data-pane="4" style="display:none">
+        <h2>Подача заявок і контакти</h2>
+        <div class="field"><label>Спосіб подачі *</label>
+          <select id="v-apply-method"><option value="internal">Через ProMedia Jobs (резюме в системі)</option><option value="email">Електронною поштою</option><option value="external">Зовнішнє посилання</option></select>
+        </div>
+        <div class="field"><label>Контактна особа</label><input type="text" id="v-contact-name" placeholder="Ім'я HR-менеджера" /></div>
+        <div class="field"><label>Контактна електронна адреса *</label><input type="email" id="v-contact-email" required placeholder="hr@company.com" /></div>
+        <div class="field"><label>Зовнішнє посилання для подачі (якщо є)</label><input type="url" id="v-external-url" placeholder="https://…" /></div>
+        <div class="wizard-actions"><button class="btn btn-light" onclick="goStep(3)">Назад</button><button class="btn btn-primary" onclick="renderPreview();goStep(5)">Переглянути</button></div>
+      </div>
+
+      <div class="wizard-pane" data-pane="5" style="display:none">
+        <h2>Перегляд перед публікацією</h2>
+        <div id="vacancy-preview" class="panel" style="box-shadow:none;border:1.5px dashed var(--border)"></div>
+        <div class="warn-box">Перша вакансія нового роботодавця проходить ручну модерацію — очікуйте на рішення до 24 годин. Ви отримаєте сповіщення про результат.</div>
+        <div class="check-row"><input type="checkbox" id="v-terms" required><label for="v-terms">Підтверджую достовірність інформації та погоджуюся з правилами публікації</label></div>
+        <div class="wizard-actions">
+          <button class="btn btn-light" onclick="goStep(4)">Назад</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" onclick="saveDraft()">Зберегти чернетку</button>
+            <button class="btn btn-accent" onclick="publishVacancy()">Надіслати на модерацію</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  function goStep(n) {
+    document.querySelectorAll(".wizard-step").forEach((s) => {
+      const sn = +s.dataset.step;
+      s.classList.toggle("active", sn === n);
+      s.classList.toggle("done", sn < n);
+    });
+    document.querySelectorAll(".wizard-pane").forEach((p) => { p.style.display = +p.dataset.pane === n ? "" : "none"; });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function checkDiscrimination() {
+    const text = (document.getElementById("v-must").value + " " + document.getElementById("v-resp").value).toLowerCase();
+    const flagged = /тільки (чоловік|жінок|дівчат)|лише (чоловік|жінок)|до 30 років|не старше/.test(text);
+    document.getElementById("discrimination-warning").style.display = flagged ? "" : "none";
+    goStep(3);
+  }
+
+  function collectDraft() {
+    return {
+      title: document.getElementById("v-title").value || "Без назви",
+      company: document.getElementById("v-company").value || "Компанія не вказана",
+      city: document.getElementById("v-city").value,
+      format: document.getElementById("v-format").value,
+      employment: document.getElementById("v-employment").value,
+      level: document.getElementById("v-level").value,
+      salMin: document.getElementById("v-sal-min").value,
+      salMax: document.getElementById("v-sal-max").value,
+      hideSalary: document.getElementById("v-hide-salary").checked,
+      deadline: document.getElementById("v-deadline").value,
+    };
+  }
+
+  function renderPreview() {
+    const d = collectDraft();
+    document.getElementById("vacancy-preview").innerHTML = `
+      <div class="jc-top"><div class="jc-logo">${(d.company[0]||"?").toUpperCase()}</div>
+      <div><div class="jc-title" style="font-size:18px">${d.title}</div><div class="jc-company">${d.company} · ${d.city}</div></div></div>
+      <div class="jc-meta" style="margin:12px 0"><span class="tag ink">${labelOf(FORMATS, d.format)}</span><span class="tag">${labelOf(EMPLOYMENT_TYPES, d.employment)}</span><span class="tag">${labelOf(LEVELS, d.level)}</span></div>
+      <div class="jc-salary">${d.hideSalary ? "Зарплата прихована" : (d.salMin && d.salMax ? d.salMin+"–"+d.salMax+" грн" : "Не вказано")}</div>
+      <p style="color:var(--muted);font-size:13px;margin-top:10px">Дедлайн подачі: ${d.deadline || "не вказано"}</p>`;
+  }
+
+  function saveDraft() { toast("Чернетку збережено (демо)"); }
+  function publishVacancy() {
+    if (!document.getElementById("v-terms").checked) { toast("Потрібно підтвердити достовірність і правила публікації"); return; }
+    toast("Вакансію надіслано на модерацію");
+    setTimeout(() => location.href = "employer-cabinet.html", 900);
+  }
+</script>
+</body>
+</html>
