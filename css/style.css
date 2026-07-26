@@ -309,6 +309,7 @@ img, svg { max-width: 100%; display: block; }
 @media (max-width: 620px) {
   .cards-grid, .cards-grid.cols-2, .kpi-grid, .pricing-grid, .steps { grid-template-columns: 1fr; }
   .main-nav { display: none; }
+  .main-nav.minimal { display: flex; }
   .footer-grid { grid-template-columns: 1fr; }
   .choice-btn { min-width: 0; width: 100%; }
 }
