@@ -2,7 +2,6 @@ User-agent: *
 Disallow: /admin.html
 Disallow: /candidate-cabinet.html
 Disallow: /employer-cabinet.html
-Disallow: /login.html
 Allow: /
 
 Sitemap: https://jobs.promedia.report/sitemap.xml

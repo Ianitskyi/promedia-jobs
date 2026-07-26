@@ -497,21 +497,20 @@ function setProfile(name, email) {
 }
 
 // Викликати першим рядком на кожній сторінці, доступній лише зареєстрованим.
-// Повертає false і одразу веде на логін, якщо людина ще не "увійшла".
+// Повертає false і одразу веде на реєстрацію/вхід, якщо людина ще не "увійшла".
 function requireAuth(defaultRole) {
   if (isAuthed()) return true;
-  const role = getRole() || defaultRole || "candidate";
+  if (defaultRole) setRole(defaultRole);
   const next = location.pathname.split("/").pop();
-  location.href = `login.html?role=${role}&next=${next}`;
+  location.href = `index.html?next=${next}`;
   return false;
 }
 
-// Виклик з кнопок вибору ролі на головній: людина, що вже увійшла раніше,
-// одразу потрапляє у свій кабінет — без повторної реєстрації чи входу.
+// Виклик з кнопок вибору ролі на головній: людина вже увійшла (інакше ці
+// кнопки не показуються), тож одразу веде у відповідний кабінет.
 function goToRole(role) {
   setRole(role);
-  const cabinet = role === "employer" ? "employer-cabinet.html" : "candidate-cabinet.html";
-  location.href = isAuthed() ? cabinet : `login.html?role=${role}&next=${cabinet}`;
+  location.href = role === "employer" ? "employer-cabinet.html" : "candidate-cabinet.html";
 }
 
 /* ---------------- Загальна ініціалізація шапки ---------------- */
