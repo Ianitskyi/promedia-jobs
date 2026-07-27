@@ -26,8 +26,6 @@
     <button data-pane="reports">Скарги <span class="badge-count">1</span></button>
     <button data-pane="sources">Джерела імпорту</button>
     <button data-pane="import-log">Журнал імпорту</button>
-    <button data-pane="pricing">Ціни й промокоди</button>
-    <button data-pane="payments">Платежі</button>
     <button data-pane="analytics">Аналітика</button>
   </aside>
 
@@ -99,30 +97,6 @@
           </tbody>
         </table>
         <p style="font-size:12.5px;color:var(--muted);margin-top:10px">Приклад дедуплікації 25.07: вакансія «Копірайтер(ка) для маркетплейсу» вже була в каталозі з Work.ua — коли той самий запис прийшов через портал ДСЗ, система розпізнала збіг за назвою посади, компанією, зарплатою й датою та додала лише друге джерело до наявної картки, не створюючи дублікат.</p>
-      </div>
-    </div>
-
-    <div class="cab-pane" data-cab="pricing" style="display:none">
-      <div class="dash-head"><div><h1>Ціни й промокоди</h1></div></div>
-      <div class="panel">
-        <table class="tbl">
-          <thead><tr><th>Послуга</th><th>Ціна</th><th></th></tr></thead>
-          <tbody>
-            <tr><td>Продовження вакансії (30 днів)</td><td><input type="number" value="199" style="width:90px;border:1px solid var(--border);border-radius:8px;padding:6px"/> ₴</td><td><button class="btn btn-light btn-sm" onclick="toast('Ціну збережено')">Зберегти</button></td></tr>
-          </tbody>
-        </table>
-        <div class="field" style="margin-top:16px"><label>Новий промокод</label><input type="text" placeholder="LAUNCH2026" /></div>
-        <button class="btn btn-primary" onclick="toast('Промокод створено')">Створити промокод</button>
-      </div>
-    </div>
-
-    <div class="cab-pane" data-cab="payments" style="display:none">
-      <div class="dash-head"><div><h1>Платежі</h1></div><button class="btn btn-light" onclick="toast('Демо: файл CSV сформовано б тут')">Експортувати CSV</button></div>
-      <div class="panel">
-        <table class="tbl">
-          <thead><tr><th>Дата</th><th>Користувач</th><th>Послуга</th><th>Сума</th><th>Статус</th></tr></thead>
-          <tbody><tr><td>2026-07-18</td><td>AdHouse Digital</td><td>Продовження вакансії</td><td class="num">199 ₴</td><td><span class="status-pill st-good">Оплачено</span></td></tr></tbody>
-        </table>
       </div>
     </div>
 
