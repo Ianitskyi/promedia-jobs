@@ -83,11 +83,6 @@ img, svg { max-width: 100%; display: block; }
 .stat-tile .val { font-family: var(--serif); font-size: 24px; font-weight: 700; }
 .stat-tile .lbl { color: var(--muted); font-size: 12px; margin-top: 2px; }
 
-/* ---------- category chips ---------- */
-.chip-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
-.cat-chip { border: 1.5px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; font-size: 13px; padding: 8px 15px; border-radius: var(--radius-pill); }
-.cat-chip:hover { border-color: var(--ink); color: var(--ink); }
-
 /* ---------- job cards ---------- */
 .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .cards-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
