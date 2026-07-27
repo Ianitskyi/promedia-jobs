@@ -26,7 +26,6 @@
     <button data-pane="reports">Скарги <span class="badge-count">1</span></button>
     <button data-pane="sources">Джерела імпорту</button>
     <button data-pane="import-log">Журнал імпорту</button>
-    <button data-pane="categories">Категорії</button>
     <button data-pane="pricing">Ціни й промокоди</button>
     <button data-pane="payments">Платежі</button>
     <button data-pane="analytics">Аналітика</button>
@@ -103,11 +102,6 @@
       </div>
     </div>
 
-    <div class="cab-pane" data-cab="categories" style="display:none">
-      <div class="dash-head"><div><h1>Категорії</h1></div><button class="btn btn-primary" onclick="toast('Демо: категорію додано')">+ Нова категорія</button></div>
-      <div class="panel"><div class="chip-cloud" id="admin-cats"></div></div>
-    </div>
-
     <div class="cab-pane" data-cab="pricing" style="display:none">
       <div class="dash-head"><div><h1>Ціни й промокоди</h1></div></div>
       <div class="panel">
@@ -162,7 +156,6 @@
   document.getElementById("an-1").textContent = Math.round((allActive.filter((v) => v.salaryMin || v.salaryMax).length / allActive.length) * 100) + "%";
   document.getElementById("an-2").textContent = Math.round((allActive.filter((v) => (v.perks || []).includes("insurance")).length / allActive.length) * 100) + "%";
   document.getElementById("an-3").textContent = Math.round((allActive.filter((v) => v.employmentArrangement === "labor").length / allActive.length) * 100) + "%";
-  document.getElementById("admin-cats").innerHTML = CATEGORIES.map((c) => `<span class="cat-chip">${c.label}</span>`).join("");
 
   function moderationCardHtml(v) {
     const tags = [

@@ -1,56 +1,6 @@
 /* ProMedia Jobs — вигадані демо-дані (крім реальних вакансій, доданих вручну).
    Немає бекенду: усе живе в цьому файлі та в localStorage браузера. */
 
-const CATEGORIES = [
-  { id: "journalism", label: "Журналістика" },
-  { id: "reporting", label: "Репортерська робота" },
-  { id: "editing", label: "Редактура" },
-  { id: "media-management", label: "Медіаменеджмент" },
-  { id: "producing", label: "Продюсування" },
-  { id: "tv", label: "Телебачення" },
-  { id: "radio", label: "Радіо" },
-  { id: "podcasts", label: "Подкасти" },
-  { id: "photography", label: "Фотографія" },
-  { id: "video-production", label: "Відеовиробництво" },
-  { id: "video-editing", label: "Відеомонтаж" },
-  { id: "design", label: "Дизайн" },
-  { id: "smm", label: "SMM" },
-  { id: "content", label: "Контент-менеджмент" },
-  { id: "copywriting", label: "Копірайтинг" },
-  { id: "pr", label: "PR" },
-  { id: "strategic-comms", label: "Стратегічні комунікації" },
-  { id: "internal-comms", label: "Внутрішні комунікації" },
-  { id: "marketing", label: "Маркетинг" },
-  { id: "advertising", label: "Реклама" },
-  { id: "analytics", label: "Аналітика та дослідження" },
-  { id: "factchecking", label: "Фактчекінг" },
-  { id: "osint", label: "OSINT" },
-  { id: "media-monitoring", label: "Медіамоніторинг" },
-  { id: "fundraising", label: "Фандрейзинг" },
-  { id: "partnerships", label: "Партнерства" },
-  { id: "project-management", label: "Проєктний менеджмент" },
-  { id: "education", label: "Освітні та тренерські позиції" },
-  { id: "tech", label: "Технічні спеціальності в медіа" },
-  { id: "product", label: "Розробка цифрових продуктів" },
-  { id: "sales", label: "Продажі" },
-  { id: "admin", label: "Адміністративні посади" },
-  { id: "internship", label: "Стажування" },
-  { id: "volunteering", label: "Волонтерство" },
-  { id: "other", label: "Інше" },
-];
-
-function catLabel(id) {
-  const c = CATEGORIES.find((x) => x.id === id);
-  return c ? c.label : id;
-}
-
-const LEVELS = [
-  { id: "starter", label: "Початківець (до 3 років досвіду)" },
-  { id: "middle", label: "Середній (3–5 років досвіду)" },
-  { id: "pro", label: "Профі (5–10 років досвіду)" },
-  { id: "top", label: "Топ (понад 10 років досвіду)" },
-];
-
 const FORMATS = [
   { id: "office", label: "Офіс" },
   { id: "remote", label: "Дистанційно" },
@@ -68,10 +18,10 @@ const EMPLOYMENT_TYPES = [
 ];
 
 const PERKS = [
-  { id: "insurance", label: "Медичне страхування" },
+  { id: "insurance", label: "Медстрахування" },
   { id: "food", label: "Харчування" },
-  { id: "english", label: "Корпоративна англійська" },
-  { id: "psychologist", label: "Корпоративний психолог" },
+  { id: "english", label: "Англійська" },
+  { id: "psychologist", label: "Психолог" },
 ];
 
 const EMPLOYMENT_ARRANGEMENTS = [
@@ -121,7 +71,6 @@ function companyOf(id) { return COMPANIES.find((c) => c.id === id); }
 const VACANCIES = [
   {
     id: "v1", title: "SMM-менеджер(ка)", companyId: "ti-ukraine",
-    categories: ["smm", "content", "advertising"], level: "starter",
     region: "м. Київ", country: "Україна", format: "hybrid", remoteOk: false,
     employmentType: "full", experienceYears: 2,
     responsibilities: [
@@ -142,7 +91,6 @@ const VACANCIES = [
       "Вільна українська; англійська — не нижче B1",
     ],
     niceToHave: ["Впевнене володіння графічними редакторами та програмами для відеомонтажу"],
-    experience: "Понад 2 роки у SMM",
     education: "Не вказано",
     skills: ["SMM", "Контент-план", "Копірайтинг", "Таргетована реклама", "Відеомонтаж"],
     tools: ["Meta Business Suite", "TGStat", "GA4"],
@@ -158,7 +106,6 @@ const VACANCIES = [
       "Компенсація навчання для професійного зростання",
       "24 календарні дні відпустки на рік",
     ],
-    startDate: "",
     contactEmail: "hr-tiu@ti-ukraine.org",
     publishedAt: "2026-07-27", expiresAt: "2026-07-31",
     source: "direct", sourceUrl: "", direct: true,
@@ -166,7 +113,6 @@ const VACANCIES = [
   },
   {
     id: "v2", title: "PR-менеджер(ка)", companyId: null, companyName: "NDA",
-    categories: ["pr", "strategic-comms"], level: "middle",
     region: "Миколаївська область", country: "Україна", format: "hybrid", remoteOk: false,
     employmentType: "full", experienceYears: 0,
     responsibilities: [
@@ -176,7 +122,7 @@ const VACANCIES = [
       "Моніторинг та аналітика: щоденне відстеження згадок про компанію в інформаційному полі (Media Monitoring), аналіз медіаполя",
     ],
     mustHave: [], niceToHave: [],
-    experience: "Не вказано", education: "Не вказано",
+    education: "Не вказано",
     skills: ["PR", "Антикризові комунікації", "Робота зі ЗМІ", "Медіамоніторинг"],
     tools: [], languages: ["Українська — рідна"],
     salaryMin: 0, salaryMax: 0, currency: "UAH",
@@ -185,7 +131,6 @@ const VACANCIES = [
       "Офіс — у разі кризової ситуації, решта часу — віддалена взаємодія з партнерськими регіонами",
       "Офіційне оформлення (деталі — на співбесіді)",
     ],
-    startDate: "",
     contactEmail: "missionofficialca@gmail.com",
     publishedAt: "2026-07-27", expiresAt: "2026-08-26",
     source: "direct", sourceUrl: "", direct: true,
@@ -193,7 +138,6 @@ const VACANCIES = [
   },
   {
     id: "v3", title: "SMM-менеджер(ка)", companyId: null, companyName: "NDA",
-    categories: ["smm", "content", "advertising"], level: "middle",
     region: "м. Київ", country: "Україна", format: "hybrid", remoteOk: false,
     employmentType: "full", experienceYears: 0,
     responsibilities: [
@@ -206,7 +150,7 @@ const VACANCIES = [
       "Аналітика та звітність: відстеження показників охоплень, приросту аудиторії, конверсій та ефективності контенту",
     ],
     mustHave: [], niceToHave: [],
-    experience: "Не вказано", education: "Не вказано",
+    education: "Не вказано",
     skills: ["SMM", "Контент-план", "Таргетована реклама", "Відеомонтаж", "Аналітика"],
     tools: ["Instagram", "TikTok", "Facebook", "LinkedIn"], languages: ["Українська — рідна"],
     salaryMin: 0, salaryMax: 0, currency: "UAH",
@@ -215,7 +159,6 @@ const VACANCIES = [
       "Офіційне оформлення",
       "Віддалений формат роботи з обов'язковими виїздами в офіс та на заходи компанії",
     ],
-    startDate: "",
     contactEmail: "missionofficialca@gmail.com",
     publishedAt: "2026-07-27", expiresAt: "2026-08-26",
     source: "direct", sourceUrl: "", direct: true,
@@ -223,7 +166,6 @@ const VACANCIES = [
   },
   {
     id: "v4", title: "PR-менеджер(ка)", companyId: null, companyName: "NDA",
-    categories: ["pr", "strategic-comms"], level: "middle",
     region: "м. Київ", country: "Україна", format: "hybrid", remoteOk: false,
     employmentType: "full", experienceYears: 0,
     responsibilities: [
@@ -234,7 +176,7 @@ const VACANCIES = [
       "Створення контенту: підготовка текстів для соцмереж, сайту, блогу, спецпроєктів чи презентацій",
     ],
     mustHave: [], niceToHave: ["Англійська мова"],
-    experience: "Не вказано", education: "Не вказано",
+    education: "Не вказано",
     skills: ["PR", "Робота зі ЗМІ", "Копірайтинг", "Партнерства"],
     tools: [], languages: ["Українська — рідна"],
     salaryMin: 0, salaryMax: 0, currency: "UAH",
@@ -243,7 +185,6 @@ const VACANCIES = [
       "Офіційне оформлення",
       "Віддалений формат роботи з можливими виїздами в офіс у Києві",
     ],
-    startDate: "",
     contactEmail: "missionofficialca@gmail.com",
     publishedAt: "2026-07-27", expiresAt: "2026-08-26",
     source: "direct", sourceUrl: "", direct: true,

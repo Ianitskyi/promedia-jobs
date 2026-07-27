@@ -11,6 +11,7 @@ const LS = {
   employerVerified: "pmj_employer_verified",
   companyProfile: "pmj_company_profile",
   subscriptions: "pmj_subscriptions",
+  employerRegistered: "pmj_employer_registered",
 };
 
 function lsGet(key, fallback) {
@@ -24,6 +25,10 @@ function formatSalary(v) {
   if (!v.salaryMin && !v.salaryMax) return "Не вказано роботодавцем";
   if (v.salaryMin && v.salaryMax && v.salaryMin !== v.salaryMax) return `${v.salaryMin.toLocaleString("uk-UA")}–${v.salaryMax.toLocaleString("uk-UA")} ${v.currency}`;
   return `${(v.salaryMax || v.salaryMin).toLocaleString("uk-UA")} ${v.currency}`;
+}
+
+function experienceText(v) {
+  return v.experienceYears ? `Від ${v.experienceYears} р. досвіду` : "Досвід не вказано";
 }
 
 function daysLeft(dateStr) {
@@ -89,7 +94,6 @@ function vacancySources(v) {
 
 function jobCardHtml(v) {
   const dl = daysLeft(v.expiresAt);
-  const catLabels = v.categories.slice(0, 2).map(catLabel).join(" · ");
   const sources = vacancySources(v);
   const perks = (v.remoteOk ? '<span class="tag green">Дистанційно</span>' : "") + perkTagsHtml(v);
   return `
@@ -104,15 +108,11 @@ function jobCardHtml(v) {
     <div class="jc-meta">
       <span class="tag ink">${labelOf(FORMATS, v.format)}</span>
       <span class="tag">${labelOf(EMPLOYMENT_TYPES, v.employmentType)}</span>
-      <span class="tag">${labelOf(LEVELS, v.level)}</span>
       ${perks}
       ${sources.map((s) => `<span class="tag green">${s.name}</span>`).join("")}
     </div>
     <div class="jc-salary">${formatSalary(v)}</div>
-    <div class="jc-foot">
-      <span>${catLabels}</span>
-      ${dl !== null ? `<span>${dl > 0 ? dl + " дн. до завершення" : "публікацію завершено"}</span>` : ""}
-    </div>
+    ${dl !== null ? `<div class="jc-foot"><span>${dl > 0 ? dl + " дн. до завершення" : "публікацію завершено"}</span></div>` : ""}
   </a>`;
 }
 
@@ -121,8 +121,6 @@ function jobCardHtml(v) {
 function initVacanciesFilters(list) {
   const arrBox = document.getElementById("f-arrangement");
   arrBox.innerHTML = EMPLOYMENT_ARRANGEMENTS.map((c) => `<label class="filter-check"><input type="checkbox" value="${c.id}"> ${c.label}</label>`).join("");
-  const lvlBox = document.getElementById("f-level");
-  lvlBox.innerHTML = LEVELS.map((c) => `<label class="filter-check"><input type="checkbox" value="${c.id}"> ${c.label}</label>`).join("");
   const regionSel = document.getElementById("f-region");
   regionSel.innerHTML = '<option value="">Будь-яка область</option>' + REGIONS.map((r) => `<option value="${r}">${r}</option>`).join("");
 
@@ -150,7 +148,6 @@ function currentFilterSnapshot() {
     keyword: (document.getElementById("f-keyword").value || "").trim(),
     region: document.getElementById("f-region").value,
     arrangement: checkedValues("f-arrangement"),
-    level: checkedValues("f-level"),
     remoteOnly: document.getElementById("f-remote").checked,
     insuranceOnly: document.getElementById("f-insurance").checked,
   };
@@ -161,7 +158,6 @@ function filterMatches(v, f) {
   if (kw && !(v.title.toLowerCase().includes(kw) || companyName(v).toLowerCase().includes(kw) || v.skills.join(" ").toLowerCase().includes(kw))) return false;
   if (f.region && v.region !== f.region) return false;
   if (f.arrangement.length && !f.arrangement.includes(v.employmentArrangement)) return false;
-  if (f.level.length && !f.level.includes(v.level)) return false;
   if (f.remoteOnly && !v.remoteOk) return false;
   if (f.insuranceOnly && !(v.perks || []).includes("insurance")) return false;
   return true;
@@ -172,7 +168,6 @@ function filterSummary(f) {
   if (f.keyword) parts.push(`«${f.keyword}»`);
   if (f.region) parts.push(f.region);
   if (f.arrangement.length) parts.push(f.arrangement.map((a) => labelOf(EMPLOYMENT_ARRANGEMENTS, a)).join(" / "));
-  if (f.level.length) parts.push(f.level.map((l) => labelOf(LEVELS, l).split(" (")[0]).join(" / "));
   if (f.remoteOnly) parts.push("лише дистанційно");
   if (f.insuranceOnly) parts.push("лише з медстрахуванням");
   return parts.length ? parts.join(" · ") : "усі вакансії";
@@ -279,10 +274,8 @@ function initVacancyDetail() {
   <div class="jc-meta" style="margin:18px 0">
     <span class="tag ink">${labelOf(FORMATS, v.format)}</span>
     <span class="tag">${labelOf(EMPLOYMENT_TYPES, v.employmentType)}</span>
-    <span class="tag">${labelOf(LEVELS, v.level)}</span>
     ${v.remoteOk ? '<span class="tag green">Дистанційно</span>' : ""}
     ${perkTagsHtml(v)}
-    ${v.categories.map((c) => `<span class="tag">${catLabel(c)}</span>`).join("")}
   </div>
   <div class="panel">
     <h2>Опис вакансії</h2>
@@ -292,7 +285,7 @@ function initVacancyDetail() {
     ${v.mustHave.length ? `<h3 style="font-size:14px;margin:14px 0 6px">Обов'язкові вимоги</h3><ul>${v.mustHave.map((r) => `<li>${r}</li>`).join("")}</ul>` : ""}
     ${v.niceToHave.length ? `<h3 style="font-size:14px;margin:14px 0 6px">Бажані навички</h3><ul>${v.niceToHave.map((r) => `<li>${r}</li>`).join("")}</ul>` : ""}
     <h3 style="font-size:14px;margin:14px 0 6px">Досвід та освіта</h3>
-    <p>${v.experience}${v.education ? " · " + v.education : ""}</p>
+    <p>${experienceText(v)}${v.education ? " · " + v.education : ""}</p>
     ${v.tools.length ? `<h3 style="font-size:14px;margin:14px 0 6px">Інструменти</h3><p>${v.tools.join(", ")}</p>` : ""}
     <h3 style="font-size:14px;margin:14px 0 6px">Мови</h3>
     <p>${v.languages.join(", ")}</p>
@@ -375,6 +368,11 @@ function initCompanyPage() {
 
 function isAuthed() { return lsGet(LS.authed, false); }
 function setAuthed(v) { lsSet(LS.authed, v); }
+
+// Тільки реєстрація (не вхід) відкриває доступ до кабінету й додавання
+// вакансій — без попередньої реєстрації в цьому браузері вхід блокується.
+function isEmployerRegistered() { return lsGet(LS.employerRegistered, false); }
+function setEmployerRegistered(v) { lsSet(LS.employerRegistered, v); }
 
 function getProfileName() { return lsGet(LS.profileName, ""); }
 function getProfileEmail() { return lsGet(LS.profileEmail, ""); }

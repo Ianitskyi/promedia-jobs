@@ -31,7 +31,7 @@
 
     <div id="pane-login" style="display:none">
       <h1>З поверненням</h1>
-      <p class="sub">Демо-вхід — акаунт не створюється насправді</p>
+      <p class="sub">Демо-вхід — доступний лише після реєстрації в цьому браузері</p>
       <form id="login-form">
         <div class="field"><label>Електронна пошта</label><input type="email" required placeholder="you@example.com" /></div>
         <div class="field"><label>Пароль</label><input type="password" required placeholder="••••••••" /></div>
@@ -104,6 +104,7 @@
   function completeLogin() {
     const form = document.getElementById("login-form");
     if (!form.reportValidity()) return;
+    if (!isEmployerRegistered()) { toast("Спочатку зареєструйте компанію"); tr.click(); return; }
     redirectAfterAuth();
   }
 
@@ -111,17 +112,20 @@
     const form = document.getElementById("register-form");
     if (!form.reportValidity()) return;
     setProfile(document.getElementById("reg-name").value, document.getElementById("reg-email").value);
+    setEmployerRegistered(true);
     toast("Демо: акаунт умовно створено");
     setTimeout(redirectAfterAuth, 500);
   }
 
   function completeGoogleLogin() {
+    if (!isEmployerRegistered()) { toast("Спочатку зареєструйте компанію"); tr.click(); return; }
     toast("Демо: вхід через Gmail умовно виконано");
     setTimeout(redirectAfterAuth, 400);
   }
 
   function completeGoogleRegister() {
     if (!document.getElementById("consent").checked) { toast("Спочатку погодьтеся з обробкою даних"); return; }
+    setEmployerRegistered(true);
     toast("Демо: акаунт через Gmail умовно створено");
     setTimeout(redirectAfterAuth, 400);
   }
