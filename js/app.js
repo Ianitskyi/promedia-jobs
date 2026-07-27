@@ -491,9 +491,17 @@ function initResumeDetail() {
 /* ---------------- Компанія ---------------- */
 
 function initCompanyPage() {
-  const c = companyOf(qs("id"));
-  const el = document.getElementById("company-detail");
-  if (!c) { el.innerHTML = '<div class="empty-state">Компанію не знайдено.</div>'; return; }
+  const seed = companyOf(qs("id"));
+  if (!seed) {
+    document.getElementById("company-hero").innerHTML = "";
+    document.getElementById("company-desc").textContent = "";
+    document.getElementById("company-vacancies").innerHTML = '<div class="empty-state">Компанію не знайдено.</div>';
+    return;
+  }
+  // Профіль AdHouse Digital редагується роботодавцем у кабінеті — тут
+  // показуємо збережені дані замість статичних, якщо їх редагували.
+  const cp = seed.id === "adhouse" ? getCompanyProfile() : null;
+  const c = cp ? Object.assign({}, seed, { name: cp.name, desc: cp.desc, site: cp.site, city: cp.city }) : seed;
   document.title = `${c.name} · ProMedia Jobs`;
   document.getElementById("company-hero").innerHTML = `
     <div class="jc-logo" style="background:${c.color}">${c.letter}</div>
@@ -502,7 +510,8 @@ function initCompanyPage() {
       <div class="jc-company">${c.industry} · ${c.city} · <a href="https://${c.site}" target="_blank" rel="noopener">${c.site}</a></div>
     </div>`;
   document.getElementById("company-desc").textContent = c.desc;
-  const open = VACANCIES.filter((v) => v.companyId === c.id && v.active);
+  const open = VACANCIES.filter((v) => v.companyId === c.id && v.active)
+    .concat(cp ? getMyVacancies().filter((v) => v.status === "active") : []);
   document.getElementById("company-vacancies").innerHTML = open.length
     ? open.map(jobCardHtml).join("")
     : '<div class="empty-state">Наразі немає активних вакансій цієї компанії.</div>';
