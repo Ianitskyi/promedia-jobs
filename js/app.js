@@ -13,6 +13,9 @@ const LS = {
   authed: "pmj_authed",
   profileName: "pmj_profile_name",
   profileEmail: "pmj_profile_email",
+  myVacancies: "pmj_my_vacancies",
+  employerVerified: "pmj_employer_verified",
+  receivedApplications: "pmj_received_applications",
 };
 
 function lsGet(key, fallback) {
@@ -325,7 +328,39 @@ function openApplyModal(v) {
   const apps = lsGet(LS.applications, []);
   apps.push({ vacancyId: v.id, title: v.title, company: companyName(v), date: "2026-07-26", status: "sent" });
   lsSet(LS.applications, apps);
+  addReceivedApplication({
+    id: "app-" + Date.now(),
+    vacancyId: v.id,
+    vacancyTitle: v.title,
+    candidateName: getProfileName() || "Кандидат (демо)",
+    date: "2026-07-26",
+    status: "new",
+  });
   toast("Відгук надіслано");
+}
+
+/* ---------------- Вакансії та відгуки роботодавця ---------------- */
+
+function getMyVacancies() { return lsGet(LS.myVacancies, []); }
+function saveMyVacancies(list) { lsSet(LS.myVacancies, list); }
+function addMyVacancy(v) {
+  const list = getMyVacancies();
+  list.unshift(v);
+  saveMyVacancies(list);
+}
+function isEmployerVerified() { return lsGet(LS.employerVerified, false); }
+function setEmployerVerified(v) { lsSet(LS.employerVerified, v); }
+
+function getReceivedApplications() { return lsGet(LS.receivedApplications, []); }
+function addReceivedApplication(entry) {
+  const list = getReceivedApplications();
+  list.unshift(entry);
+  lsSet(LS.receivedApplications, list);
+}
+function isMyVacancy(vacancyId) {
+  const seed = VACANCIES.find((v) => v.id === vacancyId);
+  if (seed) return seed.companyId === "adhouse";
+  return getMyVacancies().some((v) => v.id === vacancyId);
 }
 
 function renderSynergyForVacancy(v) {

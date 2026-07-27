@@ -155,7 +155,23 @@
   function saveDraft() { toast("Чернетку збережено (демо)"); }
   function publishVacancy() {
     if (!document.getElementById("v-terms").checked) { toast("Потрібно підтвердити достовірність і правила публікації"); return; }
-    toast("Вакансію надіслано на модерацію");
+    const d = collectDraft();
+    const firstVacancy = !isEmployerVerified();
+    addMyVacancy({
+      id: "myv-" + Date.now(),
+      title: d.title,
+      city: d.city,
+      format: d.format,
+      employment: d.employment,
+      level: d.level,
+      salMin: d.salMin,
+      salMax: d.salMax,
+      hideSalary: d.hideSalary,
+      deadline: d.deadline,
+      status: firstVacancy ? "moderation" : "active",
+    });
+    setEmployerVerified(true);
+    toast(firstVacancy ? "Вакансію надіслано на модерацію" : "Вакансію опубліковано");
     setTimeout(() => location.href = "employer-cabinet.html", 900);
   }
 </script>

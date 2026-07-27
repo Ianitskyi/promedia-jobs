@@ -18,6 +18,7 @@
   <aside class="dash-side employer">
     <button class="active" data-pane="overview">Огляд</button>
     <button data-pane="vacancies">Мої вакансії</button>
+    <button data-pane="applications">Відгуки <span class="badge-count" id="app-badge" style="display:none"></span></button>
     <button data-pane="synergy">Синергія <span class="badge-count">4</span></button>
     <button data-pane="saved">Збережені резюме</button>
     <button data-pane="company">Профіль компанії</button>
@@ -50,6 +51,17 @@
             <tr><td class="strong">Маркетинг-аналітик(иня)</td><td><span class="status-pill st-bad">Архівовано</span></td><td class="num">41</td><td class="num">3</td><td>2026-07-10</td>
               <td><button class="btn btn-light btn-sm" onclick="toast('Демо: чернетку відновлено з архіву')">Відновити</button></td></tr>
           </tbody>
+          <tbody id="my-vacancies-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cab-pane" data-cab="applications" style="display:none">
+      <div class="dash-head"><div><h1>Відгуки на вакансії</h1></div></div>
+      <div class="panel">
+        <table class="tbl">
+          <thead><tr><th>Кандидат(ка)</th><th>Вакансія</th><th>Дата</th><th>Статус</th></tr></thead>
+          <tbody id="applications-tbl"><tr><td colspan="4" class="empty-state">Відгуків поки немає.</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -112,6 +124,71 @@ if (requireAuth("employer")) {
   }
   document.getElementById("synergy-list").innerHTML = matches.map((x) => matchCardHtml(x.r, x.m)).join("");
   document.getElementById("ov-synergy").innerHTML = matches.slice(0, 2).map((x) => matchCardHtml(x.r, x.m)).join("");
+
+  function myVacancyRowHtml(v) {
+    const statusPill = v.status === "active" ? '<span class="status-pill st-good">Активна</span>'
+      : v.status === "moderation" ? '<span class="status-pill st-new">На модерації</span>'
+      : '<span class="status-pill st-bad">Архівовано</span>';
+    const actions = v.status === "archived"
+      ? `<button class="btn btn-light btn-sm" onclick="restoreMyVacancy('${v.id}')">Відновити</button>`
+      : `<button class="btn btn-light btn-sm" onclick="duplicateMyVacancy('${v.id}')">Дублювати</button>
+         <button class="btn btn-light btn-sm" onclick="archiveMyVacancy('${v.id}')">Архівувати</button>`;
+    return `<tr><td class="strong">${v.title}</td><td>${statusPill}</td><td class="num">—</td><td class="num">—</td><td>${v.deadline || "—"}</td>
+      <td style="display:flex;gap:6px">${actions}</td></tr>`;
+  }
+  window.renderMyVacancies = function () {
+    document.getElementById("my-vacancies-tbody").innerHTML = getMyVacancies().map(myVacancyRowHtml).join("");
+  };
+  window.archiveMyVacancy = function (id) {
+    const list = getMyVacancies();
+    const v = list.find((x) => x.id === id);
+    if (v) v.status = "archived";
+    saveMyVacancies(list);
+    renderMyVacancies();
+    toast("Вакансію архівовано");
+  };
+  window.restoreMyVacancy = function (id) {
+    const list = getMyVacancies();
+    const v = list.find((x) => x.id === id);
+    if (v) v.status = "active";
+    saveMyVacancies(list);
+    renderMyVacancies();
+    toast("Вакансію відновлено");
+  };
+  window.duplicateMyVacancy = function (id) {
+    const list = getMyVacancies();
+    const v = list.find((x) => x.id === id);
+    if (!v) return;
+    list.unshift(Object.assign({}, v, { id: "myv-" + Date.now(), title: v.title + " (копія)", status: "active" }));
+    saveMyVacancies(list);
+    renderMyVacancies();
+    toast("Вакансію дубльовано");
+  };
+  renderMyVacancies();
+
+  function renderApplications() {
+    const apps = getReceivedApplications().filter((a) => isMyVacancy(a.vacancyId));
+    const tbl = document.getElementById("applications-tbl");
+    tbl.innerHTML = apps.length ? apps.map((a) => `
+      <tr><td class="strong">${a.candidateName}</td><td>${a.vacancyTitle}</td><td>${a.date}</td>
+      <td><select class="btn-sm" data-id="${a.id}" style="border:1px solid var(--border);border-radius:8px;padding:6px">
+        <option value="new">Новий</option><option value="contacted">Зв'язалися</option><option value="interview">Співбесіда</option><option value="offer">Пропозиція</option><option value="hired">Найнято</option><option value="rejected">Відмовлено</option>
+      </select></td></tr>`).join("")
+      : '<tr><td colspan="4" class="empty-state">Відгуків поки немає.</td></tr>';
+    tbl.querySelectorAll("select[data-id]").forEach((sel) => {
+      const a = apps.find((x) => x.id === sel.dataset.id);
+      if (a) sel.value = a.status;
+      sel.addEventListener("change", () => {
+        const list = getReceivedApplications();
+        const rec = list.find((x) => x.id === sel.dataset.id);
+        if (rec) { rec.status = sel.value; lsSet(LS.receivedApplications, list); toast("Статус оновлено"); }
+      });
+    });
+    const badge = document.getElementById("app-badge");
+    badge.textContent = apps.length || "";
+    badge.style.display = apps.length ? "" : "none";
+  }
+  renderApplications();
 
   const savedIds = lsGet(LS.savedR, []);
   const savedRows = RESUMES.filter((r) => savedIds.includes(r.id));
