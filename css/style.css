@@ -209,6 +209,10 @@ img, svg { max-width: 100%; display: block; }
 .dash-side.candidate { border-right-color: var(--green-tint); }
 .dash-side.employer { border-right-color: rgba(13, 12, 92, .12); }
 .dash-side .badge-count { margin-left: auto; background: var(--accent); color: #3a2800; font-size: 10.5px; font-weight: 800; border-radius: 99px; padding: 2px 7px; }
+.dash-link-cta { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-align: center; background: var(--ink); color: #fff; font: 700 14px var(--sans); padding: 12px 14px; border-radius: 10px; text-decoration: none; transition: background .15s; }
+.dash-link-cta:hover { background: var(--ink-soft); }
+.dash-link-cta.green { background: var(--green); }
+.dash-link-cta.green:hover { background: #167e46; }
 .dash-main { padding: 24px 28px 60px; min-width: 0; }
 .dash-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
 .dash-head h1 { font-family: var(--serif); font-size: 24px; margin: 0; }
@@ -226,16 +230,6 @@ img, svg { max-width: 100%; display: block; }
 .status-pill.st-progress { background: var(--accent-tint); color: var(--accent-dark); }
 .status-pill.st-good { background: var(--green-tint); color: var(--green); }
 .status-pill.st-bad { background: var(--red-tint); color: var(--red); }
-
-/* ---------- notification dropdown ---------- */
-.notif-panel { position: absolute; right: 0; top: calc(100% + 10px); width: 340px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow); padding: 8px; display: none; z-index: 60; }
-.notif-panel.open { display: block; }
-.notif-item { display: flex; gap: 10px; padding: 11px 10px; border-radius: 10px; }
-.notif-item:hover { background: var(--paper); }
-.notif-item .ni-ico { font-size: 16px; flex: none; }
-.notif-item b { display: block; font-size: 13px; }
-.notif-item span { font-size: 12px; color: var(--muted); }
-.notif-empty { padding: 24px 12px; text-align: center; color: var(--muted); font-size: 13px; }
 
 /* ---------- synergy explanation ---------- */
 .synergy-box { background: rgba(13,12,92,.05); border: 1px solid rgba(13,12,92,.15); border-radius: var(--radius-md); padding: 14px 16px; margin-top: 10px; }

@@ -212,7 +212,7 @@ function renderFilteredVacancies(list) {
     return true;
   });
 
-  filtered.sort((a, b) => (b.promoted - a.promoted) || b.publishedAt.localeCompare(a.publishedAt));
+  filtered.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 
   document.getElementById("result-count").textContent = `Знайдено ${filtered.length} вакансій`;
   document.getElementById("results").innerHTML = filtered.length
@@ -226,7 +226,7 @@ function allVacancies() {
 }
 
 function initVacanciesPage() {
-  const list = allVacancies();
+  const list = allVacancies().filter((v) => !v.promoted);
   initVacanciesFilters(list);
   renderFilteredVacancies(list);
 }
@@ -518,25 +518,6 @@ function initCompanyPage() {
   bindSaveButtons();
 }
 
-/* ---------------- Нотифікації (mock) ---------------- */
-
-const MOCK_NOTIFICATIONS = [
-  { ico: "🧭", title: "Синергія знайшла 2 нові вакансії", text: "На основі вашого резюме «SMM-менеджерка»" },
-  { ico: "📬", title: "Нова вакансія за підпискою «SMM/Контент»", text: "SMM-менеджер(ка) — AdHouse Digital" },
-  { ico: "⏳", title: "Публікація вакансії завершується за 3 дні", text: "Редактор(-ка) новинного відділу" },
-  { ico: "✅", title: "Оплату підтверджено", text: "Просування вакансії на 7 днів" },
-];
-
-function initNotifBell() {
-  const bell = document.getElementById("notif-bell");
-  if (!bell) return;
-  const panel = document.getElementById("notif-panel");
-  panel.innerHTML = MOCK_NOTIFICATIONS.map((n) => `
-    <div class="notif-item"><span class="ni-ico">${n.ico}</span><div><b>${n.title}</b><span>${n.text}</span></div></div>`).join("");
-  bell.addEventListener("click", (e) => { e.stopPropagation(); panel.classList.toggle("open"); });
-  document.addEventListener("click", () => panel.classList.remove("open"));
-}
-
 /* ---------------- Реакція шапки на вибір ролі ---------------- */
 
 function onRoleChange(role) {
@@ -618,7 +599,6 @@ function goToRole(role) {
 /* ---------------- Загальна ініціалізація шапки ---------------- */
 
 function initChrome() {
-  initNotifBell();
   bindSaveButtons();
   initRoleGate();
 }

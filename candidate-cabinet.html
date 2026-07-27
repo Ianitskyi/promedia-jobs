@@ -11,7 +11,7 @@
 
 <div class="utility-bar">
   <a class="home-btn" href="https://promedia.report">← ПроМедіа</a>
-  <a class="home-btn" href="index.html" style="margin-left:auto">← На головну</a>
+  <a class="home-btn" href="index.html">← На головну</a>
 </div>
 
 <div class="dash-layout">
@@ -21,15 +21,14 @@
     <button data-pane="saved">Збережені вакансії</button>
     <button data-pane="synergy">Синергія <span class="badge-count">3</span></button>
     <button data-pane="applications">Мої відгуки</button>
-    <button data-pane="notifications">Сповіщення</button>
     <button data-pane="settings">Налаштування акаунта</button>
-    <a class="dash-link" href="vacancies.html" style="margin-top:10px;border-top:1px solid var(--border);padding-top:16px">Каталог вакансій →</a>
+    <a class="dash-link-cta green" href="vacancies.html" style="margin-top:16px">Каталог вакансій →</a>
   </aside>
 
   <main class="dash-main">
 
     <div class="cab-pane" data-cab="overview">
-      <div class="dash-head"><div><h1>Кабінет працівника</h1><div class="sub" id="candidate-sub">Демо-акаунт</div></div><a class="btn btn-primary" href="create-resume.html">+ Нове резюме</a></div>
+      <div class="dash-head"><div><h1>Кабінет працівника</h1><div class="sub" id="candidate-sub">Демо-акаунт</div></div><a class="btn btn-candidate" href="create-resume.html">+ Нове резюме</a></div>
       <div class="kpi-grid">
         <div class="stat-tile"><div class="val">1</div><div class="lbl">активне резюме</div></div>
         <div class="stat-tile"><div class="val">4</div><div class="lbl">збережені вакансії</div></div>
@@ -40,7 +39,7 @@
     </div>
 
     <div class="cab-pane" data-cab="resumes" style="display:none">
-      <div class="dash-head"><div><h1>Мої резюме</h1></div><a class="btn btn-primary" href="create-resume.html">+ Нове резюме</a></div>
+      <div class="dash-head"><div><h1>Мої резюме</h1></div><a class="btn btn-candidate" href="create-resume.html">+ Нове резюме</a></div>
       <div class="panel">
         <table class="tbl">
           <thead><tr><th>Резюме</th><th>Статус</th><th>Опубліковано</th><th>Завершується</th><th></th></tr></thead>
@@ -74,21 +73,6 @@
           <thead><tr><th>Вакансія</th><th>Компанія</th><th>Дата</th><th>Статус</th></tr></thead>
           <tbody id="applications-tbl"><tr><td colspan="4" class="empty-state">Відгуків поки немає — знайдіть вакансію в каталозі.</td></tr></tbody>
         </table>
-      </div>
-    </div>
-
-    <div class="cab-pane" data-cab="notifications" style="display:none">
-      <div class="dash-head"><div><h1>Сповіщення</h1></div></div>
-      <div class="panel">
-        <div class="field-row-2">
-          <label class="filter-check"><input type="checkbox" checked> Нова рекомендація «Синергії»</label>
-          <label class="filter-check"><input type="checkbox" checked> Завершення строку публікації</label>
-          <label class="filter-check"><input type="checkbox"> Маркетингові листи ProMedia</label>
-        </div>
-        <div class="field" style="margin-top:16px"><label>Канали сповіщень</label>
-          <select><option>Внутрішні + електронна пошта</option><option>Лише внутрішні</option><option>Лише електронна пошта</option></select>
-        </div>
-        <button class="btn btn-primary" style="margin-top:10px" onclick="toast('Налаштування збережено')">Зберегти</button>
       </div>
     </div>
 
