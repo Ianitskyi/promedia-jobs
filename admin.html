@@ -22,7 +22,7 @@
 <div class="dash-layout">
   <aside class="dash-side">
     <button class="active" data-pane="overview">Огляд</button>
-    <button data-pane="moderation">Модерація вакансій <span class="badge-count">2</span></button>
+    <button data-pane="moderation">Модерація вакансій <span class="badge-count" id="mod-badge" style="display:none"></span></button>
     <button data-pane="resumes">Модерація резюме</button>
     <button data-pane="reports">Скарги <span class="badge-count">1</span></button>
     <button data-pane="sources">Джерела імпорту</button>
@@ -57,18 +57,7 @@
 
     <div class="cab-pane" data-cab="moderation" style="display:none">
       <div class="dash-head"><div><h1>Модерація вакансій</h1></div></div>
-      <div class="mod-card">
-        <div class="who"><b>Копірайтер(ка) — AdHouse Digital</b><div class="meta">Перша вакансія цього роботодавця · надіслано 2026-07-25</div>
-          <div class="check-row"><span class="tag green">Контакти вказано</span><span class="tag green">Обов'язки заповнені</span><span class="tag">Зарплата прихована</span></div>
-        </div>
-        <div class="mod-actions"><button class="btn btn-primary btn-sm" onclick="toast('Вакансію схвалено')">Схвалити</button><button class="btn btn-danger btn-sm" onclick="toast('Вакансію відхилено')">Відхилити</button></div>
-      </div>
-      <div class="mod-card">
-        <div class="who"><b>Копірайтер(ка) для маркетплейсу — Work.ua (імпорт)</b><div class="meta">Автоматично позначено як сумнівне: відсутній контакт роботодавця</div>
-          <div class="check-row"><span class="tag">Посилання на оригінал є</span><span class="tag" style="background:var(--red-tint);color:var(--red)">Контакт відсутній</span></div>
-        </div>
-        <div class="mod-actions"><button class="btn btn-primary btn-sm" onclick="toast('Вакансію схвалено')">Схвалити</button><button class="btn btn-danger btn-sm" onclick="toast('Вакансію відхилено')">Відхилити</button></div>
-      </div>
+      <div id="moderation-list"></div>
     </div>
 
     <div class="cab-pane" data-cab="resumes" style="display:none">
@@ -171,12 +160,53 @@
     b.classList.add("active");
     document.querySelectorAll(".cab-pane").forEach((p) => p.style.display = p.dataset.cab === b.dataset.pane ? "" : "none");
   }));
-  document.getElementById("a-vac").textContent = VACANCIES.filter((v) => v.active).length;
-  document.getElementById("a-res").textContent = RESUMES.length;
+  const myActiveVacancies = getMyVacancies().filter((v) => v.status === "active");
+  document.getElementById("a-vac").textContent = VACANCIES.filter((v) => v.active).length + myActiveVacancies.length;
+  document.getElementById("a-res").textContent = RESUMES.length + getMyResumes().filter((r) => r.visibility !== "hidden").length;
   document.getElementById("a-comp").textContent = COMPANIES.length;
-  document.getElementById("a-direct").textContent = VACANCIES.filter((v) => v.direct).length;
+  document.getElementById("a-direct").textContent = VACANCIES.filter((v) => v.direct && v.active).length + myActiveVacancies.length;
   document.getElementById("an-1").textContent = Math.round((VACANCIES.filter((v) => !v.salaryHidden).length / VACANCIES.length) * 100) + "%";
   document.getElementById("admin-cats").innerHTML = CATEGORIES.map((c) => `<span class="cat-chip">${c.label}</span>`).join("");
+
+  function moderationCardHtml(v) {
+    const tags = [
+      v.contactEmail ? '<span class="tag green">Контакти вказано</span>' : '<span class="tag" style="background:var(--red-tint);color:var(--red)">Контакт відсутній</span>',
+      (v.responsibilities && v.responsibilities.length) ? '<span class="tag green">Обов\'язки заповнені</span>' : '<span class="tag" style="background:var(--red-tint);color:var(--red)">Обов\'язки не заповнені</span>',
+      v.salaryHidden ? '<span class="tag">Зарплата прихована</span>' : '<span class="tag green">Зарплата вказана</span>',
+    ].join("");
+    return `<div class="mod-card">
+      <div class="who"><b>${v.title} — ${v.companyName || "Компанія не вказана"}</b><div class="meta">Надіслано на модерацію · ${v.publishedAt || "дата не вказана"}</div>
+        <div class="check-row">${tags}</div>
+      </div>
+      <div class="mod-actions"><button class="btn btn-primary btn-sm" onclick="approveVacancy('${v.id}')">Схвалити</button><button class="btn btn-danger btn-sm" onclick="rejectVacancy('${v.id}')">Відхилити</button></div>
+    </div>`;
+  }
+  function renderModerationQueue() {
+    const pending = getMyVacancies().filter((v) => v.status === "moderation");
+    document.getElementById("moderation-list").innerHTML = pending.length
+      ? pending.map(moderationCardHtml).join("")
+      : '<div class="panel"><div class="empty-state">Черга порожня — усі вакансії розглянуто.</div></div>';
+    const badge = document.getElementById("mod-badge");
+    badge.textContent = pending.length || "";
+    badge.style.display = pending.length ? "" : "none";
+  }
+  window.approveVacancy = function (id) {
+    const list = getMyVacancies();
+    const v = list.find((x) => x.id === id);
+    if (v) { v.status = "active"; v.moderationStatus = "approved"; }
+    saveMyVacancies(list);
+    renderModerationQueue();
+    toast("Вакансію схвалено");
+  };
+  window.rejectVacancy = function (id) {
+    const list = getMyVacancies();
+    const v = list.find((x) => x.id === id);
+    if (v) { v.status = "archived"; v.moderationStatus = "rejected"; }
+    saveMyVacancies(list);
+    renderModerationQueue();
+    toast("Вакансію відхилено");
+  };
+  renderModerationQueue();
 </script>
 </body>
 </html>
