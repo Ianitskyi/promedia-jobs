@@ -10,24 +10,10 @@
 </head>
 <body>
 
-<div class="utility-bar"><a class="home-btn" href="https://promedia.report">← ПроМедіа</a></div>
-
-<header class="site-header">
-  <div class="wrap header-inner">
-    <a class="logo" href="index.html">ProMedia <span class="logo-jobs">Jobs</span></a>
-    <nav class="main-nav">
-      <a href="vacancies.html" class="active">Вакансії</a>
-      <a href="resumes.html">Резюме</a>
-      <a href="how-it-works.html">Як це працює</a>
-    </nav>
-    <div class="header-cta">
-      <div class="role-switch"><button class="candidate" data-role="candidate">🔎 Кандидат</button><button class="employer" data-role="employer">💼 Роботодавець</button></div>
-      <div style="position:relative"><button class="icon-btn" id="notif-bell" type="button">🔔<span class="dot"></span></button><div class="notif-panel" id="notif-panel"></div></div>
-      <a class="btn btn-light btn-sm" href="index.html">Увійти</a>
-      <a class="btn btn-sm" id="header-cabinet-link" href="candidate-cabinet.html">Кабінет</a>
-    </div>
-  </div>
-</header>
+<div class="utility-bar">
+  <a class="home-btn" href="https://promedia.report">← ПроМедіа</a>
+  <a class="home-btn" href="candidate-cabinet.html" style="margin-left:auto">← До кабінету</a>
+</div>
 
 <div class="hero" style="padding:30px 0">
   <div class="wrap">
@@ -57,7 +43,6 @@
         <label class="filter-check"><input type="checkbox" id="f-salary"> Лише із зазначеною зарплатою</label>
       </div>
       <button class="btn btn-light btn-block" style="margin-top:16px" id="f-reset">Скинути фільтри</button>
-      <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="toast('Пошук збережено як підписку (демо)')">Зберегти пошук як підписку</button>
     </aside>
     <div>
       <p class="result-count" id="result-count"></p>

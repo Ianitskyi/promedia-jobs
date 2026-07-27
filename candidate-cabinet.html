@@ -21,7 +21,6 @@
     <button data-pane="saved">Збережені вакансії</button>
     <button data-pane="synergy">Синергія <span class="badge-count">3</span></button>
     <button data-pane="applications">Мої відгуки</button>
-    <button data-pane="subscriptions">Підписки</button>
     <button data-pane="notifications">Сповіщення</button>
     <button data-pane="settings">Налаштування акаунта</button>
     <a class="dash-link" href="vacancies.html" style="margin-top:10px;border-top:1px solid var(--border);padding-top:16px">Каталог вакансій →</a>
@@ -30,7 +29,7 @@
   <main class="dash-main">
 
     <div class="cab-pane" data-cab="overview">
-      <div class="dash-head"><div><h1 id="greeting">Вітаємо 👋</h1><div class="sub">Ваш кабінет кандидата — демо-акаунт</div></div><a class="btn btn-primary" href="create-resume.html">+ Нове резюме</a></div>
+      <div class="dash-head"><div><h1>Кабінет працівника</h1><div class="sub" id="candidate-sub">Демо-акаунт</div></div><a class="btn btn-primary" href="create-resume.html">+ Нове резюме</a></div>
       <div class="kpi-grid">
         <div class="stat-tile"><div class="val">1</div><div class="lbl">активне резюме</div></div>
         <div class="stat-tile"><div class="val">4</div><div class="lbl">збережені вакансії</div></div>
@@ -78,24 +77,10 @@
       </div>
     </div>
 
-    <div class="cab-pane" data-cab="subscriptions" style="display:none">
-      <div class="dash-head"><div><h1>Підписки на вакансії</h1></div><button class="btn btn-primary" onclick="toast('Демо: нову підписку створено')">+ Нова підписка</button></div>
-      <div class="panel">
-        <table class="tbl">
-          <thead><tr><th>Назва</th><th>Фільтри</th><th>Частота</th><th>Стан</th><th></th></tr></thead>
-          <tbody>
-            <tr><td class="strong">SMM / Контент, Київ</td><td>SMM, Контент-менеджмент · Дистанційно</td><td>Раз на день</td><td><span class="status-pill st-good">Активна</span></td>
-              <td style="display:flex;gap:6px"><button class="btn btn-light btn-sm" onclick="toast('Демо: підписку призупинено')">Призупинити</button><button class="btn btn-light btn-sm" onclick="toast('Демо: підписку видалено')">Видалити</button></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
     <div class="cab-pane" data-cab="notifications" style="display:none">
       <div class="dash-head"><div><h1>Сповіщення</h1></div></div>
       <div class="panel">
         <div class="field-row-2">
-          <label class="filter-check"><input type="checkbox" checked> Нова вакансія за підпискою</label>
           <label class="filter-check"><input type="checkbox" checked> Нова рекомендація «Синергії»</label>
           <label class="filter-check"><input type="checkbox" checked> Завершення строку публікації</label>
           <label class="filter-check"><input type="checkbox"> Маркетингові листи ProMedia</label>
@@ -125,7 +110,7 @@
 if (requireAuth("candidate")) {
   setRole("candidate");
   const firstName = (getProfileName() || "").split(" ")[0];
-  document.getElementById("greeting").textContent = firstName ? `Вітаємо, ${firstName} 👋` : "Вітаємо 👋";
+  if (firstName) document.getElementById("candidate-sub").textContent = `Демо-акаунт · ${firstName}`;
   document.querySelectorAll(".dash-side button").forEach((b) => b.addEventListener("click", () => {
     document.querySelectorAll(".dash-side button").forEach((x) => x.classList.remove("active"));
     b.classList.add("active");
