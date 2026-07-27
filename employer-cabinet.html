@@ -29,10 +29,10 @@
     <div class="cab-pane" data-cab="overview">
       <div class="dash-head"><div><h1>Кабінет роботодавця</h1><div class="sub" id="employer-sub">AdHouse Digital — демо-акаунт</div></div><a class="btn btn-primary" href="post-vacancy.html">+ Додати вакансію</a></div>
       <div class="kpi-grid">
-        <div class="stat-tile"><div class="val">3</div><div class="lbl">активні вакансії</div></div>
-        <div class="stat-tile"><div class="val">128</div><div class="lbl">переглядів за тиждень</div></div>
-        <div class="stat-tile"><div class="val">14</div><div class="lbl">відгуків</div></div>
-        <div class="stat-tile"><div class="val">6</div><div class="lbl">рекомендацій «Синергія»</div></div>
+        <div class="stat-tile"><div class="val" id="kpi-active">—</div><div class="lbl">активні вакансії</div></div>
+        <div class="stat-tile"><div class="val">128</div><div class="lbl">переглядів за тиждень <span class="hint">(демо, не рахується)</span></div></div>
+        <div class="stat-tile"><div class="val" id="kpi-apps">—</div><div class="lbl">відгуків</div></div>
+        <div class="stat-tile"><div class="val" id="kpi-synergy">—</div><div class="lbl">рекомендацій «Синергія»</div></div>
       </div>
       <div class="panel"><h2>Топ рекомендованих кандидатів</h2><div class="cards-grid cols-2" id="ov-synergy"></div></div>
     </div>
@@ -42,14 +42,6 @@
       <div class="panel">
         <table class="tbl">
           <thead><tr><th>Вакансія</th><th>Статус</th><th>Перегляди</th><th>Відгуки</th><th>Завершується</th><th></th></tr></thead>
-          <tbody>
-            <tr><td class="strong">SMM-менеджер(ка)</td><td><span class="status-pill st-good">Активна</span></td><td class="num">64</td><td class="num">6</td><td>2026-08-21</td>
-              <td style="display:flex;gap:6px"><button class="btn btn-light btn-sm">Редагувати</button><button class="btn btn-light btn-sm">Дублювати</button></td></tr>
-            <tr><td class="strong">Копірайтер(ка)</td><td><span class="status-pill st-new">На модерації</span></td><td class="num">—</td><td class="num">—</td><td>—</td>
-              <td><button class="btn btn-light btn-sm">Редагувати чернетку</button></td></tr>
-            <tr><td class="strong">Маркетинг-аналітик(иня)</td><td><span class="status-pill st-bad">Архівовано</span></td><td class="num">41</td><td class="num">3</td><td>2026-07-10</td>
-              <td><button class="btn btn-light btn-sm" onclick="toast('Демо: чернетку відновлено з архіву')">Відновити</button></td></tr>
-          </tbody>
           <tbody id="my-vacancies-tbody"></tbody>
         </table>
       </div>
@@ -66,17 +58,19 @@
     </div>
 
     <div class="cab-pane" data-cab="synergy" style="display:none">
-      <div class="dash-head"><div><h1>Рекомендації «Синергія»</h1><div class="sub">На основі вакансії «SMM-менеджер(ка)». Ви бачите лише дані, які кандидат дозволив показувати.</div></div></div>
+      <div class="dash-head"><div><h1>Рекомендації «Синергія»</h1><div class="sub">Ви бачите лише дані, які кандидат дозволив показувати.</div></div>
+        <select id="synergy-vacancy-select" style="border:1px solid var(--border);border-radius:8px;padding:8px 10px"></select>
+      </div>
       <div class="cards-grid cols-2" id="synergy-list"></div>
     </div>
 
     <div class="cab-pane" data-cab="company" style="display:none">
       <div class="dash-head"><div><h1>Профіль компанії</h1></div></div>
       <div class="panel">
-        <div class="field"><label>Назва компанії</label><input type="text" value="AdHouse Digital" /></div>
-        <div class="field"><label>Опис</label><textarea rows="3">Перформанс-маркетинг та діджитал-реклама для e-commerce.</textarea></div>
-        <div class="field-row-2"><div class="field"><label>Сайт</label><input type="text" value="adhouse.agency" /></div><div class="field"><label>Місто</label><input type="text" value="Дніпро" /></div></div>
-        <button class="btn btn-primary" onclick="toast('Профіль компанії збережено')">Зберегти зміни</button>
+        <div class="field"><label>Назва компанії</label><input type="text" id="cp-name" /></div>
+        <div class="field"><label>Опис</label><textarea rows="3" id="cp-desc"></textarea></div>
+        <div class="field-row-2"><div class="field"><label>Сайт</label><input type="text" id="cp-site" /></div><div class="field"><label>Місто</label><input type="text" id="cp-city" /></div></div>
+        <button class="btn btn-primary" onclick="saveCompanyProfileForm()">Зберегти зміни</button>
       </div>
     </div>
 
@@ -88,16 +82,37 @@
 <script>
 if (requireAuth("employer")) {
   setRole("employer");
+
+  function isActiveVacancy(v) { return v.status ? v.status === "active" : !!v.active; }
+  function employerVacancyList() {
+    return VACANCIES.filter((v) => v.companyId === "adhouse").concat(getMyVacancies());
+  }
+
+  const cp = getCompanyProfile();
+  document.getElementById("cp-name").value = cp.name;
+  document.getElementById("cp-desc").value = cp.desc;
+  document.getElementById("cp-site").value = cp.site;
+  document.getElementById("cp-city").value = cp.city;
+  window.saveCompanyProfileForm = function () {
+    saveCompanyProfile({
+      name: document.getElementById("cp-name").value || cp.name,
+      desc: document.getElementById("cp-desc").value,
+      site: document.getElementById("cp-site").value,
+      city: document.getElementById("cp-city").value,
+    });
+    document.getElementById("employer-sub").textContent = `${document.getElementById("cp-name").value} · ${(getProfileName() || "").split(" ")[0]}`.replace(/ · $/, "");
+    toast("Профіль компанії збережено");
+  };
+
   const empName = (getProfileName() || "").split(" ")[0];
-  if (empName) document.getElementById("employer-sub").textContent = `AdHouse Digital · ${empName}`;
+  document.getElementById("employer-sub").textContent = empName ? `${cp.name} · ${empName}` : `${cp.name} — демо-акаунт`;
+
   document.querySelectorAll(".dash-side button").forEach((b) => b.addEventListener("click", () => {
     document.querySelectorAll(".dash-side button").forEach((x) => x.classList.remove("active"));
     b.classList.add("active");
     document.querySelectorAll(".cab-pane").forEach((p) => p.style.display = p.dataset.cab === b.dataset.pane ? "" : "none");
   }));
 
-  const myVacancy = VACANCIES.find((v) => v.id === "v2"); // SMM-менеджер(ка), AdHouse
-  const matches = RESUMES.map((r) => ({ r, m: computeMatch(r, myVacancy) })).filter((x) => x.m).sort((a, b) => b.m.pct - a.m.pct);
   function matchCardHtml(r, m) {
     return `<div class="resume-card">
       <div class="jc-top"><div class="jc-logo" style="background:#0d0c5c">${r.name[0]}</div>
@@ -109,8 +124,24 @@ if (requireAuth("employer")) {
       </div>
     </div>`;
   }
-  document.getElementById("synergy-list").innerHTML = matches.map((x) => matchCardHtml(x.r, x.m)).join("");
-  document.getElementById("ov-synergy").innerHTML = matches.slice(0, 2).map((x) => matchCardHtml(x.r, x.m)).join("");
+
+  const activeVacancies = employerVacancyList().filter(isActiveVacancy);
+  document.getElementById("kpi-active").textContent = activeVacancies.length;
+  const vacancySelect = document.getElementById("synergy-vacancy-select");
+  vacancySelect.innerHTML = activeVacancies.map((v) => `<option value="${v.id}">${v.title}</option>`).join("")
+    || '<option value="">Немає активних вакансій</option>';
+
+  function renderSynergyFor(vacancyId) {
+    const v = activeVacancies.find((x) => x.id === vacancyId);
+    const matches = v ? RESUMES.map((r) => ({ r, m: computeMatch(r, v) })).filter((x) => x.m).sort((a, b) => b.m.pct - a.m.pct) : [];
+    document.getElementById("synergy-list").innerHTML = matches.length ? matches.map((x) => matchCardHtml(x.r, x.m)).join("")
+      : '<div class="empty-state">Немає рекомендацій для цієї вакансії.</div>';
+    return matches;
+  }
+  vacancySelect.addEventListener("change", () => renderSynergyFor(vacancySelect.value));
+  const firstMatches = activeVacancies.length ? renderSynergyFor(activeVacancies[0].id) : [];
+  document.getElementById("ov-synergy").innerHTML = firstMatches.slice(0, 2).map((x) => matchCardHtml(x.r, x.m)).join("");
+  document.getElementById("kpi-synergy").textContent = activeVacancies.reduce((sum, v) => sum + RESUMES.filter((r) => computeMatch(r, v)).length, 0);
 
   function myVacancyRowHtml(v) {
     const statusPill = v.status === "active" ? '<span class="status-pill st-good">Активна</span>'
@@ -118,9 +149,11 @@ if (requireAuth("employer")) {
       : '<span class="status-pill st-bad">Архівовано</span>';
     const actions = v.status === "archived"
       ? `<button class="btn btn-light btn-sm" onclick="restoreMyVacancy('${v.id}')">Відновити</button>`
-      : `<button class="btn btn-light btn-sm" onclick="duplicateMyVacancy('${v.id}')">Дублювати</button>
+      : `<a class="btn btn-light btn-sm" href="post-vacancy.html?edit=${v.id}">Редагувати</a>
+         <button class="btn btn-light btn-sm" onclick="duplicateMyVacancy('${v.id}')">Дублювати</button>
          <button class="btn btn-light btn-sm" onclick="archiveMyVacancy('${v.id}')">Архівувати</button>`;
-    return `<tr><td class="strong">${v.title}</td><td>${statusPill}</td><td class="num">—</td><td class="num">—</td><td>${v.deadline || "—"}</td>
+    const appCount = getReceivedApplications().filter((a) => a.vacancyId === v.id).length;
+    return `<tr><td class="strong">${v.title}</td><td>${statusPill}</td><td class="num">—</td><td class="num">${appCount || "—"}</td><td>${v.deadline || "—"}</td>
       <td style="display:flex;gap:6px">${actions}</td></tr>`;
   }
   window.renderMyVacancies = function () {
@@ -174,6 +207,7 @@ if (requireAuth("employer")) {
     const badge = document.getElementById("app-badge");
     badge.textContent = apps.length || "";
     badge.style.display = apps.length ? "" : "none";
+    document.getElementById("kpi-apps").textContent = apps.length;
   }
   renderApplications();
 }
