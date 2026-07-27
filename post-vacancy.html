@@ -39,13 +39,14 @@
         </div>
         <div class="field"><label>Професійні категорії * <span class="hint">(можна кілька — утримуйте Ctrl/Cmd)</span></label><select id="v-cats" multiple size="6" required></select></div>
         <div class="field-row-3">
-          <div class="field"><label>Область *</label><select id="v-region" required></select></div>
-          <div class="field"><label>Місто *</label><input type="text" id="v-city" required /></div>
+          <div class="field"><label>Країна *</label><input type="text" id="v-country" value="Україна" required /></div>
+          <div class="field" id="v-region-wrap"><label>Область *</label><select id="v-region" required></select></div>
           <div class="field"><label>Формат роботи *</label><select id="v-format"><option value="office">Офіс</option><option value="remote">Дистанційно</option><option value="hybrid">Гібридно</option></select></div>
         </div>
+        <p class="hint" style="margin:-8px 0 12px">Для країн, окрім України, область не вказується — деталізуйте місто чи регіон прямо в тексті оголошення.</p>
         <div class="field-row-2">
           <div class="field"><label>Тип зайнятості *</label><select id="v-employment"><option value="full">Повна</option><option value="part">Часткова</option><option value="project">Проєктна</option><option value="freelance">Фриланс</option><option value="temporary">Тимчасова</option><option value="internship">Стажування</option><option value="volunteering">Волонтерство</option></select></div>
-          <div class="field"><label>Рівень посади *</label><select id="v-level"><option value="intern">Стажер</option><option value="junior">Junior</option><option value="middle" selected>Middle</option><option value="senior">Senior</option><option value="lead">Керівник</option><option value="top">Топменеджмент</option></select></div>
+          <div class="field"><label>Рівень посади *</label><select id="v-level"></select></div>
         </div>
         <div class="field"><label>Мінімальний досвід (років) <span class="hint">(за ним можна сортувати каталог)</span></label><input type="number" step="0.5" min="0" id="v-exp-years" placeholder="2" /></div>
         <div class="wizard-actions"><span></span><button class="btn btn-primary" onclick="goStep(2)">Далі</button></div>
@@ -75,8 +76,9 @@
           <div class="field"><label>Валюта</label><select id="v-curr"><option>UAH</option><option>USD</option><option>EUR</option></select></div>
         </div>
         <h3 style="font-size:14px;margin:18px 0 8px">Соціальний пакет *</h3>
-        <div class="check-row"><input type="checkbox" id="v-insurance"><label for="v-insurance">Медичне страхування</label></div>
-        <div class="check-row"><input type="checkbox" id="v-official"><label for="v-official">Офіційне оформлення за трудовим договором</label></div>
+        <div id="v-perks-box"></div>
+        <div class="field" style="margin-top:10px"><label>Щось своє <span class="hint">(через кому, якщо кілька)</span></label><input type="text" id="v-perks-other" placeholder="Наприклад, спортзал у офісі" /></div>
+        <div class="field" style="margin-top:14px"><label>Оформлення *</label><select id="v-arrangement" required><option value="">Оберіть варіант</option></select></div>
         <div class="field" style="margin-top:10px"><label>Інші переваги <span class="hint">(якщо немає жодної — напишіть «немає»)</span></label><textarea rows="2" id="v-benefits" placeholder="Кожна перевага з нового рядка"></textarea></div>
         <div class="field" style="margin-top:14px"><label>Дата початку роботи</label><input type="date" id="v-start" /></div>
         <div class="wizard-actions"><button class="btn btn-light" onclick="goStep(2)">Назад</button><button class="btn btn-primary" onclick="goStep(4)">Далі</button></div>
@@ -116,6 +118,18 @@
 
   document.getElementById("v-cats").innerHTML = CATEGORIES.map((c) => `<option value="${c.id}">${c.label}</option>`).join("");
   document.getElementById("v-region").innerHTML = '<option value="">Оберіть область</option>' + REGIONS.map((r) => `<option value="${r}">${r}</option>`).join("");
+  document.getElementById("v-level").innerHTML = LEVELS.map((l, i) => `<option value="${l.id}"${i === 1 ? " selected" : ""}>${l.label}</option>`).join("");
+  document.getElementById("v-perks-box").innerHTML = PERKS.map((p) => `<div class="check-row"><input type="checkbox" class="v-perk" value="${p.id}" id="v-perk-${p.id}"><label for="v-perk-${p.id}">${p.label}</label></div>`).join("");
+  document.getElementById("v-arrangement").innerHTML += EMPLOYMENT_ARRANGEMENTS.map((a) => `<option value="${a.id}">${a.label}</option>`).join("");
+
+  function updateRegionVisibility() {
+    const isUkraine = document.getElementById("v-country").value.trim() === "Україна";
+    document.getElementById("v-region-wrap").style.display = isUkraine ? "" : "none";
+    document.getElementById("v-region").required = isUkraine;
+    if (!isUkraine) document.getElementById("v-region").value = "";
+  }
+  document.getElementById("v-country").addEventListener("input", updateRegionVisibility);
+  updateRegionVisibility();
 
   const editId = qs("edit");
   const editing = editId ? getMyVacancies().find((v) => v.id === editId) : null;
@@ -128,8 +142,9 @@
     document.getElementById("v-title").value = editing.title || "";
     document.getElementById("v-company").value = editing.companyName || "";
     Array.from(document.getElementById("v-cats").options).forEach((o) => { o.selected = (editing.categories || []).includes(o.value); });
+    document.getElementById("v-country").value = editing.country || "Україна";
+    updateRegionVisibility();
     document.getElementById("v-region").value = editing.region || "";
-    document.getElementById("v-city").value = editing.city || "";
     document.getElementById("v-format").value = editing.format || "office";
     document.getElementById("v-employment").value = editing.employmentType || "full";
     document.getElementById("v-level").value = editing.level || "middle";
@@ -144,8 +159,9 @@
     document.getElementById("v-sal-min").value = editing.salaryMin || "";
     document.getElementById("v-sal-max").value = editing.salaryMax || "";
     document.getElementById("v-curr").value = editing.currency || "UAH";
-    document.getElementById("v-insurance").checked = !!editing.hasInsurance;
-    document.getElementById("v-official").checked = !!editing.officialEmployment;
+    document.querySelectorAll(".v-perk").forEach((cb) => { cb.checked = (editing.perks || []).includes(cb.value); });
+    document.getElementById("v-perks-other").value = (editing.perksOther || []).join(", ");
+    document.getElementById("v-arrangement").value = editing.employmentArrangement || "";
     document.getElementById("v-benefits").value = (editing.benefits || []).join("\n");
     document.getElementById("v-start").value = editing.startDate || "";
     document.getElementById("v-expires").value = editing.expiresAt || "";
@@ -181,8 +197,8 @@
       title: document.getElementById("v-title").value || "Без назви",
       company: document.getElementById("v-company").value || "Компанія не вказана",
       categories: Array.from(document.getElementById("v-cats").selectedOptions).map((o) => o.value),
+      country: document.getElementById("v-country").value.trim() || "Україна",
       region: document.getElementById("v-region").value,
-      city: document.getElementById("v-city").value,
       format: document.getElementById("v-format").value,
       employment: document.getElementById("v-employment").value,
       level: document.getElementById("v-level").value,
@@ -197,8 +213,9 @@
       salMin: document.getElementById("v-sal-min").value,
       salMax: document.getElementById("v-sal-max").value,
       currency: document.getElementById("v-curr").value,
-      hasInsurance: document.getElementById("v-insurance").checked,
-      officialEmployment: document.getElementById("v-official").checked,
+      perks: Array.from(document.querySelectorAll(".v-perk:checked")).map((cb) => cb.value),
+      perksOther: splitCommas(document.getElementById("v-perks-other").value),
+      employmentArrangement: document.getElementById("v-arrangement").value,
       benefits: splitLines(document.getElementById("v-benefits").value),
       startDate: document.getElementById("v-start").value,
       expiresAt: document.getElementById("v-expires").value,
@@ -211,8 +228,8 @@
     const d = collectDraft();
     document.getElementById("vacancy-preview").innerHTML = `
       <div class="jc-top"><div class="jc-logo">${(d.company[0]||"?").toUpperCase()}</div>
-      <div><div class="jc-title" style="font-size:18px">${d.title}</div><div class="jc-company">${d.company} · ${d.city}${d.region ? ", " + d.region : ""}</div></div></div>
-      <div class="jc-meta" style="margin:12px 0"><span class="tag ink">${labelOf(FORMATS, d.format)}</span><span class="tag">${labelOf(EMPLOYMENT_TYPES, d.employment)}</span><span class="tag">${labelOf(LEVELS, d.level)}</span>${d.hasInsurance ? '<span class="tag green">Медстрахування</span>' : ""}${d.officialEmployment ? '<span class="tag green">Офіційне оформлення</span>' : ""}${d.categories.map((c) => `<span class="tag">${catLabel(c)}</span>`).join("")}</div>
+      <div><div class="jc-title" style="font-size:18px">${d.title}</div><div class="jc-company">${d.company} · ${d.country === "Україна" && d.region ? d.region + ", Україна" : d.country}</div></div></div>
+      <div class="jc-meta" style="margin:12px 0"><span class="tag ink">${labelOf(FORMATS, d.format)}</span><span class="tag">${labelOf(EMPLOYMENT_TYPES, d.employment)}</span><span class="tag">${labelOf(LEVELS, d.level)}</span>${d.perks.map((p) => `<span class="tag green">${labelOf(PERKS, p)}</span>`).join("")}${d.perksOther.map((p) => `<span class="tag green">${p}</span>`).join("")}${d.employmentArrangement === "labor" ? '<span class="tag green">Офіційне оформлення</span>' : ""}${d.categories.map((c) => `<span class="tag">${catLabel(c)}</span>`).join("")}</div>
       <div class="jc-salary">${d.salMin && d.salMax ? d.salMin+"–"+d.salMax+" "+d.currency : (d.salMin ? "від "+d.salMin+" "+d.currency : "Не вказано")}</div>
       <p style="color:var(--muted);font-size:13px;margin-top:10px">Вакансія активна до: ${d.expiresAt || "не вказано"}</p>
       <p style="color:var(--muted);font-size:13px">Контакт для кандидатів: ${d.contactEmail || "не вказано"}</p>`;
@@ -226,9 +243,8 @@
       companyName: d.company,
       categories: d.categories,
       level: d.level,
-      region: d.region,
-      city: d.city,
-      country: "Україна",
+      region: d.country === "Україна" ? d.region : "",
+      country: d.country,
       format: d.format,
       remoteOk: d.format === "remote",
       employmentType: d.employment,
@@ -244,8 +260,9 @@
       salaryMin: d.salMin ? +d.salMin : 0,
       salaryMax: d.salMax ? +d.salMax : 0,
       currency: d.currency,
-      hasInsurance: d.hasInsurance,
-      officialEmployment: d.officialEmployment,
+      perks: d.perks,
+      perksOther: d.perksOther,
+      employmentArrangement: d.employmentArrangement,
       benefits: d.benefits,
       startDate: d.startDate,
       expiresAt: d.expiresAt,
@@ -272,9 +289,9 @@
     if (!document.getElementById("v-terms").checked) { toast("Потрібно підтвердити достовірність і правила публікації"); return; }
     const d = collectDraft();
     if (!d.categories.length) { toast("Оберіть хоча б одну професійну категорію"); goStep(1); return; }
-    if (!d.region || !d.city) { toast("Вкажіть область і місто"); goStep(1); return; }
+    if (d.country === "Україна" && !d.region) { toast("Оберіть область"); goStep(1); return; }
     if (!d.salMin) { toast("Вкажіть зарплату — портал не публікує вакансії без неї"); goStep(3); return; }
-    if (!d.hasInsurance && !d.officialEmployment && !d.benefits.length) { toast("Заповніть розділ соціального пакета (або вкажіть «немає»)"); goStep(3); return; }
+    if (!d.employmentArrangement) { toast("Оберіть варіант оформлення"); goStep(3); return; }
     if (!d.expiresAt) { toast("Вкажіть, до якої дати активна вакансія"); goStep(4); return; }
     if (!d.contactEmail) { toast("Вкажіть контактну пошту для кандидатів"); goStep(4); return; }
     const firstVacancy = !editing && !isEmployerVerified();

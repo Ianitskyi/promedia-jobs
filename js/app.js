@@ -31,6 +31,18 @@ function daysLeft(dateStr) {
   return d;
 }
 
+function locationText(v) {
+  return v.country === "Україна" && v.region ? `${v.region}, Україна` : v.country;
+}
+
+function perkTagsHtml(v) {
+  const tags = (v.perks || []).map((id) => `<span class="tag green">${labelOf(PERKS, id)}</span>`);
+  (v.perksOther || []).forEach((p) => tags.push(`<span class="tag green">${p}</span>`));
+  if (v.employmentArrangement === "labor") tags.push('<span class="tag green">Офіційне оформлення</span>');
+  else if (v.employmentArrangement) tags.push(`<span class="tag">${labelOf(EMPLOYMENT_ARRANGEMENTS, v.employmentArrangement)}</span>`);
+  return tags.join("");
+}
+
 function companyName(v) { return v.companyId ? companyOf(v.companyId).name : v.companyName; }
 function companyLetter(v) { return v.companyId ? companyOf(v.companyId).letter : (v.companyName || "?")[0]; }
 function companyColor(v) { return v.companyId ? companyOf(v.companyId).color : "#7c7c93"; }
@@ -78,18 +90,14 @@ function jobCardHtml(v) {
   const dl = daysLeft(v.expiresAt);
   const catLabels = v.categories.slice(0, 2).map(catLabel).join(" · ");
   const sources = vacancySources(v);
-  const perks = [
-    v.remoteOk ? '<span class="tag green">Дистанційно</span>' : "",
-    v.hasInsurance ? '<span class="tag green">Медстрахування</span>' : "",
-    v.officialEmployment ? '<span class="tag green">Офіційне оформлення</span>' : "",
-  ].join("");
+  const perks = (v.remoteOk ? '<span class="tag green">Дистанційно</span>' : "") + perkTagsHtml(v);
   return `
   <a class="job-card" href="vacancy.html?id=${v.id}">
     <div class="jc-top">
       ${logoOrLetterHtml(v)}
       <div>
         <div class="jc-title">${v.title}</div>
-        <div class="jc-company">${companyName(v)} · ${v.city}</div>
+        <div class="jc-company">${companyName(v)} · ${locationText(v)}</div>
       </div>
     </div>
     <div class="jc-meta">
@@ -110,33 +118,22 @@ function jobCardHtml(v) {
 /* ---------------- Каталог вакансій ---------------- */
 
 function initVacanciesFilters(list) {
-  const catBox = document.getElementById("f-categories");
-  catBox.innerHTML = CATEGORIES.map((c) => `
-    <label class="filter-check"><input type="checkbox" value="${c.id}"> ${c.label}</label>`).join("");
-  const empBox = document.getElementById("f-employment");
-  empBox.innerHTML = EMPLOYMENT_TYPES.map((c) => `<label class="filter-check"><input type="checkbox" value="${c.id}"> ${c.label}</label>`).join("");
+  const arrBox = document.getElementById("f-arrangement");
+  arrBox.innerHTML = EMPLOYMENT_ARRANGEMENTS.map((c) => `<label class="filter-check"><input type="checkbox" value="${c.id}"> ${c.label}</label>`).join("");
   const lvlBox = document.getElementById("f-level");
   lvlBox.innerHTML = LEVELS.map((c) => `<label class="filter-check"><input type="checkbox" value="${c.id}"> ${c.label}</label>`).join("");
   const regionSel = document.getElementById("f-region");
   regionSel.innerHTML = '<option value="">Будь-яка область</option>' + REGIONS.map((r) => `<option value="${r}">${r}</option>`).join("");
 
-  const preCat = qs("category");
-  if (preCat) {
-    const cb = catBox.querySelector(`input[value="${preCat}"]`);
-    if (cb) cb.checked = true;
-  }
-
   document.querySelectorAll(".filters-panel input, .filters-panel select").forEach((el) => {
     el.addEventListener("change", () => renderFilteredVacancies(list));
   });
   document.getElementById("f-keyword").addEventListener("input", () => renderFilteredVacancies(list));
-  document.getElementById("f-city").addEventListener("input", () => renderFilteredVacancies(list));
   const preQ = qs("q");
   if (preQ) document.getElementById("f-keyword").value = preQ;
   document.getElementById("f-reset").addEventListener("click", () => {
     document.querySelectorAll(".filters-panel input[type=checkbox]").forEach((c) => (c.checked = false));
     document.getElementById("f-keyword").value = "";
-    document.getElementById("f-city").value = "";
     document.getElementById("f-region").value = "";
     document.getElementById("f-sort").value = "new";
     renderFilteredVacancies(list);
@@ -149,29 +146,21 @@ function checkedValues(containerId) {
 
 function renderFilteredVacancies(list) {
   const kw = (document.getElementById("f-keyword").value || "").toLowerCase();
-  const cityKw = (document.getElementById("f-city").value || "").toLowerCase();
   const region = document.getElementById("f-region").value;
-  const cats = checkedValues("f-categories");
-  const emps = checkedValues("f-employment");
+  const arrs = checkedValues("f-arrangement");
   const lvls = checkedValues("f-level");
   const remoteOnly = document.getElementById("f-remote").checked;
   const insuranceOnly = document.getElementById("f-insurance").checked;
-  const officialOnly = document.getElementById("f-official").checked;
-  const salaryOnly = document.getElementById("f-salary").checked;
   const sortBy = document.getElementById("f-sort").value;
 
   const filtered = list.filter((v) => {
     if (!v.active) return false;
     if (kw && !(v.title.toLowerCase().includes(kw) || companyName(v).toLowerCase().includes(kw) || v.skills.join(" ").toLowerCase().includes(kw))) return false;
-    if (cityKw && !v.city.toLowerCase().includes(cityKw)) return false;
     if (region && v.region !== region) return false;
-    if (cats.length && !cats.some((c) => v.categories.includes(c))) return false;
-    if (emps.length && !emps.includes(v.employmentType)) return false;
+    if (arrs.length && !arrs.includes(v.employmentArrangement)) return false;
     if (lvls.length && !lvls.includes(v.level)) return false;
     if (remoteOnly && !v.remoteOk) return false;
-    if (insuranceOnly && !v.hasInsurance) return false;
-    if (officialOnly && !v.officialEmployment) return false;
-    if (salaryOnly && !v.salaryMin && !v.salaryMax) return false;
+    if (insuranceOnly && !(v.perks || []).includes("insurance")) return false;
     return true;
   });
 
@@ -214,7 +203,7 @@ function initVacancyDetail() {
     <div>
       <div class="eyebrow" style="margin-bottom:6px">${v.direct ? "Пряма вакансія" : "Імпортовано з " + sources.map((s) => s.name).join(" та ")}</div>
       <h1>${v.title}</h1>
-      <a class="company-link" href="${v.companyId ? "company.html?id=" + v.companyId : "#"}">${companyName(v)}</a> · ${v.city}, ${v.country}
+      <a class="company-link" href="${v.companyId ? "company.html?id=" + v.companyId : "#"}">${companyName(v)}</a> · ${locationText(v)}
     </div>
   </div>
   <div class="jc-meta" style="margin:18px 0">
@@ -222,8 +211,7 @@ function initVacancyDetail() {
     <span class="tag">${labelOf(EMPLOYMENT_TYPES, v.employmentType)}</span>
     <span class="tag">${labelOf(LEVELS, v.level)}</span>
     ${v.remoteOk ? '<span class="tag green">Дистанційно</span>' : ""}
-    ${v.hasInsurance ? '<span class="tag green">Медичне страхування</span>' : ""}
-    ${v.officialEmployment ? '<span class="tag green">Офіційне оформлення</span>' : ""}
+    ${perkTagsHtml(v)}
     ${v.categories.map((c) => `<span class="tag">${catLabel(c)}</span>`).join("")}
   </div>
   <div class="panel">

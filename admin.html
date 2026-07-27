@@ -160,8 +160,8 @@
   document.getElementById("a-comp").textContent = COMPANIES.length;
   document.getElementById("a-direct").textContent = VACANCIES.filter((v) => v.direct && v.active).length + myActiveVacancies.length;
   document.getElementById("an-1").textContent = Math.round((allActive.filter((v) => v.salaryMin || v.salaryMax).length / allActive.length) * 100) + "%";
-  document.getElementById("an-2").textContent = Math.round((allActive.filter((v) => v.hasInsurance).length / allActive.length) * 100) + "%";
-  document.getElementById("an-3").textContent = Math.round((allActive.filter((v) => v.officialEmployment).length / allActive.length) * 100) + "%";
+  document.getElementById("an-2").textContent = Math.round((allActive.filter((v) => (v.perks || []).includes("insurance")).length / allActive.length) * 100) + "%";
+  document.getElementById("an-3").textContent = Math.round((allActive.filter((v) => v.employmentArrangement === "labor").length / allActive.length) * 100) + "%";
   document.getElementById("admin-cats").innerHTML = CATEGORIES.map((c) => `<span class="cat-chip">${c.label}</span>`).join("");
 
   function moderationCardHtml(v) {

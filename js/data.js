@@ -45,12 +45,10 @@ function catLabel(id) {
 }
 
 const LEVELS = [
-  { id: "intern", label: "Стажер" },
-  { id: "junior", label: "Junior" },
-  { id: "middle", label: "Middle" },
-  { id: "senior", label: "Senior" },
-  { id: "lead", label: "Керівник" },
-  { id: "top", label: "Топменеджмент" },
+  { id: "starter", label: "Початківець (до 3 років досвіду)" },
+  { id: "middle", label: "Середній (3–5 років досвіду)" },
+  { id: "pro", label: "Профі (5–10 років досвіду)" },
+  { id: "top", label: "Топ (понад 10 років досвіду)" },
 ];
 
 const FORMATS = [
@@ -67,6 +65,20 @@ const EMPLOYMENT_TYPES = [
   { id: "temporary", label: "Тимчасова" },
   { id: "internship", label: "Стажування" },
   { id: "volunteering", label: "Волонтерство" },
+];
+
+const PERKS = [
+  { id: "insurance", label: "Медичне страхування" },
+  { id: "food", label: "Харчування" },
+  { id: "english", label: "Корпоративна англійська" },
+  { id: "psychologist", label: "Корпоративний психолог" },
+];
+
+const EMPLOYMENT_ARRANGEMENTS = [
+  { id: "labor", label: "Трудова" },
+  { id: "civil", label: "Цивільно-правова угода" },
+  { id: "sole-prop", label: "ФОП" },
+  { id: "other", label: "Інший формат" },
 ];
 
 const REGIONS = [
@@ -109,8 +121,8 @@ function companyOf(id) { return COMPANIES.find((c) => c.id === id); }
 const VACANCIES = [
   {
     id: "v1", title: "SMM-менеджер(ка)", companyId: "ti-ukraine",
-    categories: ["smm", "content", "advertising"], level: "middle",
-    city: "Київ", region: "м. Київ", country: "Україна", format: "hybrid", remoteOk: false,
+    categories: ["smm", "content", "advertising"], level: "starter",
+    region: "м. Київ", country: "Україна", format: "hybrid", remoteOk: false,
     employmentType: "full", experienceYears: 2,
     responsibilities: [
       "Реалізація та розвиток стратегії просування організації у соціальних мережах (пріоритетні: Facebook, Telegram, Instagram)",
@@ -136,7 +148,7 @@ const VACANCIES = [
     tools: ["Meta Business Suite", "TGStat", "GA4"],
     languages: ["Українська — вільно", "Англійська — не нижче B1"],
     salaryMin: 0, salaryMax: 0, currency: "UAH",
-    hasInsurance: false, officialEmployment: false,
+    perks: [], perksOther: [], employmentArrangement: "",
     benefits: [
       "Робота з суспільно-важливим інформаційним продуктом",
       "Open-minded команда, яка щиро вітає пропозиції щодо змін",
@@ -155,7 +167,7 @@ const VACANCIES = [
   {
     id: "v2", title: "PR-менеджер(ка)", companyId: null, companyName: "NDA",
     categories: ["pr", "strategic-comms"], level: "middle",
-    city: "Миколаїв", region: "Миколаївська область", country: "Україна", format: "hybrid", remoteOk: false,
+    region: "Миколаївська область", country: "Україна", format: "hybrid", remoteOk: false,
     employmentType: "full", experienceYears: 0,
     responsibilities: [
       "Антикризова комунікація: розробка та реалізація стратегій реагування на кризові ситуації, робота з репутаційними ризиками, мінімізація негативу в інфопросторі",
@@ -168,7 +180,7 @@ const VACANCIES = [
     skills: ["PR", "Антикризові комунікації", "Робота зі ЗМІ", "Медіамоніторинг"],
     tools: [], languages: ["Українська — рідна"],
     salaryMin: 0, salaryMax: 0, currency: "UAH",
-    hasInsurance: false, officialEmployment: true,
+    perks: [], perksOther: [], employmentArrangement: "labor",
     benefits: [
       "Офіс — у разі кризової ситуації, решта часу — віддалена взаємодія з партнерськими регіонами",
       "Офіційне оформлення (деталі — на співбесіді)",
@@ -182,7 +194,7 @@ const VACANCIES = [
   {
     id: "v3", title: "SMM-менеджер(ка)", companyId: null, companyName: "NDA",
     categories: ["smm", "content", "advertising"], level: "middle",
-    city: "Київ", region: "м. Київ", country: "Україна", format: "hybrid", remoteOk: false,
+    region: "м. Київ", country: "Україна", format: "hybrid", remoteOk: false,
     employmentType: "full", experienceYears: 0,
     responsibilities: [
       "Імплементація стратегії та планування: розробка контент-плану, вибір платформ (Instagram, TikTok, Facebook, LinkedIn тощо) під задану цільову аудиторію",
@@ -198,7 +210,7 @@ const VACANCIES = [
     skills: ["SMM", "Контент-план", "Таргетована реклама", "Відеомонтаж", "Аналітика"],
     tools: ["Instagram", "TikTok", "Facebook", "LinkedIn"], languages: ["Українська — рідна"],
     salaryMin: 0, salaryMax: 0, currency: "UAH",
-    hasInsurance: false, officialEmployment: true,
+    perks: [], perksOther: [], employmentArrangement: "labor",
     benefits: [
       "Офіційне оформлення",
       "Віддалений формат роботи з обов'язковими виїздами в офіс та на заходи компанії",
@@ -212,7 +224,7 @@ const VACANCIES = [
   {
     id: "v4", title: "PR-менеджер(ка)", companyId: null, companyName: "NDA",
     categories: ["pr", "strategic-comms"], level: "middle",
-    city: "Київ", region: "м. Київ", country: "Україна", format: "hybrid", remoteOk: false,
+    region: "м. Київ", country: "Україна", format: "hybrid", remoteOk: false,
     employmentType: "full", experienceYears: 0,
     responsibilities: [
       "Імплементація існуючої стратегії, адаптація під аудиторію",
@@ -226,7 +238,7 @@ const VACANCIES = [
     skills: ["PR", "Робота зі ЗМІ", "Копірайтинг", "Партнерства"],
     tools: [], languages: ["Українська — рідна"],
     salaryMin: 0, salaryMax: 0, currency: "UAH",
-    hasInsurance: false, officialEmployment: true,
+    perks: [], perksOther: [], employmentArrangement: "labor",
     benefits: [
       "Офіційне оформлення",
       "Віддалений формат роботи з можливими виїздами в офіс у Києві",
