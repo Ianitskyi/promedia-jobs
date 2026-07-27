@@ -23,9 +23,9 @@
   <div class="wizard">
     <div class="wizard-steps">
       <div class="wizard-step active" data-step="1"><span class="n">1</span> Основне</div>
-      <div class="wizard-step" data-step="2"><span class="n">2</span> Вимоги та навички</div>
-      <div class="wizard-step" data-step="3"><span class="n">3</span> Зарплата й умови</div>
-      <div class="wizard-step" data-step="4"><span class="n">4</span> Подача та контакти</div>
+      <div class="wizard-step" data-step="2"><span class="n">2</span> Вимоги</div>
+      <div class="wizard-step" data-step="3"><span class="n">3</span> Зарплата й соцпакет</div>
+      <div class="wizard-step" data-step="4"><span class="n">4</span> Термін і контакти</div>
       <div class="wizard-step" data-step="5"><span class="n">5</span> Перегляд і публікація</div>
     </div>
 
@@ -39,22 +39,26 @@
         </div>
         <div class="field"><label>Професійні категорії * <span class="hint">(можна кілька — утримуйте Ctrl/Cmd)</span></label><select id="v-cats" multiple size="6" required></select></div>
         <div class="field-row-3">
+          <div class="field"><label>Область *</label><select id="v-region" required></select></div>
           <div class="field"><label>Місто *</label><input type="text" id="v-city" required /></div>
           <div class="field"><label>Формат роботи *</label><select id="v-format"><option value="office">Офіс</option><option value="remote">Дистанційно</option><option value="hybrid">Гібридно</option></select></div>
-          <div class="field"><label>Тип зайнятості *</label><select id="v-employment"><option value="full">Повна</option><option value="part">Часткова</option><option value="project">Проєктна</option><option value="freelance">Фриланс</option><option value="temporary">Тимчасова</option><option value="internship">Стажування</option><option value="volunteering">Волонтерство</option></select></div>
         </div>
-        <div class="field"><label>Рівень посади *</label><select id="v-level"><option value="intern">Стажер</option><option value="junior">Junior</option><option value="middle" selected>Middle</option><option value="senior">Senior</option><option value="lead">Керівник</option><option value="top">Топменеджмент</option></select></div>
+        <div class="field-row-2">
+          <div class="field"><label>Тип зайнятості *</label><select id="v-employment"><option value="full">Повна</option><option value="part">Часткова</option><option value="project">Проєктна</option><option value="freelance">Фриланс</option><option value="temporary">Тимчасова</option><option value="internship">Стажування</option><option value="volunteering">Волонтерство</option></select></div>
+          <div class="field"><label>Рівень посади *</label><select id="v-level"><option value="intern">Стажер</option><option value="junior">Junior</option><option value="middle" selected>Middle</option><option value="senior">Senior</option><option value="lead">Керівник</option><option value="top">Топменеджмент</option></select></div>
+        </div>
+        <div class="field"><label>Мінімальний досвід (років) <span class="hint">(за ним можна сортувати каталог)</span></label><input type="number" step="0.5" min="0" id="v-exp-years" placeholder="2" /></div>
         <div class="wizard-actions"><span></span><button class="btn btn-primary" onclick="goStep(2)">Далі</button></div>
       </div>
 
       <div class="wizard-pane" data-pane="2" style="display:none">
-        <h2>Вимоги та навички</h2>
+        <h2>Вимоги</h2>
         <div class="field"><label>Основні обов'язки *</label><textarea rows="3" id="v-resp" placeholder="Кожен пункт з нового рядка"></textarea></div>
-        <div class="field"><label>Обов'язкові вимоги *</label><textarea rows="3" id="v-must" placeholder="Кожен пункт з нового рядка"></textarea></div>
+        <div class="field"><label>Обов'язкові вимоги</label><textarea rows="3" id="v-must" placeholder="Кожен пункт з нового рядка"></textarea></div>
         <div class="field"><label>Бажані навички</label><textarea rows="2" id="v-nice" placeholder="Необов'язково"></textarea></div>
-        <div class="field"><label>Ключові навички * <span class="hint">(через кому — за ними працює «Синергія»)</span></label><input type="text" id="v-skills" placeholder="SMM, Контент-план, Canva" required /></div>
+        <div class="field"><label>Ключові навички <span class="hint">(через кому)</span></label><input type="text" id="v-skills" placeholder="SMM, Контент-план, Canva" /></div>
         <div class="field-row-2">
-          <div class="field"><label>Необхідний досвід</label><input type="text" id="v-exp" placeholder="Від 1 року" /></div>
+          <div class="field"><label>Необхідний досвід (опис)</label><input type="text" id="v-exp" placeholder="Від 1 року" /></div>
           <div class="field"><label>Рівень освіти <span class="hint">(лише якщо справді потрібен)</span></label><input type="text" id="v-edu" placeholder="Не обов'язкова" /></div>
         </div>
         <div class="field"><label>Знання мов <span class="hint">(через кому)</span></label><input type="text" id="v-lang" placeholder="Українська — рідна, англійська — середній" /></div>
@@ -63,24 +67,25 @@
       </div>
 
       <div class="wizard-pane" data-pane="3" style="display:none">
-        <h2>Зарплата та умови</h2>
+        <h2>Зарплата та соціальний пакет</h2>
+        <p style="color:var(--muted);font-size:13.5px;margin-top:-6px">ProMedia Jobs публікує лише вакансії з указаною зарплатою — стартовою сумою або діапазоном (наприклад, нижча на випробувальний термін і вища після нього).</p>
         <div class="field-row-3">
-          <div class="field"><label>Зарплата від</label><input type="number" id="v-sal-min" placeholder="20000" /></div>
-          <div class="field"><label>Зарплата до</label><input type="number" id="v-sal-max" placeholder="28000" /></div>
+          <div class="field"><label>Зарплата від *</label><input type="number" id="v-sal-min" placeholder="20000" required /></div>
+          <div class="field"><label>Зарплата до <span class="hint">(якщо є діапазон)</span></label><input type="number" id="v-sal-max" placeholder="28000" /></div>
           <div class="field"><label>Валюта</label><select id="v-curr"><option>UAH</option><option>USD</option><option>EUR</option></select></div>
         </div>
-        <div class="check-row"><input type="checkbox" id="v-hide-salary"><label for="v-hide-salary">Не показувати зарплату публічно</label></div>
-        <div class="field" style="margin-top:14px"><label>Соціальний пакет та переваги</label><textarea rows="2" id="v-benefits" placeholder="Кожна перевага з нового рядка"></textarea></div>
-        <div class="field-row-2">
-          <div class="field"><label>Дата початку роботи</label><input type="date" id="v-start" /></div>
-          <div class="field"><label>Дедлайн подачі</label><input type="date" id="v-deadline" /></div>
-        </div>
+        <h3 style="font-size:14px;margin:18px 0 8px">Соціальний пакет *</h3>
+        <div class="check-row"><input type="checkbox" id="v-insurance"><label for="v-insurance">Медичне страхування</label></div>
+        <div class="check-row"><input type="checkbox" id="v-official"><label for="v-official">Офіційне оформлення за трудовим договором</label></div>
+        <div class="field" style="margin-top:10px"><label>Інші переваги <span class="hint">(якщо немає жодної — напишіть «немає»)</span></label><textarea rows="2" id="v-benefits" placeholder="Кожна перевага з нового рядка"></textarea></div>
+        <div class="field" style="margin-top:14px"><label>Дата початку роботи</label><input type="date" id="v-start" /></div>
         <div class="wizard-actions"><button class="btn btn-light" onclick="goStep(2)">Назад</button><button class="btn btn-primary" onclick="goStep(4)">Далі</button></div>
       </div>
 
       <div class="wizard-pane" data-pane="4" style="display:none">
-        <h2>Подача заявок і контакти</h2>
-        <p style="color:var(--muted);font-size:13.5px;margin-top:-6px">Кандидати подаються резюме зі свого кабінету ProMedia Jobs. Про кожен відгук ви отримаєте сповіщення на вказану пошту.</p>
+        <h2>Термін дії та контакти</h2>
+        <div class="field"><label>Вакансія активна до *</label><input type="date" id="v-expires" required /></div>
+        <p style="color:var(--muted);font-size:13.5px">Кандидати пишуть напряму на вказану пошту — подачі всередині порталу немає.</p>
         <div class="field"><label>Контактна особа</label><input type="text" id="v-contact-name" placeholder="Ім'я HR-менеджера" /></div>
         <div class="field"><label>Контактна електронна адреса *</label><input type="email" id="v-contact-email" required placeholder="hr@company.com" /></div>
         <div class="wizard-actions"><button class="btn btn-light" onclick="goStep(3)">Назад</button><button class="btn btn-primary" onclick="renderPreview();goStep(5)">Переглянути</button></div>
@@ -89,7 +94,7 @@
       <div class="wizard-pane" data-pane="5" style="display:none">
         <h2>Перегляд перед публікацією</h2>
         <div id="vacancy-preview" class="panel" style="box-shadow:none;border:1.5px dashed var(--border)"></div>
-        <div class="warn-box" id="moderation-warning">Перша вакансія нового роботодавця проходить ручну модерацію — очікуйте на рішення до 24 годин. Ви отримаєте сповіщення про результат.</div>
+        <div class="warn-box" id="moderation-warning">Перша вакансія нового роботодавця проходить ручну модерацію — очікуйте на рішення до 24 годин.</div>
         <div class="check-row"><input type="checkbox" id="v-terms" required><label for="v-terms">Підтверджую достовірність інформації та погоджуюся з правилами публікації</label></div>
         <div class="wizard-actions">
           <button class="btn btn-light" onclick="goStep(4)">Назад</button>
@@ -107,9 +112,10 @@
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script>
-  if (requireAuth("employer")) setRole("employer");
+  if (requireAuth()) { /* лише роботодавці мають доступ до цієї сторінки */ }
 
   document.getElementById("v-cats").innerHTML = CATEGORIES.map((c) => `<option value="${c.id}">${c.label}</option>`).join("");
+  document.getElementById("v-region").innerHTML = '<option value="">Оберіть область</option>' + REGIONS.map((r) => `<option value="${r}">${r}</option>`).join("");
 
   const editId = qs("edit");
   const editing = editId ? getMyVacancies().find((v) => v.id === editId) : null;
@@ -122,10 +128,12 @@
     document.getElementById("v-title").value = editing.title || "";
     document.getElementById("v-company").value = editing.companyName || "";
     Array.from(document.getElementById("v-cats").options).forEach((o) => { o.selected = (editing.categories || []).includes(o.value); });
+    document.getElementById("v-region").value = editing.region || "";
     document.getElementById("v-city").value = editing.city || "";
     document.getElementById("v-format").value = editing.format || "office";
     document.getElementById("v-employment").value = editing.employmentType || "full";
     document.getElementById("v-level").value = editing.level || "middle";
+    document.getElementById("v-exp-years").value = editing.experienceYears || "";
     document.getElementById("v-resp").value = (editing.responsibilities || []).join("\n");
     document.getElementById("v-must").value = (editing.mustHave || []).join("\n");
     document.getElementById("v-nice").value = (editing.niceToHave || []).join("\n");
@@ -136,10 +144,11 @@
     document.getElementById("v-sal-min").value = editing.salaryMin || "";
     document.getElementById("v-sal-max").value = editing.salaryMax || "";
     document.getElementById("v-curr").value = editing.currency || "UAH";
-    document.getElementById("v-hide-salary").checked = !!editing.salaryHidden;
+    document.getElementById("v-insurance").checked = !!editing.hasInsurance;
+    document.getElementById("v-official").checked = !!editing.officialEmployment;
     document.getElementById("v-benefits").value = (editing.benefits || []).join("\n");
     document.getElementById("v-start").value = editing.startDate || "";
-    document.getElementById("v-deadline").value = editing.deadline || "";
+    document.getElementById("v-expires").value = editing.expiresAt || "";
     document.getElementById("v-contact-name").value = editing.contactName || "";
     document.getElementById("v-contact-email").value = editing.contactEmail || "";
   } else {
@@ -172,10 +181,12 @@
       title: document.getElementById("v-title").value || "Без назви",
       company: document.getElementById("v-company").value || "Компанія не вказана",
       categories: Array.from(document.getElementById("v-cats").selectedOptions).map((o) => o.value),
+      region: document.getElementById("v-region").value,
       city: document.getElementById("v-city").value,
       format: document.getElementById("v-format").value,
       employment: document.getElementById("v-employment").value,
       level: document.getElementById("v-level").value,
+      expYears: document.getElementById("v-exp-years").value,
       responsibilities: splitLines(document.getElementById("v-resp").value),
       mustHave: splitLines(document.getElementById("v-must").value),
       niceToHave: splitLines(document.getElementById("v-nice").value),
@@ -186,10 +197,11 @@
       salMin: document.getElementById("v-sal-min").value,
       salMax: document.getElementById("v-sal-max").value,
       currency: document.getElementById("v-curr").value,
-      hideSalary: document.getElementById("v-hide-salary").checked,
+      hasInsurance: document.getElementById("v-insurance").checked,
+      officialEmployment: document.getElementById("v-official").checked,
       benefits: splitLines(document.getElementById("v-benefits").value),
       startDate: document.getElementById("v-start").value,
-      deadline: document.getElementById("v-deadline").value,
+      expiresAt: document.getElementById("v-expires").value,
       contactName: document.getElementById("v-contact-name").value,
       contactEmail: document.getElementById("v-contact-email").value,
     };
@@ -199,11 +211,11 @@
     const d = collectDraft();
     document.getElementById("vacancy-preview").innerHTML = `
       <div class="jc-top"><div class="jc-logo">${(d.company[0]||"?").toUpperCase()}</div>
-      <div><div class="jc-title" style="font-size:18px">${d.title}</div><div class="jc-company">${d.company} · ${d.city}</div></div></div>
-      <div class="jc-meta" style="margin:12px 0"><span class="tag ink">${labelOf(FORMATS, d.format)}</span><span class="tag">${labelOf(EMPLOYMENT_TYPES, d.employment)}</span><span class="tag">${labelOf(LEVELS, d.level)}</span>${d.categories.map((c) => `<span class="tag">${catLabel(c)}</span>`).join("")}</div>
-      <div class="jc-salary">${d.hideSalary ? "Зарплата прихована" : (d.salMin && d.salMax ? d.salMin+"–"+d.salMax+" "+d.currency : "Не вказано")}</div>
-      <p style="color:var(--muted);font-size:13px;margin-top:10px">Дедлайн подачі: ${d.deadline || "не вказано"}</p>
-      <p style="color:var(--muted);font-size:13px">Сповіщення про відгуки: ${d.contactEmail || "не вказано"}</p>`;
+      <div><div class="jc-title" style="font-size:18px">${d.title}</div><div class="jc-company">${d.company} · ${d.city}${d.region ? ", " + d.region : ""}</div></div></div>
+      <div class="jc-meta" style="margin:12px 0"><span class="tag ink">${labelOf(FORMATS, d.format)}</span><span class="tag">${labelOf(EMPLOYMENT_TYPES, d.employment)}</span><span class="tag">${labelOf(LEVELS, d.level)}</span>${d.hasInsurance ? '<span class="tag green">Медстрахування</span>' : ""}${d.officialEmployment ? '<span class="tag green">Офіційне оформлення</span>' : ""}${d.categories.map((c) => `<span class="tag">${catLabel(c)}</span>`).join("")}</div>
+      <div class="jc-salary">${d.salMin && d.salMax ? d.salMin+"–"+d.salMax+" "+d.currency : (d.salMin ? "від "+d.salMin+" "+d.currency : "Не вказано")}</div>
+      <p style="color:var(--muted);font-size:13px;margin-top:10px">Вакансія активна до: ${d.expiresAt || "не вказано"}</p>
+      <p style="color:var(--muted);font-size:13px">Контакт для кандидатів: ${d.contactEmail || "не вказано"}</p>`;
   }
 
   function buildVacancyFromForm(d) {
@@ -214,12 +226,13 @@
       companyName: d.company,
       categories: d.categories,
       level: d.level,
+      region: d.region,
       city: d.city,
       country: "Україна",
       format: d.format,
       remoteOk: d.format === "remote",
-      fromAbroad: false,
       employmentType: d.employment,
+      experienceYears: d.expYears ? +d.expYears : 0,
       responsibilities: d.responsibilities,
       mustHave: d.mustHave,
       niceToHave: d.niceToHave,
@@ -231,10 +244,11 @@
       salaryMin: d.salMin ? +d.salMin : 0,
       salaryMax: d.salMax ? +d.salMax : 0,
       currency: d.currency,
-      salaryHidden: d.hideSalary,
+      hasInsurance: d.hasInsurance,
+      officialEmployment: d.officialEmployment,
       benefits: d.benefits,
       startDate: d.startDate,
-      deadline: d.deadline,
+      expiresAt: d.expiresAt,
       contactName: d.contactName,
       contactEmail: d.contactEmail,
       direct: true,
@@ -245,7 +259,6 @@
     const d = collectDraft();
     const vacancy = Object.assign(buildVacancyFromForm(d), {
       publishedAt: editing ? editing.publishedAt : "",
-      expiresAt: editing ? editing.expiresAt : "",
       moderationStatus: "draft",
       active: false,
       status: "draft",
@@ -259,11 +272,15 @@
     if (!document.getElementById("v-terms").checked) { toast("Потрібно підтвердити достовірність і правила публікації"); return; }
     const d = collectDraft();
     if (!d.categories.length) { toast("Оберіть хоча б одну професійну категорію"); goStep(1); return; }
+    if (!d.region || !d.city) { toast("Вкажіть область і місто"); goStep(1); return; }
+    if (!d.salMin) { toast("Вкажіть зарплату — портал не публікує вакансії без неї"); goStep(3); return; }
+    if (!d.hasInsurance && !d.officialEmployment && !d.benefits.length) { toast("Заповніть розділ соціального пакета (або вкажіть «немає»)"); goStep(3); return; }
+    if (!d.expiresAt) { toast("Вкажіть, до якої дати активна вакансія"); goStep(4); return; }
+    if (!d.contactEmail) { toast("Вкажіть контактну пошту для кандидатів"); goStep(4); return; }
     const firstVacancy = !editing && !isEmployerVerified();
     const wasDraft = editing && editing.status === "draft";
     const vacancy = Object.assign(buildVacancyFromForm(d), {
       publishedAt: (editing && !wasDraft) ? editing.publishedAt : "2026-07-27",
-      expiresAt: (editing && !wasDraft) ? editing.expiresAt : "2026-08-26",
       moderationStatus: (editing && !wasDraft) ? editing.moderationStatus : ((firstVacancy || wasDraft) ? "moderation" : "approved"),
       active: true,
       status: (editing && !wasDraft) ? editing.status : ((firstVacancy || wasDraft) ? "moderation" : "active"),

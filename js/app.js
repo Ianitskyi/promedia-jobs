@@ -1,22 +1,14 @@
 /* ProMedia Jobs — рендеринг і взаємодія прототипу.
-   Усе працює на клієнті: localStorage замінює реальний бекенд і акаунти. */
+   Усе працює на клієнті: localStorage замінює реальний бекенд і акаунти.
+   Сервіс лише для вакансій: каталог відкритий без входу, реєстрація потрібна
+   тільки роботодавцям (щоб додавати й керувати власними вакансіями). */
 
 const LS = {
-  savedV: "pmj_saved_vacancies",
-  savedR: "pmj_saved_resumes",
-  notesV: "pmj_notes_vacancies",
-  notesR: "pmj_notes_resumes",
-  subsV: "pmj_subscriptions_vacancies",
-  subsR: "pmj_subscriptions_resumes",
-  applications: "pmj_applications",
-  role: "pmj_role", // 'candidate' | 'employer'
   authed: "pmj_authed",
   profileName: "pmj_profile_name",
   profileEmail: "pmj_profile_email",
   myVacancies: "pmj_my_vacancies",
-  myResumes: "pmj_my_resumes",
   employerVerified: "pmj_employer_verified",
-  receivedApplications: "pmj_received_applications",
   companyProfile: "pmj_company_profile",
 };
 
@@ -28,20 +20,31 @@ function lsSet(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 function qs(name) { return new URLSearchParams(location.search).get(name); }
 
 function formatSalary(v) {
-  if (v.salaryHidden || (!v.salaryMin && !v.salaryMax)) return "Не вказано";
+  if (!v.salaryMin && !v.salaryMax) return "Не вказано роботодавцем";
   if (v.salaryMin && v.salaryMax && v.salaryMin !== v.salaryMax) return `${v.salaryMin.toLocaleString("uk-UA")}–${v.salaryMax.toLocaleString("uk-UA")} ${v.currency}`;
   return `${(v.salaryMax || v.salaryMin).toLocaleString("uk-UA")} ${v.currency}`;
 }
 
 function daysLeft(dateStr) {
   if (!dateStr) return null;
-  const d = Math.ceil((new Date(dateStr) - new Date("2026-07-26")) / 86400000);
+  const d = Math.ceil((new Date(dateStr) - new Date("2026-07-27")) / 86400000);
   return d;
 }
 
 function companyName(v) { return v.companyId ? companyOf(v.companyId).name : v.companyName; }
 function companyLetter(v) { return v.companyId ? companyOf(v.companyId).letter : (v.companyName || "?")[0]; }
 function companyColor(v) { return v.companyId ? companyOf(v.companyId).color : "#7c7c93"; }
+function companyLogo(v) {
+  if (v.companyId === "adhouse") { const cp = getCompanyProfile(); return cp.logoDataUrl || null; }
+  return null;
+}
+function logoOrLetterHtml(v, size) {
+  const logo = companyLogo(v);
+  const s = size || 46;
+  return logo
+    ? `<img src="${logo}" alt="" style="width:${s}px;height:${s}px;border-radius:12px;object-fit:cover;flex:none" />`
+    : `<div class="jc-logo" style="background:${companyColor(v)};width:${s}px;height:${s}px">${companyLetter(v)}</div>`;
+}
 
 function toast(msg) {
   let el = document.getElementById("toast");
@@ -55,34 +58,6 @@ function toast(msg) {
   el.classList.add("show");
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove("show"), 2200);
-}
-
-/* ---------------- Збережені вакансії / резюме ---------------- */
-
-function isSaved(type, id) {
-  const key = type === "vacancy" ? LS.savedV : LS.savedR;
-  return lsGet(key, []).includes(id);
-}
-function toggleSaved(type, id, labelSave, labelUnsave) {
-  const key = type === "vacancy" ? LS.savedV : LS.savedR;
-  const list = lsGet(key, []);
-  const idx = list.indexOf(id);
-  if (idx >= 0) { list.splice(idx, 1); toast(labelUnsave || "Видалено зі збережених"); }
-  else { list.push(id); toast(labelSave || "Збережено"); }
-  lsSet(key, list);
-  return idx < 0;
-}
-
-function bindSaveButtons(root) {
-  (root || document).querySelectorAll(".save-btn").forEach((btn) => {
-    const type = btn.dataset.type, id = btn.dataset.id;
-    if (isSaved(type, id)) btn.classList.add("saved");
-    btn.addEventListener("click", (e) => {
-      e.preventDefault(); e.stopPropagation();
-      const saved = toggleSaved(type, id, type === "vacancy" ? "Вакансію збережено" : "Резюме збережено", "Прибрано зі збережених");
-      btn.classList.toggle("saved", saved);
-    });
-  });
 }
 
 /* ---------------- Джерела імпорту (дедуплікація) ---------------- */
@@ -103,10 +78,15 @@ function jobCardHtml(v) {
   const dl = daysLeft(v.expiresAt);
   const catLabels = v.categories.slice(0, 2).map(catLabel).join(" · ");
   const sources = vacancySources(v);
+  const perks = [
+    v.remoteOk ? '<span class="tag green">Дистанційно</span>' : "",
+    v.hasInsurance ? '<span class="tag green">Медстрахування</span>' : "",
+    v.officialEmployment ? '<span class="tag green">Офіційне оформлення</span>' : "",
+  ].join("");
   return `
   <a class="job-card" href="vacancy.html?id=${v.id}">
     <div class="jc-top">
-      <div class="jc-logo" style="background:${companyColor(v)}">${companyLetter(v)}</div>
+      ${logoOrLetterHtml(v)}
       <div>
         <div class="jc-title">${v.title}</div>
         <div class="jc-company">${companyName(v)} · ${v.city}</div>
@@ -116,38 +96,13 @@ function jobCardHtml(v) {
       <span class="tag ink">${labelOf(FORMATS, v.format)}</span>
       <span class="tag">${labelOf(EMPLOYMENT_TYPES, v.employmentType)}</span>
       <span class="tag">${labelOf(LEVELS, v.level)}</span>
+      ${perks}
       ${sources.map((s) => `<span class="tag green">${s.name}</span>`).join("")}
     </div>
     <div class="jc-salary">${formatSalary(v)}</div>
     <div class="jc-foot">
       <span>${catLabels}</span>
-      <span style="display:flex;align-items:center;gap:10px">
-        ${dl !== null ? `<span>${dl > 0 ? dl + " дн. до дедлайну" : "дедлайн минув"}</span>` : ""}
-        <button class="save-btn" data-type="vacancy" data-id="${v.id}" title="Зберегти" onclick="return false">☆</button>
-      </span>
-    </div>
-  </a>`;
-}
-
-function resumeCardHtml(r) {
-  const catLabels = r.categories.slice(0, 2).map(catLabel).join(" · ");
-  return `
-  <a class="resume-card" href="resume.html?id=${r.id}">
-    <div class="jc-top">
-      <div class="jc-logo" style="background:#0d0c5c">${r.name[0]}</div>
-      <div>
-        <div class="jc-title">${r.name} ${r.visibility === "employers_only" ? "🔒" : ""}</div>
-        <div class="jc-company">${r.title} · ${r.city}</div>
-      </div>
-    </div>
-    <div class="jc-meta">
-      <span class="tag ink">${labelOf(LEVELS, r.level)}</span>
-      <span class="tag">${r.experienceYears} р. досвіду</span>
-      ${r.remoteOk ? '<span class="tag green">Дистанційно ОК</span>' : ""}
-    </div>
-    <div class="jc-salary">${r.expectedSalary ? r.expectedSalary.toLocaleString("uk-UA") + " " + r.currency : "Не вказано"}</div>
-    <div class="jc-foot">
-      <span>${catLabels}</span>
+      ${dl !== null ? `<span>${dl > 0 ? dl + " дн. до завершення" : "публікацію завершено"}</span>` : ""}
     </div>
   </a>`;
 }
@@ -158,12 +113,12 @@ function initVacanciesFilters(list) {
   const catBox = document.getElementById("f-categories");
   catBox.innerHTML = CATEGORIES.map((c) => `
     <label class="filter-check"><input type="checkbox" value="${c.id}"> ${c.label}</label>`).join("");
-  const fmtBox = document.getElementById("f-format");
-  fmtBox.innerHTML = FORMATS.map((c) => `<label class="filter-check"><input type="checkbox" value="${c.id}"> ${c.label}</label>`).join("");
   const empBox = document.getElementById("f-employment");
   empBox.innerHTML = EMPLOYMENT_TYPES.map((c) => `<label class="filter-check"><input type="checkbox" value="${c.id}"> ${c.label}</label>`).join("");
   const lvlBox = document.getElementById("f-level");
   lvlBox.innerHTML = LEVELS.map((c) => `<label class="filter-check"><input type="checkbox" value="${c.id}"> ${c.label}</label>`).join("");
+  const regionSel = document.getElementById("f-region");
+  regionSel.innerHTML = '<option value="">Будь-яка область</option>' + REGIONS.map((r) => `<option value="${r}">${r}</option>`).join("");
 
   const preCat = qs("category");
   if (preCat) {
@@ -175,13 +130,15 @@ function initVacanciesFilters(list) {
     el.addEventListener("change", () => renderFilteredVacancies(list));
   });
   document.getElementById("f-keyword").addEventListener("input", () => renderFilteredVacancies(list));
+  document.getElementById("f-city").addEventListener("input", () => renderFilteredVacancies(list));
   const preQ = qs("q");
   if (preQ) document.getElementById("f-keyword").value = preQ;
   document.getElementById("f-reset").addEventListener("click", () => {
     document.querySelectorAll(".filters-panel input[type=checkbox]").forEach((c) => (c.checked = false));
     document.getElementById("f-keyword").value = "";
-    document.getElementById("f-direct").checked = false;
-    document.getElementById("f-salary").checked = false;
+    document.getElementById("f-city").value = "";
+    document.getElementById("f-region").value = "";
+    document.getElementById("f-sort").value = "new";
     renderFilteredVacancies(list);
   });
 }
@@ -192,32 +149,44 @@ function checkedValues(containerId) {
 
 function renderFilteredVacancies(list) {
   const kw = (document.getElementById("f-keyword").value || "").toLowerCase();
+  const cityKw = (document.getElementById("f-city").value || "").toLowerCase();
+  const region = document.getElementById("f-region").value;
   const cats = checkedValues("f-categories");
-  const fmts = checkedValues("f-format");
   const emps = checkedValues("f-employment");
   const lvls = checkedValues("f-level");
-  const directOnly = document.getElementById("f-direct").checked;
+  const remoteOnly = document.getElementById("f-remote").checked;
+  const insuranceOnly = document.getElementById("f-insurance").checked;
+  const officialOnly = document.getElementById("f-official").checked;
   const salaryOnly = document.getElementById("f-salary").checked;
+  const sortBy = document.getElementById("f-sort").value;
 
   const filtered = list.filter((v) => {
     if (!v.active) return false;
     if (kw && !(v.title.toLowerCase().includes(kw) || companyName(v).toLowerCase().includes(kw) || v.skills.join(" ").toLowerCase().includes(kw))) return false;
+    if (cityKw && !v.city.toLowerCase().includes(cityKw)) return false;
+    if (region && v.region !== region) return false;
     if (cats.length && !cats.some((c) => v.categories.includes(c))) return false;
-    if (fmts.length && !fmts.includes(v.format)) return false;
     if (emps.length && !emps.includes(v.employmentType)) return false;
     if (lvls.length && !lvls.includes(v.level)) return false;
-    if (directOnly && !v.direct) return false;
-    if (salaryOnly && v.salaryHidden) return false;
+    if (remoteOnly && !v.remoteOk) return false;
+    if (insuranceOnly && !v.hasInsurance) return false;
+    if (officialOnly && !v.officialEmployment) return false;
+    if (salaryOnly && !v.salaryMin && !v.salaryMax) return false;
     return true;
   });
 
-  filtered.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+  filtered.sort((a, b) => {
+    if (sortBy === "salary-desc") return (b.salaryMax || b.salaryMin || 0) - (a.salaryMax || a.salaryMin || 0);
+    if (sortBy === "salary-asc") return (a.salaryMin || a.salaryMax || 0) - (b.salaryMin || b.salaryMax || 0);
+    if (sortBy === "exp-asc") return (a.experienceYears || 0) - (b.experienceYears || 0);
+    if (sortBy === "exp-desc") return (b.experienceYears || 0) - (a.experienceYears || 0);
+    return b.publishedAt.localeCompare(a.publishedAt);
+  });
 
   document.getElementById("result-count").textContent = `Знайдено ${filtered.length} вакансій`;
   document.getElementById("results").innerHTML = filtered.length
     ? filtered.map(jobCardHtml).join("")
-    : '<div class="empty-state">Нічого не знайдено. Спробуйте змінити фільтри або зберегти пошук як підписку в кабінеті.</div>';
-  bindSaveButtons();
+    : '<div class="empty-state">Нічого не знайдено. Спробуйте змінити фільтри.</div>';
 }
 
 function allVacancies() {
@@ -230,87 +199,18 @@ function initVacanciesPage() {
   renderFilteredVacancies(list);
 }
 
-/* ---------------- Каталог резюме ---------------- */
-
-function initResumesFilters(list) {
-  const catBox = document.getElementById("f-categories");
-  catBox.innerHTML = CATEGORIES.map((c) => `<label class="filter-check"><input type="checkbox" value="${c.id}"> ${c.label}</label>`).join("");
-  const lvlBox = document.getElementById("f-level");
-  lvlBox.innerHTML = LEVELS.map((c) => `<label class="filter-check"><input type="checkbox" value="${c.id}"> ${c.label}</label>`).join("");
-
-  document.querySelectorAll(".filters-panel input, .filters-panel select").forEach((el) => {
-    el.addEventListener("change", () => renderFilteredResumes(list));
-  });
-  document.getElementById("f-keyword").addEventListener("input", () => renderFilteredResumes(list));
-  document.getElementById("f-reset").addEventListener("click", () => {
-    document.querySelectorAll(".filters-panel input[type=checkbox]").forEach((c) => (c.checked = false));
-    document.getElementById("f-keyword").value = "";
-    document.getElementById("f-remote").checked = false;
-    renderFilteredResumes(list);
-  });
-}
-
-function renderFilteredResumes(list) {
-  const kw = (document.getElementById("f-keyword").value || "").toLowerCase();
-  const cats = checkedValues("f-categories");
-  const lvls = checkedValues("f-level");
-  const remoteOnly = document.getElementById("f-remote").checked;
-
-  const filtered = list.filter((r) => {
-    if (r.visibility === "hidden") return false;
-    if (kw && !(r.title.toLowerCase().includes(kw) || r.name.toLowerCase().includes(kw) || r.skills.join(" ").toLowerCase().includes(kw))) return false;
-    if (cats.length && !cats.some((c) => r.categories.includes(c))) return false;
-    if (lvls.length && !lvls.includes(r.level)) return false;
-    if (remoteOnly && !r.remoteOk) return false;
-    return true;
-  });
-
-  filtered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-
-  document.getElementById("result-count").textContent = `Знайдено ${filtered.length} резюме`;
-  document.getElementById("results").innerHTML = filtered.length
-    ? filtered.map(resumeCardHtml).join("")
-    : '<div class="empty-state">Нічого не знайдено за цими фільтрами.</div>';
-  bindSaveButtons();
-}
-
-function getMyResumes() { return lsGet(LS.myResumes, []); }
-function saveMyResumes(list) { lsSet(LS.myResumes, list); }
-function addMyResume(r) {
-  const list = getMyResumes();
-  list.unshift(r);
-  saveMyResumes(list);
-}
-function upsertMyResume(r) {
-  const list = getMyResumes();
-  const idx = list.findIndex((x) => x.id === r.id);
-  if (idx >= 0) list[idx] = r; else list.unshift(r);
-  saveMyResumes(list);
-}
-function myCandidateResume() {
-  const mine = getMyResumes();
-  return mine[0] || RESUMES[0];
-}
-function allResumes() { return RESUMES.concat(getMyResumes()); }
-
-function initResumesPage() {
-  const list = allResumes();
-  initResumesFilters(list);
-  renderFilteredResumes(list);
-}
-
 /* ---------------- Деталі вакансії ---------------- */
 
 function initVacancyDetail() {
   const v = allVacancies().find((x) => x.id === qs("id"));
   const el = document.getElementById("vacancy-detail");
-  if (!v) { el.innerHTML = '<div class="empty-state">Вакансію не знайдено або її публікацію завершено. <a href="vacancies.html">До каталогу вакансій →</a></div>'; return; }
+  if (!v) { el.innerHTML = '<div class="empty-state">Вакансію не знайдено або її публікацію завершено. <a href="index.html">До каталогу вакансій →</a></div>'; return; }
   document.title = `${v.title} — ${companyName(v)} · ProMedia Jobs`;
   const dl = daysLeft(v.expiresAt);
   const sources = vacancySources(v);
   el.innerHTML = `
   <div class="detail-hero">
-    <div class="jc-logo" style="background:${companyColor(v)}">${companyLetter(v)}</div>
+    ${logoOrLetterHtml(v, 56)}
     <div>
       <div class="eyebrow" style="margin-bottom:6px">${v.direct ? "Пряма вакансія" : "Імпортовано з " + sources.map((s) => s.name).join(" та ")}</div>
       <h1>${v.title}</h1>
@@ -321,6 +221,9 @@ function initVacancyDetail() {
     <span class="tag ink">${labelOf(FORMATS, v.format)}</span>
     <span class="tag">${labelOf(EMPLOYMENT_TYPES, v.employmentType)}</span>
     <span class="tag">${labelOf(LEVELS, v.level)}</span>
+    ${v.remoteOk ? '<span class="tag green">Дистанційно</span>' : ""}
+    ${v.hasInsurance ? '<span class="tag green">Медичне страхування</span>' : ""}
+    ${v.officialEmployment ? '<span class="tag green">Офіційне оформлення</span>' : ""}
     ${v.categories.map((c) => `<span class="tag">${catLabel(c)}</span>`).join("")}
   </div>
   <div class="panel">
@@ -328,15 +231,14 @@ function initVacancyDetail() {
     <p><b>Зарплата:</b> ${formatSalary(v)}</p>
     <h3 style="font-size:14px;margin:14px 0 6px">Обов'язки</h3>
     <ul>${v.responsibilities.map((r) => `<li>${r}</li>`).join("")}</ul>
-    <h3 style="font-size:14px;margin:14px 0 6px">Обов'язкові вимоги</h3>
-    <ul>${v.mustHave.map((r) => `<li>${r}</li>`).join("")}</ul>
+    ${v.mustHave.length ? `<h3 style="font-size:14px;margin:14px 0 6px">Обов'язкові вимоги</h3><ul>${v.mustHave.map((r) => `<li>${r}</li>`).join("")}</ul>` : ""}
     ${v.niceToHave.length ? `<h3 style="font-size:14px;margin:14px 0 6px">Бажані навички</h3><ul>${v.niceToHave.map((r) => `<li>${r}</li>`).join("")}</ul>` : ""}
     <h3 style="font-size:14px;margin:14px 0 6px">Досвід та освіта</h3>
     <p>${v.experience}${v.education ? " · " + v.education : ""}</p>
     ${v.tools.length ? `<h3 style="font-size:14px;margin:14px 0 6px">Інструменти</h3><p>${v.tools.join(", ")}</p>` : ""}
     <h3 style="font-size:14px;margin:14px 0 6px">Мови</h3>
     <p>${v.languages.join(", ")}</p>
-    ${v.benefits.length ? `<h3 style="font-size:14px;margin:14px 0 6px">Переваги</h3><ul>${v.benefits.map((r) => `<li>${r}</li>`).join("")}</ul>` : ""}
+    ${v.benefits.length ? `<h3 style="font-size:14px;margin:14px 0 6px">Соціальний пакет і переваги</h3><ul>${v.benefits.map((r) => `<li>${r}</li>`).join("")}</ul>` : ""}
     ${!v.direct ? `<div class="source-note">Ця вакансія імпортована у скороченому й нейтралізованому вигляді.${sources.length > 1 ? " Знайдена одразу в кількох джерелах — показуємо один запис із посиланнями на всі:" : " Повне оголошення — за посиланням на джерело:"}<br>${sources.map((s) => s.url ? `<a href="${s.url}" target="_blank" rel="noopener">${s.name} →</a>` : s.name).join(" · ")}</div>` : ""}
   </div>
   `;
@@ -344,40 +246,17 @@ function initVacancyDetail() {
   const apply = document.getElementById("apply-panel");
   apply.innerHTML = `
     <div class="panel">
-      <div class="deadline">Дедлайн подачі: <b>${v.deadline || "не вказано"}</b>${dl !== null ? ` (${dl > 0 ? dl + " дн." : "минув"})` : ""}<br>
-      Публікація активна до: <b>${v.expiresAt}</b></div>
+      <div class="deadline">Вакансія активна до: <b>${v.expiresAt || "не вказано"}</b>${dl !== null ? ` (${dl > 0 ? dl + " дн." : "минуло"})` : ""}</div>
       ${v.direct
-        ? `<button class="btn btn-primary btn-block" id="apply-btn">Відгукнутися</button>`
+        ? (v.contactEmail
+            ? `<a class="btn btn-primary btn-block" href="mailto:${v.contactEmail}?subject=${encodeURIComponent("Відгук на вакансію: " + v.title)}">Написати на ${v.contactEmail}</a>`
+            : `<p style="color:var(--muted);font-size:13px">Контакти роботодавця не вказано.</p>`)
         : `<a class="btn btn-primary btn-block" href="${v.sourceUrl}" target="_blank" rel="noopener">Перейти до оригіналу →</a>`}
-      <button class="save-btn" data-type="vacancy" data-id="${v.id}" style="margin-top:12px;font-size:22px" onclick="return false">☆ Зберегти вакансію</button>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:10px">Подача — напряму на пошту роботодавця, без реєстрації на порталі.</p>
     </div>`;
-  bindSaveButtons(apply);
-
-  const applyBtn = document.getElementById("apply-btn");
-  if (applyBtn) applyBtn.addEventListener("click", () => openApplyModal(v));
-
-  renderSynergyForVacancy(v);
 }
 
-function openApplyModal(v) {
-  const already = lsGet(LS.applications, []).some((a) => a.vacancyId === v.id);
-  if (already) { toast("Ви вже відгукнулися на цю вакансію"); return; }
-  if (!confirm(`Перед надсиланням: роботодавець «${companyName(v)}» отримає ваше демо-резюме та контактні дані згідно з вашими налаштуваннями видимості.\n\nНадіслати відгук?`)) return;
-  const apps = lsGet(LS.applications, []);
-  apps.push({ vacancyId: v.id, title: v.title, company: companyName(v), date: "2026-07-26", status: "sent" });
-  lsSet(LS.applications, apps);
-  addReceivedApplication({
-    id: "app-" + Date.now(),
-    vacancyId: v.id,
-    vacancyTitle: v.title,
-    candidateName: getProfileName() || "Кандидат (демо)",
-    date: "2026-07-26",
-    status: "new",
-  });
-  toast(v.contactEmail ? `Відгук надіслано. Роботодавець отримає сповіщення на ${v.contactEmail}` : "Відгук надіслано");
-}
-
-/* ---------------- Вакансії та відгуки роботодавця ---------------- */
+/* ---------------- Вакансії роботодавця ---------------- */
 
 function getMyVacancies() { return lsGet(LS.myVacancies, []); }
 function saveMyVacancies(list) { lsSet(LS.myVacancies, list); }
@@ -392,88 +271,15 @@ function upsertMyVacancy(v) {
   if (idx >= 0) list[idx] = v; else list.unshift(v);
   saveMyVacancies(list);
 }
+function deleteMyVacancy(id) {
+  saveMyVacancies(getMyVacancies().filter((x) => x.id !== id));
+}
 function isEmployerVerified() { return lsGet(LS.employerVerified, false); }
 function setEmployerVerified(v) { lsSet(LS.employerVerified, v); }
 
-const COMPANY_PROFILE_SEED = { name: "AdHouse Digital", desc: "Перформанс-маркетинг та діджитал-реклама для e-commerce.", site: "adhouse.agency", city: "Дніпро" };
+const COMPANY_PROFILE_SEED = { name: "AdHouse Digital", desc: "Перформанс-маркетинг та діджитал-реклама для e-commerce.", site: "adhouse.agency", city: "Дніпро", logoDataUrl: "" };
 function getCompanyProfile() { return lsGet(LS.companyProfile, COMPANY_PROFILE_SEED); }
 function saveCompanyProfile(p) { lsSet(LS.companyProfile, p); }
-
-function getReceivedApplications() { return lsGet(LS.receivedApplications, []); }
-function addReceivedApplication(entry) {
-  const list = getReceivedApplications();
-  list.unshift(entry);
-  lsSet(LS.receivedApplications, list);
-}
-function isMyVacancy(vacancyId) {
-  const seed = VACANCIES.find((v) => v.id === vacancyId);
-  if (seed) return seed.companyId === "adhouse";
-  return getMyVacancies().some((v) => v.id === vacancyId);
-}
-
-function renderSynergyForVacancy(v) {
-  const box = document.getElementById("synergy-box");
-  if (!box) return;
-  const m = computeMatch(myCandidateResume(), v);
-  if (!m) { box.innerHTML = ""; return; }
-  box.innerHTML = `
-    <div class="synergy-box">
-      <div class="sy-title"><span class="match-badge match-${m.level}">${MATCH_LABELS[m.level]} · ${m.pct}%</span> Синергія — чому ця вакансія може вам підійти</div>
-      <p>${m.reasons.map((r) => "• " + r).join("<br>")}</p>
-      ${m.gaps.length ? `<p class="sy-gap">Можливі невідповідності: ${m.gaps.join("; ")}</p>` : ""}
-    </div>`;
-}
-
-/* ---------------- Деталі резюме ---------------- */
-
-function initResumeDetail() {
-  const r = allResumes().find((x) => x.id === qs("id") && x.visibility !== "hidden");
-  const el = document.getElementById("resume-detail");
-  if (!r) { el.innerHTML = '<div class="empty-state">Резюме не знайдено або приховане кандидатом. <a href="resumes.html">До каталогу резюме →</a></div>'; return; }
-  document.title = `${r.name} — ${r.title} · ProMedia Jobs`;
-  el.innerHTML = `
-  <div class="detail-hero">
-    <div class="jc-logo" style="background:#0d0c5c">${r.name[0]}</div>
-    <div>
-      <div class="eyebrow" style="margin-bottom:6px">${r.visibility === "employers_only" ? "Видно лише зареєстрованим роботодавцям" : "Відкрите резюме"}</div>
-      <h1>${r.name} — ${r.title}</h1>
-      <span class="company-link">${r.city}, ${r.country}</span>
-    </div>
-  </div>
-  <div class="jc-meta" style="margin:18px 0">
-    <span class="tag ink">${labelOf(LEVELS, r.level)}</span>
-    <span class="tag">${r.experienceYears} р. досвіду</span>
-    <span class="tag">${labelOf(FORMATS, r.desiredFormat)}</span>
-    ${r.remoteOk ? '<span class="tag green">Дистанційно ОК</span>' : ""}
-    ${r.categories.map((c) => `<span class="tag">${catLabel(c)}</span>`).join("")}
-  </div>
-  <div class="panel">
-    <h2>Професійний профіль</h2>
-    <p>${r.profile}</p>
-    <h3 style="font-size:14px;margin:14px 0 6px">Бажані посади</h3>
-    <p>${r.desiredPositions.join(", ")}</p>
-    <h3 style="font-size:14px;margin:14px 0 6px">Досвід та освіта</h3>
-    <p>${r.experienceYears} років досвіду · ${r.education}</p>
-    <h3 style="font-size:14px;margin:14px 0 6px">Навички</h3>
-    <p>${r.skills.join(", ")}</p>
-    ${r.tools.length ? `<h3 style="font-size:14px;margin:14px 0 6px">Інструменти</h3><p>${r.tools.join(", ")}</p>` : ""}
-    <h3 style="font-size:14px;margin:14px 0 6px">Мови</h3>
-    <p>${r.languages.join(", ")}</p>
-    <h3 style="font-size:14px;margin:14px 0 6px">Очікувана зарплата</h3>
-    <p>${r.expectedSalary ? r.expectedSalary.toLocaleString("uk-UA") + " " + r.currency : "Не вказано"}</p>
-    <h3 style="font-size:14px;margin:14px 0 6px">Доступність</h3>
-    <p>${r.availability}</p>
-  </div>`;
-
-  const apply = document.getElementById("apply-panel");
-  apply.innerHTML = `
-    <div class="panel">
-      <p style="font-size:13px;color:var(--muted);margin:0 0 14px">Оновлено: ${r.updatedAt}</p>
-      ${r.contactsVisible === "everyone"
-        ? `<button class="btn btn-primary btn-block" onclick="toast('Контакти показано (демо): mail@example.com')">Показати контакти</button>`
-        : `<button class="btn btn-primary btn-block" onclick="toast('Увійдіть як зареєстрований роботодавець, щоб побачити контакти')">Написати кандидату</button>`}
-    </div>`;
-}
 
 /* ---------------- Компанія ---------------- */
 
@@ -490,8 +296,11 @@ function initCompanyPage() {
   const cp = seed.id === "adhouse" ? getCompanyProfile() : null;
   const c = cp ? Object.assign({}, seed, { name: cp.name, desc: cp.desc, site: cp.site, city: cp.city }) : seed;
   document.title = `${c.name} · ProMedia Jobs`;
+  const logo = cp && cp.logoDataUrl
+    ? `<img src="${cp.logoDataUrl}" alt="" style="width:56px;height:56px;border-radius:14px;object-fit:cover;flex:none" />`
+    : `<div class="jc-logo" style="background:${c.color};width:56px;height:56px">${c.letter}</div>`;
   document.getElementById("company-hero").innerHTML = `
-    <div class="jc-logo" style="background:${c.color}">${c.letter}</div>
+    ${logo}
     <div>
       <h1>${c.name}</h1>
       <div class="jc-company">${c.industry} · ${c.city} · <a href="https://${c.site}" target="_blank" rel="noopener">${c.site}</a></div>
@@ -502,60 +311,9 @@ function initCompanyPage() {
   document.getElementById("company-vacancies").innerHTML = open.length
     ? open.map(jobCardHtml).join("")
     : '<div class="empty-state">Наразі немає активних вакансій цієї компанії.</div>';
-  bindSaveButtons();
 }
 
-/* ---------------- Реакція шапки на вибір ролі ---------------- */
-
-function onRoleChange(role) {
-  const cabinetLink = document.getElementById("header-cabinet-link");
-  if (cabinetLink) {
-    cabinetLink.href = role === "employer" ? "employer-cabinet.html" : "candidate-cabinet.html";
-    cabinetLink.textContent = role === "employer" ? "Кабінет роботодавця" : role === "candidate" ? "Кабінет кандидата" : "Кабінет";
-    cabinetLink.classList.remove("btn-primary", "btn-candidate", "btn-light");
-    cabinetLink.classList.add(role === "employer" ? "btn-primary" : role === "candidate" ? "btn-candidate" : "btn-light");
-  }
-}
-
-/* ---------------- Роль: кандидат чи роботодавець ---------------- */
-
-function getRole() { return lsGet(LS.role, null); }
-
-function setRole(role) {
-  lsSet(LS.role, role);
-  applyRole(role);
-  const path = location.pathname.split("/").pop();
-  if (role === "employer" && path === "candidate-cabinet.html") location.href = "employer-cabinet.html";
-  if (role === "candidate" && path === "employer-cabinet.html") location.href = "candidate-cabinet.html";
-}
-
-function applyRole(role) {
-  document.body.dataset.role = role || "";
-  document.querySelectorAll("[data-role-section]").forEach((el) => {
-    const want = el.dataset.roleSection;
-    el.style.display = (want === "both" || want === role || !role) ? "" : "none";
-  });
-  document.querySelectorAll(".role-switch button").forEach((b) => {
-    b.classList.toggle("active", b.dataset.role === role);
-  });
-  const gate = document.getElementById("role-gate");
-  if (gate) gate.style.display = role ? "none" : "";
-  const gateNote = document.getElementById("role-gate-note");
-  if (gateNote) gateNote.style.display = role ? "" : "none";
-  onRoleChange(role);
-}
-
-function initRoleGate() {
-  document.querySelectorAll(".role-gate-card").forEach((c) => {
-    c.addEventListener("click", () => setRole(c.dataset.role));
-  });
-  document.querySelectorAll(".role-switch button").forEach((b) => {
-    b.addEventListener("click", () => setRole(b.dataset.role));
-  });
-  applyRole(getRole());
-}
-
-/* ---------------- Автентифікація (демо) ---------------- */
+/* ---------------- Автентифікація роботодавця (демо) ---------------- */
 
 function isAuthed() { return lsGet(LS.authed, false); }
 function setAuthed(v) { lsSet(LS.authed, v); }
@@ -567,27 +325,26 @@ function setProfile(name, email) {
   if (email) lsSet(LS.profileEmail, email);
 }
 
-// Викликати першим рядком на кожній сторінці, доступній лише зареєстрованим.
-// Повертає false і одразу веде на реєстрацію/вхід, якщо людина ще не "увійшла".
-function requireAuth(defaultRole) {
+// Викликати першим рядком на кожній сторінці кабінету роботодавця.
+// Повертає false і одразу веде на вхід/реєстрацію, якщо ще не увійшли.
+function requireAuth() {
   if (isAuthed()) return true;
-  if (defaultRole) setRole(defaultRole);
   const next = location.pathname.split("/").pop();
-  location.href = `index.html?next=${next}`;
+  location.href = `employer-login.html?next=${next}`;
   return false;
 }
 
-// Виклик з кнопок вибору ролі на головній: людина вже увійшла (інакше ці
-// кнопки не показуються), тож одразу веде у відповідний кабінет.
-function goToRole(role) {
-  setRole(role);
-  location.href = role === "employer" ? "employer-cabinet.html" : "candidate-cabinet.html";
-}
+/* ---------------- Верхня панель: показ посилання на кабінет ---------------- */
 
-/* ---------------- Загальна ініціалізація шапки ---------------- */
-
-function initChrome() {
-  bindSaveButtons();
-  initRoleGate();
+function initEmployerLink() {
+  const link = document.getElementById("employer-link");
+  if (!link) return;
+  if (isAuthed()) {
+    link.textContent = "Кабінет роботодавця →";
+    link.href = "employer-cabinet.html";
+  } else {
+    link.textContent = "Роботодавцям →";
+    link.href = "employer-login.html";
+  }
 }
-document.addEventListener("DOMContentLoaded", initChrome);
+document.addEventListener("DOMContentLoaded", initEmployerLink);

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ProMedia Jobs — робота в медіа, журналістиці, маркетингу та PR</title>
-<meta name="description" content="ProMedia Jobs — вакансії та резюме у сфері медіа, журналістики, маркетингу, реклами, PR, комунікацій і контенту." />
+<title>ProMedia Jobs — вакансії із зарплатами в медіа, журналістиці, маркетингу та PR</title>
+<meta name="description" content="ProMedia Jobs — вакансії у сфері медіа, журналістики, маркетингу, реклами, PR, комунікацій і контенту. Публікуємо лише оголошення з вказаною зарплатою." />
 <link rel="icon" href="favicon.svg" />
 <link rel="stylesheet" href="css/style.css" />
 </head>
@@ -13,62 +13,62 @@
 <div class="utility-bar">
   <a class="home-btn" href="https://promedia.report">← ПроМедіа</a>
   <a class="home-btn" href="how-it-works.html">Як це працює</a>
+  <a class="home-btn" id="employer-link" href="employer-login.html" style="margin-left:auto">Роботодавцям →</a>
 </div>
 
 <section class="hero">
   <div class="wrap">
-    <div class="eyebrow">Сервіс</div>
+    <div class="eyebrow">Вакансії із зарплатами</div>
     <h1>ProMedia Jobs</h1>
     <p class="lede">Кар'єра в медіа та комунікаціях</p>
+    <p style="color:var(--muted);font-size:14px;max-width:62ch">Ми приймаємо лише оголошення з чітко вказаною стартовою зарплатою або діапазоном — наприклад, нижчою на випробувальний термін і вищою після нього. Резюме та реєстрація для пошуку роботи тут не потрібні: обирайте вакансію й пишіть роботодавцю напряму.</p>
   </div>
 </section>
 
-<main class="wrap" id="auth-section" style="padding:40px 24px">
-  <div class="auth-card">
-    <div class="auth-tabs">
-      <button id="tab-login" type="button">Увійти</button>
-      <button id="tab-register" type="button">Реєстрація</button>
+<main class="wrap" style="padding:26px 24px 70px">
+  <div class="catalog-layout">
+    <aside class="filters-panel">
+      <div class="field">
+        <label>Ключове слово</label>
+        <input type="text" id="f-keyword" placeholder="Посада, компанія, навичка…" />
+      </div>
+      <div class="field">
+        <label>Місто</label>
+        <input type="text" id="f-city" placeholder="Наприклад, Львів" />
+      </div>
+      <div class="field">
+        <label>Область</label>
+        <select id="f-region"></select>
+      </div>
+      <div class="field">
+        <label>Сортування</label>
+        <select id="f-sort">
+          <option value="new">Спочатку нові</option>
+          <option value="salary-desc">Зарплата: спочатку вища</option>
+          <option value="salary-asc">Зарплата: спочатку нижча</option>
+          <option value="exp-asc">Досвід: спочатку менше</option>
+          <option value="exp-desc">Досвід: спочатку більше</option>
+        </select>
+      </div>
+      <h3>Категорія</h3>
+      <div class="filter-group" id="f-categories"></div>
+      <h3>Тип зайнятості</h3>
+      <div class="filter-group" id="f-employment"></div>
+      <h3>Рівень посади</h3>
+      <div class="filter-group" id="f-level"></div>
+      <h3>Інше</h3>
+      <div class="filter-group">
+        <label class="filter-check"><input type="checkbox" id="f-remote"> Лише дистанційна робота</label>
+        <label class="filter-check"><input type="checkbox" id="f-insurance"> Лише з медичним страхуванням</label>
+        <label class="filter-check"><input type="checkbox" id="f-official"> Лише оформлення за трудовим договором</label>
+        <label class="filter-check"><input type="checkbox" id="f-salary"> Лише із зазначеною зарплатою</label>
+      </div>
+      <button class="btn btn-light btn-block" style="margin-top:16px" id="f-reset">Скинути фільтри</button>
+    </aside>
+    <div>
+      <p class="result-count" id="result-count"></p>
+      <div class="cards-grid" id="results"></div>
     </div>
-
-    <div id="pane-login" style="display:none">
-      <h1>З поверненням</h1>
-      <p class="sub">Демо-вхід — акаунт не створюється насправді</p>
-      <form id="login-form">
-        <div class="field"><label>Електронна пошта</label><input type="email" required placeholder="you@example.com" /></div>
-        <div class="field"><label>Пароль</label><input type="password" required placeholder="••••••••" /></div>
-        <button class="btn btn-primary btn-block" type="button" onclick="completeLogin()">Увійти</button>
-      </form>
-      <div class="auth-divider">або</div>
-      <button class="btn btn-light btn-block btn-google" type="button" onclick="completeGoogleLogin()">
-        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.09-1.8 2.73v2.27h2.91c1.7-1.57 2.69-3.88 2.69-6.64z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.27c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.34C2.44 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.96 10.7c-.18-.54-.28-1.11-.28-1.7s.1-1.16.28-1.7V4.96H.96C.35 6.17 0 7.55 0 9s.35 2.83.96 4.04l3-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.96l3 2.34C4.67 5.16 6.66 3.58 9 3.58z"/></svg>
-        Увійти через Gmail
-      </button>
-      <p style="text-align:center;margin-top:16px"><a href="#" style="font-size:13px;color:var(--ink)" onclick="alert('Демо: лист для відновлення пароля не надсилається');return false">Забули пароль?</a></p>
-    </div>
-
-    <div id="pane-register">
-      <h1>Створити акаунт</h1>
-      <p class="sub">Підтвердження електронної пошти в демо не потрібне</p>
-      <form id="register-form">
-        <div class="field"><label>Ім'я</label><input type="text" id="reg-name" required placeholder="Ваше ім'я" /></div>
-        <div class="field"><label>Електронна пошта</label><input type="email" id="reg-email" required placeholder="you@example.com" /></div>
-        <div class="field"><label>Пароль</label><input type="password" required placeholder="Мінімум 8 символів" /></div>
-        <div class="check-row"><input type="checkbox" required id="consent"><label for="consent">Реєструючись, я погоджуюся з <a href="terms.html#offer" target="_blank">публічною офертою</a>, <a href="terms.html#rules" target="_blank">правилами користування</a> та <a href="privacy.html" target="_blank">обробкою персональних даних</a></label></div>
-        <button class="btn btn-primary btn-block" style="margin-top:14px" type="button" onclick="completeRegister()">Зареєструватися</button>
-      </form>
-      <div class="auth-divider">або</div>
-      <button class="btn btn-light btn-block btn-google" type="button" onclick="completeGoogleRegister()">
-        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.09-1.8 2.73v2.27h2.91c1.7-1.57 2.69-3.88 2.69-6.64z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.27c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.34C2.44 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.96 10.7c-.18-.54-.28-1.11-.28-1.7s.1-1.16.28-1.7V4.96H.96C.35 6.17 0 7.55 0 9s.35 2.83.96 4.04l3-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.96l3 2.34C4.67 5.16 6.66 3.58 9 3.58z"/></svg>
-        Зареєструватися через Gmail
-      </button>
-    </div>
-  </div>
-</main>
-
-<main class="first-screen" id="role-section" style="display:none;padding-top:0">
-  <div class="first-screen-buttons">
-    <button class="choice-btn candidate" onclick="goToRole('candidate')">Шукаю роботу</button>
-    <button class="choice-btn employer" onclick="goToRole('employer')">Шукаю працівників</button>
   </div>
 </main>
 
@@ -77,13 +77,10 @@
     <div class="footer-grid">
       <div>
         <div class="footer-brand">ProMedia Jobs</div>
-        <p style="font-size:13px;max-width:34ch">Пошук роботи та працівників у медіа, журналістиці, маркетингу, рекламі, PR і суміжних креативних індустріях. Ініціатива ГО «ПроМедіа».</p>
-      </div>
-      <div><h4>Кандидатам</h4>
-        <a href="vacancies.html">Каталог вакансій</a><a href="create-resume.html">Створити резюме</a><a href="candidate-cabinet.html">Кабінет кандидата</a>
+        <p style="font-size:13px;max-width:34ch">Вакансії із зарплатами в медіа, журналістиці, маркетингу, рекламі, PR і суміжних креативних індустріях. Ініціатива ГО «ПроМедіа».</p>
       </div>
       <div><h4>Роботодавцям</h4>
-        <a href="post-vacancy.html">Додати вакансію</a><a href="resumes.html">Каталог резюме</a>
+        <a href="employer-login.html">Увійти / зареєструватися</a><a href="post-vacancy.html">Додати вакансію</a>
       </div>
       <div><h4>Інформація</h4>
         <a href="how-it-works.html">Як це працює</a><a href="terms.html">Оферта та правила</a><a href="privacy.html">Конфіденційність</a><a href="report.html">Поскаржитися</a>
@@ -98,54 +95,6 @@
 
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
-<script>
-  const tl = document.getElementById("tab-login"), tr = document.getElementById("tab-register");
-  const pl = document.getElementById("pane-login"), pr = document.getElementById("pane-register");
-  tl.addEventListener("click", () => { tl.classList.add("active"); tr.classList.remove("active"); pl.style.display = ""; pr.style.display = "none"; });
-  tr.addEventListener("click", () => { tr.classList.add("active"); tl.classList.remove("active"); pr.style.display = ""; pl.style.display = "none"; });
-
-  function showAuthedState() {
-    document.getElementById("auth-section").style.display = "none";
-    document.getElementById("role-section").style.display = "";
-  }
-
-  if (isAuthed()) {
-    showAuthedState();
-  } else {
-    tl.click();
-  }
-
-  function redirectAfterAuth() {
-    setAuthed(true);
-    const next = qs("next");
-    if (next) { location.href = next; return; }
-    showAuthedState();
-  }
-
-  function completeLogin() {
-    const form = document.getElementById("login-form");
-    if (!form.reportValidity()) return;
-    redirectAfterAuth();
-  }
-
-  function completeRegister() {
-    const form = document.getElementById("register-form");
-    if (!form.reportValidity()) return;
-    setProfile(document.getElementById("reg-name").value, document.getElementById("reg-email").value);
-    toast("Демо: акаунт умовно створено");
-    setTimeout(redirectAfterAuth, 500);
-  }
-
-  function completeGoogleLogin() {
-    toast("Демо: вхід через Gmail умовно виконано");
-    setTimeout(redirectAfterAuth, 400);
-  }
-
-  function completeGoogleRegister() {
-    if (!document.getElementById("consent").checked) { toast("Спочатку погодьтеся з обробкою даних"); return; }
-    toast("Демо: акаунт через Gmail умовно створено");
-    setTimeout(redirectAfterAuth, 400);
-  }
-</script>
+<script>initVacanciesPage();</script>
 </body>
 </html>

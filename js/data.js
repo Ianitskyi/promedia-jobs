@@ -1,5 +1,5 @@
-/* ProMedia Jobs — вигадані демо-дані. Немає бекенду: усе живе в цьому файлі
-   та в localStorage браузера (збережені вакансії/резюме, підписки, відгуки). */
+/* ProMedia Jobs — вигадані демо-дані (крім реальних вакансій, доданих вручну).
+   Немає бекенду: усе живе в цьому файлі та в localStorage браузера. */
 
 const CATEGORIES = [
   { id: "journalism", label: "Журналістика" },
@@ -69,6 +69,16 @@ const EMPLOYMENT_TYPES = [
   { id: "volunteering", label: "Волонтерство" },
 ];
 
+const REGIONS = [
+  "м. Київ", "Вінницька область", "Волинська область", "Дніпропетровська область",
+  "Донецька область", "Житомирська область", "Закарпатська область", "Запорізька область",
+  "Івано-Франківська область", "Київська область", "Кіровоградська область", "Луганська область",
+  "Львівська область", "Миколаївська область", "Одеська область", "Полтавська область",
+  "Рівненська область", "Сумська область", "Тернопільська область", "Харківська область",
+  "Херсонська область", "Хмельницька область", "Черкаська область", "Чернівецька область",
+  "Чернігівська область",
+];
+
 function labelOf(list, id) {
   const it = list.find((x) => x.id === id);
   return it ? it.label : id;
@@ -81,7 +91,7 @@ const COMPANIES = [
     desc: "Одне з найбільших онлайн-видань України.", site: "pravda.com.ua" },
   { id: "the-village", name: "The Village Україна", letter: "V", color: "#d98a17", city: "Київ", industry: "Медіа / Лайфстайл",
     desc: "Медіа про місто, культуру та людей.", site: "village.com.ua" },
-  { id: "promedia-agency", name: "PR-агенція «レゾнанс»", letter: "Р", color: "#1c9a56", city: "Львів", industry: "PR / Комунікації",
+  { id: "promedia-agency", name: "PR-агенція «Резонанс»", letter: "Р", color: "#1c9a56", city: "Львів", industry: "PR / Комунікації",
     desc: "Комунікаційна агенція повного циклу для бізнесу та НГО.", site: "rezonans-agency.ua" },
   { id: "adhouse", name: "AdHouse Digital", letter: "A", color: "#c9932c", city: "Дніпро", industry: "Реклама / Маркетинг",
     desc: "Перформанс-маркетинг та діджитал-реклама для e-commerce.", site: "adhouse.agency" },
@@ -93,12 +103,15 @@ const COMPANIES = [
 
 function companyOf(id) { return COMPANIES.find((c) => c.id === id); }
 
+/* Реальні вакансії надійшли до того, як портал почав вимагати обов'язкову
+   вказану зарплату від нових оголошень — зарплата тут чесно позначена як
+   не вказана роботодавцем, а не прихована. */
 const VACANCIES = [
   {
     id: "v1", title: "SMM-менеджер(ка)", companyId: "ti-ukraine",
     categories: ["smm", "content", "advertising"], level: "middle",
-    city: "Київ", country: "Україна", format: "hybrid", remoteOk: false, fromAbroad: false,
-    employmentType: "full",
+    city: "Київ", region: "м. Київ", country: "Україна", format: "hybrid", remoteOk: false,
+    employmentType: "full", experienceYears: 2,
     responsibilities: [
       "Реалізація та розвиток стратегії просування організації у соціальних мережах (пріоритетні: Facebook, Telegram, Instagram)",
       "Формування контент-плану під визначені KPI, пошук нових форматів і трендів",
@@ -122,7 +135,8 @@ const VACANCIES = [
     skills: ["SMM", "Контент-план", "Копірайтинг", "Таргетована реклама", "Відеомонтаж"],
     tools: ["Meta Business Suite", "TGStat", "GA4"],
     languages: ["Українська — вільно", "Англійська — не нижче B1"],
-    salaryMin: 0, salaryMax: 0, currency: "UAH", salaryHidden: true,
+    salaryMin: 0, salaryMax: 0, currency: "UAH",
+    hasInsurance: false, officialEmployment: false,
     benefits: [
       "Робота з суспільно-важливим інформаційним продуктом",
       "Open-minded команда, яка щиро вітає пропозиції щодо змін",
@@ -132,8 +146,8 @@ const VACANCIES = [
       "Компенсація навчання для професійного зростання",
       "24 календарні дні відпустки на рік",
     ],
-    startDate: "", deadline: "2026-07-31",
-    applyMethod: "email", contactEmail: "hr-tiu@ti-ukraine.org",
+    startDate: "",
+    contactEmail: "hr-tiu@ti-ukraine.org",
     publishedAt: "2026-07-27", expiresAt: "2026-07-31",
     source: "direct", sourceUrl: "", direct: true,
     moderationStatus: "approved", active: true,
@@ -141,28 +155,26 @@ const VACANCIES = [
   {
     id: "v2", title: "PR-менеджер(ка)", companyId: null, companyName: "NDA",
     categories: ["pr", "strategic-comms"], level: "middle",
-    city: "Миколаїв", country: "Україна", format: "hybrid", remoteOk: false, fromAbroad: false,
-    employmentType: "full",
+    city: "Миколаїв", region: "Миколаївська область", country: "Україна", format: "hybrid", remoteOk: false,
+    employmentType: "full", experienceYears: 0,
     responsibilities: [
       "Антикризова комунікація: розробка та реалізація стратегій реагування на кризові ситуації, робота з репутаційними ризиками, мінімізація негативу в інфопросторі",
       "Робота зі ЗМІ: взаємодія з регіональними та національними медіа, написання прес-релізів, коментарів, організація інтерв'ю та брифінгів",
       "Створення контенту: підготовка офіційних заяв, текстів для медіа, блогу чи соцмереж щодо критичних та важливих подій",
       "Моніторинг та аналітика: щоденне відстеження згадок про компанію в інформаційному полі (Media Monitoring), аналіз медіаполя",
     ],
-    mustHave: [],
-    niceToHave: [],
-    experience: "Не вказано",
-    education: "Не вказано",
+    mustHave: [], niceToHave: [],
+    experience: "Не вказано", education: "Не вказано",
     skills: ["PR", "Антикризові комунікації", "Робота зі ЗМІ", "Медіамоніторинг"],
-    tools: [],
-    languages: ["Українська — рідна"],
-    salaryMin: 0, salaryMax: 0, currency: "UAH", salaryHidden: true,
+    tools: [], languages: ["Українська — рідна"],
+    salaryMin: 0, salaryMax: 0, currency: "UAH",
+    hasInsurance: false, officialEmployment: true,
     benefits: [
       "Офіс — у разі кризової ситуації, решта часу — віддалена взаємодія з партнерськими регіонами",
       "Офіційне оформлення (деталі — на співбесіді)",
     ],
-    startDate: "", deadline: "2026-08-26",
-    applyMethod: "email", contactEmail: "missionofficialca@gmail.com",
+    startDate: "",
+    contactEmail: "missionofficialca@gmail.com",
     publishedAt: "2026-07-27", expiresAt: "2026-08-26",
     source: "direct", sourceUrl: "", direct: true,
     moderationStatus: "approved", active: true,
@@ -170,8 +182,8 @@ const VACANCIES = [
   {
     id: "v3", title: "SMM-менеджер(ка)", companyId: null, companyName: "NDA",
     categories: ["smm", "content", "advertising"], level: "middle",
-    city: "Київ", country: "Україна", format: "hybrid", remoteOk: false, fromAbroad: false,
-    employmentType: "full",
+    city: "Київ", region: "м. Київ", country: "Україна", format: "hybrid", remoteOk: false,
+    employmentType: "full", experienceYears: 0,
     responsibilities: [
       "Імплементація стратегії та планування: розробка контент-плану, вибір платформ (Instagram, TikTok, Facebook, LinkedIn тощо) під задану цільову аудиторію",
       "Створення контенту: написання текстів, зйомка та монтаж відео (Reels, TikTok), створення фото та дизайну (сторіс, пости)",
@@ -181,20 +193,18 @@ const VACANCIES = [
       "Колаборації та інфлюенс-маркетинг: пошук блогерів для партнерства",
       "Аналітика та звітність: відстеження показників охоплень, приросту аудиторії, конверсій та ефективності контенту",
     ],
-    mustHave: [],
-    niceToHave: [],
-    experience: "Не вказано",
-    education: "Не вказано",
+    mustHave: [], niceToHave: [],
+    experience: "Не вказано", education: "Не вказано",
     skills: ["SMM", "Контент-план", "Таргетована реклама", "Відеомонтаж", "Аналітика"],
-    tools: ["Instagram", "TikTok", "Facebook", "LinkedIn"],
-    languages: ["Українська — рідна"],
-    salaryMin: 0, salaryMax: 0, currency: "UAH", salaryHidden: true,
+    tools: ["Instagram", "TikTok", "Facebook", "LinkedIn"], languages: ["Українська — рідна"],
+    salaryMin: 0, salaryMax: 0, currency: "UAH",
+    hasInsurance: false, officialEmployment: true,
     benefits: [
       "Офіційне оформлення",
       "Віддалений формат роботи з обов'язковими виїздами в офіс та на заходи компанії",
     ],
-    startDate: "", deadline: "2026-08-26",
-    applyMethod: "email", contactEmail: "missionofficialca@gmail.com",
+    startDate: "",
+    contactEmail: "missionofficialca@gmail.com",
     publishedAt: "2026-07-27", expiresAt: "2026-08-26",
     source: "direct", sourceUrl: "", direct: true,
     moderationStatus: "approved", active: true,
@@ -202,8 +212,8 @@ const VACANCIES = [
   {
     id: "v4", title: "PR-менеджер(ка)", companyId: null, companyName: "NDA",
     categories: ["pr", "strategic-comms"], level: "middle",
-    city: "Київ", country: "Україна", format: "hybrid", remoteOk: false, fromAbroad: false,
-    employmentType: "full",
+    city: "Київ", region: "м. Київ", country: "Україна", format: "hybrid", remoteOk: false,
+    employmentType: "full", experienceYears: 0,
     responsibilities: [
       "Імплементація існуючої стратегії, адаптація під аудиторію",
       "Робота зі ЗМІ: написання прес-релізів, статей, коментарів, організація інтерв'ю та пресконференцій, формування бази журналістів",
@@ -211,203 +221,20 @@ const VACANCIES = [
       "Пошук партнерів, блогерів для колаборацій та нативних інтеграцій",
       "Створення контенту: підготовка текстів для соцмереж, сайту, блогу, спецпроєктів чи презентацій",
     ],
-    mustHave: [],
-    niceToHave: ["Англійська мова"],
-    experience: "Не вказано",
-    education: "Не вказано",
+    mustHave: [], niceToHave: ["Англійська мова"],
+    experience: "Не вказано", education: "Не вказано",
     skills: ["PR", "Робота зі ЗМІ", "Копірайтинг", "Партнерства"],
-    tools: [],
-    languages: ["Українська — рідна"],
-    salaryMin: 0, salaryMax: 0, currency: "UAH", salaryHidden: true,
+    tools: [], languages: ["Українська — рідна"],
+    salaryMin: 0, salaryMax: 0, currency: "UAH",
+    hasInsurance: false, officialEmployment: true,
     benefits: [
       "Офіційне оформлення",
       "Віддалений формат роботи з можливими виїздами в офіс у Києві",
     ],
-    startDate: "", deadline: "2026-08-26",
-    applyMethod: "email", contactEmail: "missionofficialca@gmail.com",
+    startDate: "",
+    contactEmail: "missionofficialca@gmail.com",
     publishedAt: "2026-07-27", expiresAt: "2026-08-26",
     source: "direct", sourceUrl: "", direct: true,
     moderationStatus: "approved", active: true,
   },
 ];
-
-const RESUMES = [
-  {
-    id: "r1", name: "Марія К.", title: "SMM-менеджерка", city: "Київ", country: "Україна",
-    categories: ["smm", "content"], level: "junior",
-    remoteOk: true, relocation: false, desiredFormat: "remote", desiredEmploymentType: "full",
-    experienceYears: 1.5, education: "Бакалавр журналістики, КНУ ім. Шевченка",
-    skills: ["SMM", "Копірайтинг", "Контент-план"], tools: ["Canva", "Meta Business Suite"],
-    languages: ["Українська — рідна", "Англійська — середній"],
-    profile: "Веду соцмережі малого бізнесу останні 1.5 роки: контент-план, візуали, комунікація з аудиторією.",
-    desiredPositions: ["SMM-менеджер", "Контент-менеджер"],
-    expectedSalary: 20000, currency: "UAH",
-    availability: "Готова почати за 2 тижні",
-    visibility: "open", contactsVisible: "employers", updatedAt: "2026-07-20",
-  },
-  {
-    id: "r2", name: "Олег П.", title: "Відеомонтажер / videographer", city: "Львів", country: "Україна",
-    categories: ["video-editing", "video-production"], level: "middle",
-    remoteOk: true, relocation: true, desiredFormat: "hybrid", desiredEmploymentType: "full",
-    experienceYears: 3, education: "Не вказано",
-    skills: ["Відеомонтаж", "Кольорокорекція"], tools: ["Adobe Premiere Pro", "DaVinci Resolve", "After Effects"],
-    languages: ["Українська — рідна", "Англійська — базовий"],
-    profile: "3 роки монтую рекламні та документальні відео. Працював з YouTube-каналами та агенціями.",
-    desiredPositions: ["Відеомонтажер", "Моушн-дизайнер"],
-    expectedSalary: 26000, currency: "UAH",
-    availability: "Готовий одразу",
-    visibility: "open", contactsVisible: "everyone", updatedAt: "2026-07-22",
-  },
-  {
-    id: "r3", name: "Ірина Т.", title: "PR та комунікації", city: "Львів", country: "Україна",
-    categories: ["pr", "strategic-comms", "internal-comms"], level: "senior",
-    remoteOk: false, relocation: false, desiredFormat: "hybrid", desiredEmploymentType: "full",
-    experienceYears: 6, education: "Магістр, спеціальність «Зв'язки з громадськістю»",
-    skills: ["PR", "Кризові комунікації", "Медіарилейшнз"], tools: ["Google Workspace"],
-    languages: ["Українська — рідна", "Англійська — вільно", "Польська — середній"],
-    profile: "6 років у стратегічних комунікаціях, з них 3 — на позиції керівниці PR-відділу.",
-    desiredPositions: ["Керівник PR-відділу", "PR-менеджер"],
-    expectedSalary: 45000, currency: "UAH",
-    availability: "За місяць (відпрацювання)",
-    visibility: "employers_only", contactsVisible: "employers", updatedAt: "2026-07-18",
-  },
-  {
-    id: "r4", name: "Данило С.", title: "Журналіст / репортер", city: "Харків", country: "Україна",
-    categories: ["journalism", "reporting", "factchecking"], level: "middle",
-    remoteOk: true, relocation: true, desiredFormat: "office", desiredEmploymentType: "full",
-    experienceYears: 4, education: "Бакалавр журналістики",
-    skills: ["Журналістика", "Фактчекінг", "Інтерв'ю"], tools: [],
-    languages: ["Українська — рідна", "Англійська — вище середнього"],
-    profile: "4 роки писав репортажі й новини для регіональних та національних медіа.",
-    desiredPositions: ["Журналіст", "Кореспондент"],
-    expectedSalary: 28000, currency: "UAH",
-    availability: "Готовий одразу",
-    visibility: "open", contactsVisible: "everyone", updatedAt: "2026-07-24",
-  },
-  {
-    id: "r5", name: "Софія В.", title: "Дизайнерка (Figma, Illustrator)", city: "Одеса", country: "Україна",
-    categories: ["design", "smm"], level: "junior",
-    remoteOk: true, relocation: false, desiredFormat: "remote", desiredEmploymentType: "freelance",
-    experienceYears: 1, education: "Не вказано",
-    skills: ["Дизайн", "Брендинг"], tools: ["Figma", "Adobe Illustrator"],
-    languages: ["Українська — рідна"],
-    profile: "Роблю візуали для соцмереж та невеликі брендбуки на фрилансі.",
-    desiredPositions: ["Графічний дизайнер", "SMM-дизайнер"],
-    expectedSalary: 15000, currency: "UAH",
-    availability: "Готова одразу",
-    visibility: "open", contactsVisible: "everyone", updatedAt: "2026-07-23",
-  },
-  {
-    id: "r6", name: "Андрій М.", title: "Маркетинг-аналітик", city: "Дніпро", country: "Україна",
-    categories: ["marketing", "analytics"], level: "middle",
-    remoteOk: false, relocation: false, desiredFormat: "office", desiredEmploymentType: "full",
-    experienceYears: 2.5, education: "Бакалавр економіки",
-    skills: ["Аналітика", "Google Ads"], tools: ["Google Analytics", "Google Ads", "Excel"],
-    languages: ["Українська — рідна", "Англійська — середній"],
-    profile: "Аналізую рекламні кампанії та готую звіти для клієнтів агенції.",
-    desiredPositions: ["Маркетинг-аналітик", "PPC-спеціаліст"],
-    expectedSalary: 30000, currency: "UAH",
-    availability: "За 2 тижні",
-    visibility: "open", contactsVisible: "employers", updatedAt: "2026-07-15",
-  },
-  {
-    id: "r7", name: "Христина Л.", title: "Фактчекерка / OSINT", city: "Дистанційно", country: "Україна",
-    categories: ["factchecking", "osint", "media-monitoring"], level: "junior",
-    remoteOk: true, relocation: false, desiredFormat: "remote", desiredEmploymentType: "project",
-    experienceYears: 0.8, education: "Студентка магістратури журналістики",
-    skills: ["Фактчекінг", "OSINT"], tools: ["InVID"],
-    languages: ["Українська — рідна", "Англійська — вище середнього"],
-    profile: "Проходила курс з верифікації інформації, шукаю першу проєктну роботу у фактчекінгу.",
-    desiredPositions: ["Фактчекер", "OSINT-аналітик"],
-    expectedSalary: 15000, currency: "UAH",
-    availability: "Готова одразу",
-    visibility: "open", contactsVisible: "everyone", updatedAt: "2026-07-21",
-  },
-  {
-    id: "r8", name: "Максим Р.", title: "Продюсер відео/подкастів", city: "Київ", country: "Україна",
-    categories: ["producing", "podcasts", "video-production"], level: "senior",
-    remoteOk: false, relocation: false, desiredFormat: "hybrid", desiredEmploymentType: "full",
-    experienceYears: 5, education: "Не вказано",
-    skills: ["Продюсування", "Управління проєктами"], tools: ["Adobe Audition", "Premiere Pro"],
-    languages: ["Українська — рідна", "Англійська — середній"],
-    profile: "5 років продюсую відео та аудіоконтент для медіа й брендів.",
-    desiredPositions: ["Продюсер", "Керівник відеовідділу"],
-    expectedSalary: 40000, currency: "UAH",
-    availability: "За місяць",
-    visibility: "open", contactsVisible: "employers", updatedAt: "2026-07-11",
-  },
-];
-
-/* ---------------- Синергія: проста прозора модель відповідності ---------------- */
-
-function computeMatch(resume, vacancy) {
-  // Критичні несумісності — не рекомендуємо взагалі
-  if (!resume.remoteOk && vacancy.format === "remote" && resume.desiredFormat === "office") {
-    return null;
-  }
-  if (resume.desiredFormat === "office" && vacancy.format === "remote" && !resume.relocation && resume.city !== vacancy.city) {
-    // М'яке правило в демо — не критичне, просто знижує бал нижче
-  }
-
-  const reasons = [];
-  const gaps = [];
-  let score = 0;
-  let maxScore = 0;
-
-  // Категорії (вага 35)
-  maxScore += 35;
-  const catOverlap = resume.categories.filter((c) => vacancy.categories.includes(c));
-  if (catOverlap.length > 0) {
-    score += 35 * Math.min(1, catOverlap.length / Math.min(2, vacancy.categories.length));
-    reasons.push(`професійна категорія «${catLabel(catOverlap[0])}» збігається з вакансією`);
-  } else {
-    gaps.push("жодна професійна категорія не збігається напряму");
-  }
-
-  // Навички (вага 25)
-  maxScore += 25;
-  const skillOverlap = resume.skills.filter((s) => vacancy.skills.includes(s));
-  if (skillOverlap.length > 0) {
-    score += 25 * Math.min(1, skillOverlap.length / Math.max(1, vacancy.skills.length));
-    reasons.push(`збігаються навички: ${skillOverlap.join(", ")}`);
-  } else {
-    gaps.push("немає прямого збігу навичок із вимогами вакансії");
-  }
-
-  // Формат роботи (вага 15)
-  maxScore += 15;
-  if (resume.desiredFormat === vacancy.format || resume.remoteOk) {
-    score += 15;
-    reasons.push("формат роботи підходить (дистанційно/гібридно за потреби)");
-  } else {
-    gaps.push("бажаний формат роботи відрізняється від вакансії");
-  }
-
-  // Рівень посади (вага 15)
-  maxScore += 15;
-  const levelOrder = ["intern", "junior", "middle", "senior", "lead", "top"];
-  const diff = Math.abs(levelOrder.indexOf(resume.level) - levelOrder.indexOf(vacancy.level));
-  if (diff === 0) { score += 15; reasons.push("рівень посади збігається"); }
-  else if (diff === 1) { score += 8; reasons.push("рівень посади близький до вимог вакансії"); }
-  else { gaps.push("рівень посади суттєво відрізняється від вимог вакансії"); }
-
-  // Місто/дистанційність (вага 10)
-  maxScore += 10;
-  if (vacancy.remoteOk || resume.city === vacancy.city || resume.relocation) {
-    score += 10;
-  } else {
-    gaps.push("місто не збігається, а вакансія не дистанційна");
-  }
-
-  const pct = Math.round((score / maxScore) * 100);
-  let level;
-  if (pct >= 75) level = "high";
-  else if (pct >= 45) level = "possible";
-  else level = "partial";
-
-  if (catOverlap.length === 0 && skillOverlap.length === 0) return null; // надто далеко — не показуємо
-
-  return { pct, level, reasons, gaps };
-}
-
-const MATCH_LABELS = { high: "Висока відповідність", possible: "Можлива відповідність", partial: "Часткова відповідність" };

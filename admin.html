@@ -23,7 +23,6 @@
   <aside class="dash-side">
     <button class="active" data-pane="overview">Огляд</button>
     <button data-pane="moderation">Модерація вакансій <span class="badge-count" id="mod-badge" style="display:none"></span></button>
-    <button data-pane="resumes">Модерація резюме</button>
     <button data-pane="reports">Скарги <span class="badge-count">1</span></button>
     <button data-pane="sources">Джерела імпорту</button>
     <button data-pane="import-log">Журнал імпорту</button>
@@ -39,7 +38,7 @@
       <div class="dash-head"><div><h1>Адмінпанель ProMedia Jobs</h1><div class="sub">Демо-дані — реальної модерації немає</div></div></div>
       <div class="kpi-grid">
         <div class="stat-tile"><div class="val" id="a-vac">—</div><div class="lbl">активних вакансій</div></div>
-        <div class="stat-tile"><div class="val" id="a-res">—</div><div class="lbl">активних резюме</div></div>
+        <div class="stat-tile"><div class="val" id="a-salary">—</div><div class="lbl">із вказаною зарплатою</div></div>
         <div class="stat-tile"><div class="val" id="a-comp">—</div><div class="lbl">компаній</div></div>
         <div class="stat-tile"><div class="val">3</div><div class="lbl">джерела імпорту</div></div>
       </div>
@@ -58,11 +57,6 @@
     <div class="cab-pane" data-cab="moderation" style="display:none">
       <div class="dash-head"><div><h1>Модерація вакансій</h1></div></div>
       <div id="moderation-list"></div>
-    </div>
-
-    <div class="cab-pane" data-cab="resumes" style="display:none">
-      <div class="dash-head"><div><h1>Модерація резюме</h1></div></div>
-      <div class="panel"><div class="empty-state">Черга порожня — усі резюме пройшли автоматичну перевірку.</div></div>
     </div>
 
     <div class="cab-pane" data-cab="reports" style="display:none">
@@ -121,7 +115,6 @@
           <thead><tr><th>Послуга</th><th>Ціна</th><th></th></tr></thead>
           <tbody>
             <tr><td>Продовження вакансії (30 днів)</td><td><input type="number" value="199" style="width:90px;border:1px solid var(--border);border-radius:8px;padding:6px"/> ₴</td><td><button class="btn btn-light btn-sm" onclick="toast('Ціну збережено')">Зберегти</button></td></tr>
-            <tr><td>Продовження резюме (30 днів)</td><td><input type="number" value="49" style="width:90px;border:1px solid var(--border);border-radius:8px;padding:6px"/> ₴</td><td><button class="btn btn-light btn-sm" onclick="toast('Ціну збережено')">Зберегти</button></td></tr>
           </tbody>
         </table>
         <div class="field" style="margin-top:16px"><label>Новий промокод</label><input type="text" placeholder="LAUNCH2026" /></div>
@@ -143,8 +136,8 @@
       <div class="dash-head"><div><h1>Аналітика</h1></div><button class="btn btn-light" onclick="toast('Демо: агреговану статистику експортовано в CSV')">Експортувати CSV</button></div>
       <div class="kpi-grid">
         <div class="stat-tile"><div class="val" id="an-1">—</div><div class="lbl">частка вакансій із зарплатою</div></div>
-        <div class="stat-tile"><div class="val">3.4%</div><div class="lbl">конверсія перегляду у відгук</div></div>
-        <div class="stat-tile"><div class="val">62%</div><div class="lbl">прийнятих рекомендацій «Синергія»</div></div>
+        <div class="stat-tile"><div class="val" id="an-2">—</div><div class="lbl">частка з медичним страхуванням</div></div>
+        <div class="stat-tile"><div class="val" id="an-3">—</div><div class="lbl">частка з офіційним оформленням</div></div>
         <div class="stat-tile"><div class="val">2</div><div class="lbl">дублікати відхилено (тиждень)</div></div>
       </div>
     </div>
@@ -161,18 +154,21 @@
     document.querySelectorAll(".cab-pane").forEach((p) => p.style.display = p.dataset.cab === b.dataset.pane ? "" : "none");
   }));
   const myActiveVacancies = getMyVacancies().filter((v) => v.status === "active");
-  document.getElementById("a-vac").textContent = VACANCIES.filter((v) => v.active).length + myActiveVacancies.length;
-  document.getElementById("a-res").textContent = RESUMES.length + getMyResumes().filter((r) => r.visibility !== "hidden").length;
+  const allActive = VACANCIES.filter((v) => v.active).concat(myActiveVacancies);
+  document.getElementById("a-vac").textContent = allActive.length;
+  document.getElementById("a-salary").textContent = allActive.filter((v) => v.salaryMin || v.salaryMax).length;
   document.getElementById("a-comp").textContent = COMPANIES.length;
   document.getElementById("a-direct").textContent = VACANCIES.filter((v) => v.direct && v.active).length + myActiveVacancies.length;
-  document.getElementById("an-1").textContent = Math.round((VACANCIES.filter((v) => !v.salaryHidden).length / VACANCIES.length) * 100) + "%";
+  document.getElementById("an-1").textContent = Math.round((allActive.filter((v) => v.salaryMin || v.salaryMax).length / allActive.length) * 100) + "%";
+  document.getElementById("an-2").textContent = Math.round((allActive.filter((v) => v.hasInsurance).length / allActive.length) * 100) + "%";
+  document.getElementById("an-3").textContent = Math.round((allActive.filter((v) => v.officialEmployment).length / allActive.length) * 100) + "%";
   document.getElementById("admin-cats").innerHTML = CATEGORIES.map((c) => `<span class="cat-chip">${c.label}</span>`).join("");
 
   function moderationCardHtml(v) {
     const tags = [
       v.contactEmail ? '<span class="tag green">Контакти вказано</span>' : '<span class="tag" style="background:var(--red-tint);color:var(--red)">Контакт відсутній</span>',
       (v.responsibilities && v.responsibilities.length) ? '<span class="tag green">Обов\'язки заповнені</span>' : '<span class="tag" style="background:var(--red-tint);color:var(--red)">Обов\'язки не заповнені</span>',
-      v.salaryHidden ? '<span class="tag">Зарплата прихована</span>' : '<span class="tag green">Зарплата вказана</span>',
+      (v.salaryMin || v.salaryMax) ? '<span class="tag green">Зарплата вказана</span>' : '<span class="tag" style="background:var(--red-tint);color:var(--red)">Зарплата не вказана</span>',
     ].join("");
     return `<div class="mod-card">
       <div class="who"><b>${v.title} — ${v.companyName || "Компанія не вказана"}</b><div class="meta">Надіслано на модерацію · ${v.publishedAt || "дата не вказана"}</div>

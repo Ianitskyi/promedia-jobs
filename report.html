@@ -17,10 +17,10 @@
 
 <main class="wrap" style="padding:30px 24px 70px;max-width:680px">
   <h1 style="font-family:var(--serif)">Поскаржитися на оголошення</h1>
-  <p style="color:var(--muted)">Повідомте модераторам, якщо вакансія чи резюме порушує правила публікації: вимагає оплату за працевлаштування, має ознаки шахрайства, не містить зрозумілого роботодавця, приховує рекламу під виглядом вакансії або порушує трудове законодавство.</p>
+  <p style="color:var(--muted)">Повідомте модераторам, якщо вакансія порушує правила публікації: вимагає оплату за працевлаштування, має ознаки шахрайства, не містить зрозумілого роботодавця, приховує рекламу під виглядом вакансії, не має вказаної зарплати або порушує трудове законодавство.</p>
   <div class="panel">
     <form onsubmit="event.preventDefault(); toast('Скаргу надіслано модераторам (демо)'); this.reset();">
-      <div class="field"><label>Посилання на вакансію або резюме</label><input type="text" placeholder="https://jobs.promedia.report/vacancy.html?id=..." required /></div>
+      <div class="field"><label>Посилання на вакансію</label><input type="text" placeholder="https://jobs.promedia.report/vacancy.html?id=..." required /></div>
       <div class="field">
         <label>Причина</label>
         <select required>

@@ -18,11 +18,9 @@
   <aside class="dash-side employer">
     <button class="active" data-pane="overview">Огляд</button>
     <button data-pane="vacancies">Мої вакансії</button>
-    <button data-pane="applications">Відгуки <span class="badge-count" id="app-badge" style="display:none"></span></button>
-    <button data-pane="synergy">Синергія <span class="badge-count" id="synergy-badge" style="display:none"></span></button>
     <button data-pane="company">Профіль компанії</button>
     <button data-pane="settings">Налаштування акаунта</button>
-    <a class="dash-link-cta" href="resumes.html" style="margin-top:16px">Каталог резюме →</a>
+    <a class="dash-link-cta" href="post-vacancy.html" style="margin-top:16px">+ Додати вакансію →</a>
   </aside>
 
   <main class="dash-main">
@@ -31,43 +29,36 @@
       <div class="dash-head"><div><h1>Кабінет роботодавця</h1><div class="sub" id="employer-sub">AdHouse Digital — демо-акаунт</div></div><a class="btn btn-primary" href="post-vacancy.html">+ Додати вакансію</a></div>
       <div class="kpi-grid">
         <div class="stat-tile"><div class="val" id="kpi-active">—</div><div class="lbl">активні вакансії</div></div>
+        <div class="stat-tile"><div class="val" id="kpi-moderation">—</div><div class="lbl">на модерації</div></div>
+        <div class="stat-tile"><div class="val" id="kpi-draft">—</div><div class="lbl">чернетки</div></div>
         <div class="stat-tile"><div class="val">128</div><div class="lbl">переглядів за тиждень <span class="hint">(демо, не рахується)</span></div></div>
-        <div class="stat-tile"><div class="val" id="kpi-apps">—</div><div class="lbl">відгуків</div></div>
-        <div class="stat-tile"><div class="val" id="kpi-synergy">—</div><div class="lbl">рекомендацій «Синергія»</div></div>
       </div>
-      <div class="panel"><h2>Топ рекомендованих кандидатів</h2><div class="cards-grid cols-2" id="ov-synergy"></div></div>
     </div>
 
     <div class="cab-pane" data-cab="vacancies" style="display:none">
       <div class="dash-head"><div><h1>Мої вакансії</h1></div><a class="btn btn-primary" href="post-vacancy.html">+ Додати вакансію</a></div>
       <div class="panel">
         <table class="tbl">
-          <thead><tr><th>Вакансія</th><th>Статус</th><th>Перегляди</th><th>Відгуки</th><th>Завершується</th><th></th></tr></thead>
+          <thead><tr><th>Вакансія</th><th>Статус</th><th>Зарплата</th><th>Активна до</th><th></th></tr></thead>
           <tbody id="my-vacancies-tbody"></tbody>
         </table>
       </div>
     </div>
 
-    <div class="cab-pane" data-cab="applications" style="display:none">
-      <div class="dash-head"><div><h1>Відгуки на вакансії</h1></div></div>
-      <div class="panel">
-        <table class="tbl">
-          <thead><tr><th>Кандидат(ка)</th><th>Вакансія</th><th>Дата</th><th>Статус</th></tr></thead>
-          <tbody id="applications-tbl"><tr><td colspan="4" class="empty-state">Відгуків поки немає.</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="cab-pane" data-cab="synergy" style="display:none">
-      <div class="dash-head"><div><h1>Рекомендації «Синергія»</h1><div class="sub">Ви бачите лише дані, які кандидат дозволив показувати.</div></div>
-        <select id="synergy-vacancy-select" style="border:1px solid var(--border);border-radius:8px;padding:8px 10px"></select>
-      </div>
-      <div class="cards-grid cols-2" id="synergy-list"></div>
-    </div>
-
     <div class="cab-pane" data-cab="company" style="display:none">
       <div class="dash-head"><div><h1>Профіль компанії</h1></div><a class="btn btn-light" href="company.html?id=adhouse" target="_blank" rel="noopener">Публічна сторінка →</a></div>
       <div class="panel">
+        <div class="field">
+          <label>Логотип</label>
+          <div style="display:flex;align-items:center;gap:14px">
+            <div id="cp-logo-preview" style="width:64px;height:64px;border-radius:14px;background:var(--paper);display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;border:1px solid var(--border)"></div>
+            <div>
+              <input type="file" id="cp-logo-file" accept="image/*" style="display:none" />
+              <button class="btn btn-light btn-sm" type="button" onclick="document.getElementById('cp-logo-file').click()">Завантажити лого</button>
+              <button class="btn btn-light btn-sm" type="button" onclick="clearLogo()">Прибрати</button>
+            </div>
+          </div>
+        </div>
         <div class="field"><label>Назва компанії</label><input type="text" id="cp-name" /></div>
         <div class="field"><label>Опис</label><textarea rows="3" id="cp-desc"></textarea></div>
         <div class="field-row-2"><div class="field"><label>Сайт</label><input type="text" id="cp-site" /></div><div class="field"><label>Місто</label><input type="text" id="cp-city" /></div></div>
@@ -90,25 +81,39 @@
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script>
-if (requireAuth("employer")) {
-  setRole("employer");
-
-  function isActiveVacancy(v) { return v.status ? v.status === "active" : !!v.active; }
-  function employerVacancyList() {
-    return VACANCIES.filter((v) => v.companyId === "adhouse").concat(getMyVacancies());
-  }
-
+if (requireAuth()) {
   const cp = getCompanyProfile();
   document.getElementById("cp-name").value = cp.name;
   document.getElementById("cp-desc").value = cp.desc;
   document.getElementById("cp-site").value = cp.site;
   document.getElementById("cp-city").value = cp.city;
+
+  function renderLogoPreview(dataUrl) {
+    const box = document.getElementById("cp-logo-preview");
+    box.innerHTML = dataUrl
+      ? `<img src="${dataUrl}" alt="" style="width:100%;height:100%;object-fit:cover" />`
+      : `<span style="font-family:var(--serif);font-weight:700;font-size:22px;color:var(--muted)">${(cp.name || "?")[0]}</span>`;
+  }
+  renderLogoPreview(cp.logoDataUrl);
+
+  let pendingLogo = cp.logoDataUrl || "";
+  document.getElementById("cp-logo-file").addEventListener("change", (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    if (f.size > 1024 * 1024) { toast("Файл завеликий — до 1 МБ"); return; }
+    const reader = new FileReader();
+    reader.onload = () => { pendingLogo = reader.result; renderLogoPreview(pendingLogo); };
+    reader.readAsDataURL(f);
+  });
+  window.clearLogo = function () { pendingLogo = ""; renderLogoPreview(""); };
+
   window.saveCompanyProfileForm = function () {
     saveCompanyProfile({
       name: document.getElementById("cp-name").value || cp.name,
       desc: document.getElementById("cp-desc").value,
       site: document.getElementById("cp-site").value,
       city: document.getElementById("cp-city").value,
+      logoDataUrl: pendingLogo,
     });
     document.getElementById("employer-sub").textContent = `${document.getElementById("cp-name").value} · ${(getProfileName() || "").split(" ")[0]}`.replace(/ · $/, "");
     toast("Профіль компанії збережено");
@@ -124,40 +129,6 @@ if (requireAuth("employer")) {
     document.querySelectorAll(".cab-pane").forEach((p) => p.style.display = p.dataset.cab === b.dataset.pane ? "" : "none");
   }));
 
-  function matchCardHtml(r, m) {
-    return `<div class="resume-card">
-      <div class="jc-top"><div class="jc-logo" style="background:#0d0c5c">${r.name[0]}</div>
-      <div><div class="jc-title">${r.name} ${r.visibility === "employers_only" ? "🔒" : ""}</div><div class="jc-company">${r.title} · ${r.city}</div></div></div>
-      <span class="match-badge match-${m.level}">${MATCH_LABELS[m.level]} · ${m.pct}%</span>
-      <div class="synergy-box" style="margin-top:0"><p>${m.reasons.slice(0,2).map(x=>"• "+x).join("<br>")}</p>${m.gaps.length ? `<p class="sy-gap">${m.gaps[0]}</p>`:""}</div>
-      <div class="jc-foot"><a href="resume.html?id=${r.id}" style="font-weight:700;color:var(--ink)">Переглянути →</a>
-        <button class="btn btn-light btn-sm" onclick="toast('Позначено як нерелевантну')">Не релевантно</button>
-      </div>
-    </div>`;
-  }
-
-  const activeVacancies = employerVacancyList().filter(isActiveVacancy);
-  document.getElementById("kpi-active").textContent = activeVacancies.length;
-  const vacancySelect = document.getElementById("synergy-vacancy-select");
-  vacancySelect.innerHTML = activeVacancies.map((v) => `<option value="${v.id}">${v.title}</option>`).join("")
-    || '<option value="">Немає активних вакансій</option>';
-
-  function renderSynergyFor(vacancyId) {
-    const v = activeVacancies.find((x) => x.id === vacancyId);
-    const matches = v ? RESUMES.map((r) => ({ r, m: computeMatch(r, v) })).filter((x) => x.m).sort((a, b) => b.m.pct - a.m.pct) : [];
-    document.getElementById("synergy-list").innerHTML = matches.length ? matches.map((x) => matchCardHtml(x.r, x.m)).join("")
-      : '<div class="empty-state">Немає рекомендацій для цієї вакансії.</div>';
-    return matches;
-  }
-  vacancySelect.addEventListener("change", () => renderSynergyFor(vacancySelect.value));
-  const firstMatches = activeVacancies.length ? renderSynergyFor(activeVacancies[0].id) : [];
-  document.getElementById("ov-synergy").innerHTML = firstMatches.slice(0, 2).map((x) => matchCardHtml(x.r, x.m)).join("");
-  const synergyTotal = activeVacancies.reduce((sum, v) => sum + RESUMES.filter((r) => computeMatch(r, v)).length, 0);
-  document.getElementById("kpi-synergy").textContent = synergyTotal;
-  const synergyBadge = document.getElementById("synergy-badge");
-  synergyBadge.textContent = synergyTotal || "";
-  synergyBadge.style.display = synergyTotal ? "" : "none";
-
   function myVacancyRowHtml(v) {
     const statusPill = v.status === "active" ? '<span class="status-pill st-good">Активна</span>'
       : v.status === "moderation" ? '<span class="status-pill st-new">На модерації</span>'
@@ -167,16 +138,20 @@ if (requireAuth("employer")) {
       ? `<button class="btn btn-light btn-sm" onclick="restoreMyVacancy('${v.id}')">Відновити</button>`
       : v.status === "draft"
       ? `<a class="btn btn-light btn-sm" href="post-vacancy.html?edit=${v.id}">Редагувати чернетку</a>
-         <button class="btn btn-light btn-sm" onclick="deleteMyVacancy('${v.id}')">Видалити</button>`
+         <button class="btn btn-light btn-sm" onclick="removeMyVacancy('${v.id}')">Видалити</button>`
       : `<a class="btn btn-light btn-sm" href="post-vacancy.html?edit=${v.id}">Редагувати</a>
          <button class="btn btn-light btn-sm" onclick="duplicateMyVacancy('${v.id}')">Дублювати</button>
-         <button class="btn btn-light btn-sm" onclick="archiveMyVacancy('${v.id}')">Архівувати</button>`;
-    const appCount = getReceivedApplications().filter((a) => a.vacancyId === v.id).length;
-    return `<tr><td class="strong">${v.title}</td><td>${statusPill}</td><td class="num">—</td><td class="num">${appCount || "—"}</td><td>${v.deadline || "—"}</td>
+         <button class="btn btn-light btn-sm" onclick="archiveMyVacancy('${v.id}')">Зняти з публікації</button>`;
+    return `<tr><td class="strong">${v.title}</td><td>${statusPill}</td><td class="num">${formatSalary(v)}</td><td>${v.expiresAt || "—"}</td>
       <td style="display:flex;gap:6px">${actions}</td></tr>`;
   }
   window.renderMyVacancies = function () {
-    document.getElementById("my-vacancies-tbody").innerHTML = getMyVacancies().map(myVacancyRowHtml).join("");
+    const list = getMyVacancies();
+    document.getElementById("my-vacancies-tbody").innerHTML = list.length ? list.map(myVacancyRowHtml).join("")
+      : '<tr><td colspan="5" class="empty-state">Ще немає вакансій — натисніть «+ Додати вакансію».</td></tr>';
+    document.getElementById("kpi-active").textContent = list.filter((v) => v.status === "active").length;
+    document.getElementById("kpi-moderation").textContent = list.filter((v) => v.status === "moderation").length;
+    document.getElementById("kpi-draft").textContent = list.filter((v) => v.status === "draft").length;
   };
   window.archiveMyVacancy = function (id) {
     const list = getMyVacancies();
@@ -184,7 +159,7 @@ if (requireAuth("employer")) {
     if (v) v.status = "archived";
     saveMyVacancies(list);
     renderMyVacancies();
-    toast("Вакансію архівовано");
+    toast("Вакансію знято з публікації");
   };
   window.restoreMyVacancy = function (id) {
     const list = getMyVacancies();
@@ -203,38 +178,13 @@ if (requireAuth("employer")) {
     renderMyVacancies();
     toast("Вакансію дубльовано");
   };
-  window.deleteMyVacancy = function (id) {
+  window.removeMyVacancy = function (id) {
     if (!confirm("Видалити цю чернетку без можливості відновлення?")) return;
     saveMyVacancies(getMyVacancies().filter((x) => x.id !== id));
     renderMyVacancies();
     toast("Чернетку видалено");
   };
   renderMyVacancies();
-
-  function renderApplications() {
-    const apps = getReceivedApplications().filter((a) => isMyVacancy(a.vacancyId));
-    const tbl = document.getElementById("applications-tbl");
-    tbl.innerHTML = apps.length ? apps.map((a) => `
-      <tr><td class="strong">${a.candidateName}</td><td>${a.vacancyTitle}</td><td>${a.date}</td>
-      <td><select class="btn-sm" data-id="${a.id}" style="border:1px solid var(--border);border-radius:8px;padding:6px">
-        <option value="new">Новий</option><option value="contacted">Зв'язалися</option><option value="interview">Співбесіда</option><option value="offer">Пропозиція</option><option value="hired">Найнято</option><option value="rejected">Відмовлено</option>
-      </select></td></tr>`).join("")
-      : '<tr><td colspan="4" class="empty-state">Відгуків поки немає.</td></tr>';
-    tbl.querySelectorAll("select[data-id]").forEach((sel) => {
-      const a = apps.find((x) => x.id === sel.dataset.id);
-      if (a) sel.value = a.status;
-      sel.addEventListener("change", () => {
-        const list = getReceivedApplications();
-        const rec = list.find((x) => x.id === sel.dataset.id);
-        if (rec) { rec.status = sel.value; lsSet(LS.receivedApplications, list); toast("Статус оновлено"); }
-      });
-    });
-    const badge = document.getElementById("app-badge");
-    badge.textContent = apps.length || "";
-    badge.style.display = apps.length ? "" : "none";
-    document.getElementById("kpi-apps").textContent = apps.length;
-  }
-  renderApplications();
 }
 </script>
 </body>

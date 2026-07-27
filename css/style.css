@@ -72,28 +72,6 @@ img, svg { max-width: 100%; display: block; }
 .hero h1 { font-family: var(--sans); font-size: clamp(28px, 4vw, 40px); font-weight: 800; line-height: 1.1; letter-spacing: -.015em; color: var(--ink); margin: 0 0 12px; }
 .lede { color: var(--muted); font-size: 16px; max-width: 62ch; margin: 0 0 26px; }
 
-/* ---------- рольова система: кандидат (зелений) / роботодавець (синій) ---------- */
-.role-switch { display: inline-flex; background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius-pill); padding: 3px; gap: 2px; }
-.role-switch button { border: none; background: transparent; font: 700 12px var(--sans); color: var(--muted); padding: 7px 13px; border-radius: var(--radius-pill); cursor: pointer; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
-.role-switch button.active.candidate { background: var(--green); color: #fff; }
-.role-switch button.active.employer { background: var(--ink); color: #fff; }
-.role-switch button:not(.active):hover { color: var(--text); }
-
-.role-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: 4px 10px; border-radius: var(--radius-pill); }
-.role-badge.candidate { background: var(--green-tint); color: var(--green); }
-.role-badge.employer { background: rgba(13, 12, 92, .08); color: var(--ink); }
-
-.btn-candidate { background: var(--green); color: #fff; box-shadow: 0 8px 20px -8px rgba(28, 154, 86, .45); }
-.btn-candidate:hover { background: #167e46; }
-
-/* ---------- перший екран: єдиний вибір ролі ---------- */
-.first-screen { min-height: calc(100vh - 260px); display: flex; align-items: center; justify-content: center; padding: 60px 24px; }
-.first-screen-buttons { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
-.choice-btn { font-family: var(--serif); font-size: 19px; font-weight: 700; padding: 30px 38px; border-radius: var(--radius-lg); border: none; cursor: pointer; text-align: center; min-width: 300px; max-width: 380px; transition: transform .15s, box-shadow .15s; }
-.choice-btn:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
-.choice-btn.candidate { background: var(--green); color: #fff; }
-.choice-btn.employer { background: var(--ink); color: #fff; }
-
 /* ---------- section ---------- */
 .section { padding: 48px 0; }
 .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 22px; flex-wrap: wrap; }
@@ -110,13 +88,12 @@ img, svg { max-width: 100%; display: block; }
 .cat-chip { border: 1.5px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; font-size: 13px; padding: 8px 15px; border-radius: var(--radius-pill); }
 .cat-chip:hover { border-color: var(--ink); color: var(--ink); }
 
-/* ---------- job / resume cards ---------- */
+/* ---------- job cards ---------- */
 .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .cards-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
-.job-card, .resume-card { background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--border); border-radius: var(--radius-md); padding: 18px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 10px; transition: transform .14s, box-shadow .14s; position: relative; }
+.job-card { background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--border); border-radius: var(--radius-md); padding: 18px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 10px; transition: transform .14s, box-shadow .14s; position: relative; }
 .job-card { border-left-color: var(--ink); }
-.resume-card { border-left-color: var(--green); }
-.job-card:hover, .resume-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.job-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
 .jc-top { display: flex; gap: 12px; align-items: center; }
 .jc-logo { width: 46px; height: 46px; border-radius: 12px; background: var(--ink); color: #fff; font-family: var(--serif); font-weight: 700; font-size: 18px; display: grid; place-items: center; flex: none; }
 .jc-title { font-weight: 700; font-size: 15.5px; line-height: 1.3; }
@@ -127,14 +104,6 @@ img, svg { max-width: 100%; display: block; }
 .tag.green { background: var(--green-tint); color: var(--green); }
 .jc-salary { font-family: var(--serif); font-weight: 700; font-size: 15px; color: var(--ink); }
 .jc-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
-.save-btn { border: none; background: none; cursor: pointer; font-size: 18px; color: var(--muted); padding: 2px; line-height: 1; }
-.save-btn.saved { color: var(--accent-dark); }
-
-/* ---------- match / synergy badge ---------- */
-.match-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800; padding: 4px 10px; border-radius: var(--radius-pill); }
-.match-high { background: var(--green-tint); color: var(--green); }
-.match-possible { background: var(--accent-tint); color: var(--accent-dark); }
-.match-partial { background: #eeeef4; color: var(--muted); }
 
 /* ---------- catalog layout ---------- */
 .catalog-layout { display: grid; grid-template-columns: 268px 1fr; gap: 24px; align-items: start; }
@@ -190,28 +159,16 @@ img, svg { max-width: 100%; display: block; }
 .check-row { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--muted); margin-top: 10px; }
 .check-row input { margin-top: 3px; accent-color: var(--ink); }
 
-/* ---------- CV upload ---------- */
-.upload-drop { display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px dashed var(--border); border-radius: var(--radius-md); padding: 34px 20px; text-align: center; cursor: pointer; transition: border-color .15s, background .15s; }
-.upload-drop:hover { border-color: var(--ink); background: #fafafe; }
-.upload-drop .ui { font-size: 30px; margin-bottom: 10px; }
-.parsed-field { display: flex; gap: 10px; align-items: flex-start; background: #fafafe; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
-.parsed-field.uncertain { border-color: var(--accent); background: var(--accent-tint); }
-.parsed-field .pf-flag { font-size: 11px; font-weight: 800; color: var(--accent-dark); text-transform: uppercase; }
-
 /* ---------- dashboard / cabinet layout ---------- */
 .dash-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 70vh; gap: 0; margin-top: 8px; }
 .dash-side { padding: 20px 12px; border-right: 1px solid var(--border); position: sticky; top: 72px; align-self: start; }
-.dash-side button, .dash-side a.dash-link { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: transparent; border: none; color: var(--text); cursor: pointer; font: 600 14px var(--sans); padding: 11px 12px; border-radius: 10px; }
-.dash-side button:hover, .dash-side a.dash-link:hover { background: var(--paper); }
-.dash-side button.active, .dash-side a.dash-link.active { background: var(--ink); color: #fff; }
-.dash-side.candidate button.active, .dash-side.candidate a.dash-link.active { background: var(--green); }
-.dash-side.candidate { border-right-color: var(--green-tint); }
+.dash-side button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: transparent; border: none; color: var(--text); cursor: pointer; font: 600 14px var(--sans); padding: 11px 12px; border-radius: 10px; }
+.dash-side button:hover { background: var(--paper); }
+.dash-side button.active { background: var(--ink); color: #fff; }
 .dash-side.employer { border-right-color: rgba(13, 12, 92, .12); }
 .dash-side .badge-count { margin-left: auto; background: var(--accent); color: #3a2800; font-size: 10.5px; font-weight: 800; border-radius: 99px; padding: 2px 7px; }
 .dash-link-cta { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-align: center; background: var(--ink); color: #fff; font: 700 14px var(--sans); padding: 12px 14px; border-radius: 10px; text-decoration: none; transition: background .15s; }
 .dash-link-cta:hover { background: var(--ink-soft); }
-.dash-link-cta.green { background: var(--green); }
-.dash-link-cta.green:hover { background: #167e46; }
 .dash-main { padding: 24px 28px 60px; min-width: 0; }
 .dash-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
 .dash-head h1 { font-family: var(--serif); font-size: 24px; margin: 0; }
@@ -229,12 +186,6 @@ img, svg { max-width: 100%; display: block; }
 .status-pill.st-progress { background: var(--accent-tint); color: var(--accent-dark); }
 .status-pill.st-good { background: var(--green-tint); color: var(--green); }
 .status-pill.st-bad { background: var(--red-tint); color: var(--red); }
-
-/* ---------- synergy explanation ---------- */
-.synergy-box { background: rgba(13,12,92,.05); border: 1px solid rgba(13,12,92,.15); border-radius: var(--radius-md); padding: 14px 16px; margin-top: 10px; }
-.synergy-box .sy-title { font-weight: 700; font-size: 13.5px; color: var(--ink); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
-.synergy-box p { font-size: 13px; color: var(--text); margin: 0 0 6px; line-height: 1.55; }
-.synergy-box .sy-gap { color: var(--muted); font-style: italic; }
 
 /* ---------- pricing ---------- */
 .pricing-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
@@ -306,5 +257,4 @@ img, svg { max-width: 100%; display: block; }
   .main-nav { display: none; }
   .main-nav.minimal { display: flex; }
   .footer-grid { grid-template-columns: 1fr; }
-  .choice-btn { min-width: 0; width: 100%; }
 }
