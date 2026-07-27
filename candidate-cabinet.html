@@ -30,7 +30,7 @@
     <div class="cab-pane" data-cab="overview">
       <div class="dash-head"><div><h1>Кабінет працівника</h1><div class="sub" id="candidate-sub">Демо-акаунт</div></div><a class="btn btn-candidate" href="create-resume.html">+ Нове резюме</a></div>
       <div class="kpi-grid">
-        <div class="stat-tile"><div class="val">1</div><div class="lbl">активне резюме</div></div>
+        <div class="stat-tile"><div class="val" id="kpi-resumes">—</div><div class="lbl">активні резюме</div></div>
         <div class="stat-tile"><div class="val" id="kpi-saved">—</div><div class="lbl">збережені вакансії</div></div>
         <div class="stat-tile"><div class="val" id="kpi-synergy">—</div><div class="lbl">рекомендації «Синергія»</div></div>
         <div class="stat-tile"><div class="val" id="kpi-apps">—</div><div class="lbl">надіслані відгуки</div></div>
@@ -42,11 +42,8 @@
       <div class="dash-head"><div><h1>Мої резюме</h1></div><a class="btn btn-candidate" href="create-resume.html">+ Нове резюме</a></div>
       <div class="panel">
         <table class="tbl">
-          <thead><tr><th>Резюме</th><th>Статус</th><th>Опубліковано</th><th>Завершується</th><th></th></tr></thead>
-          <tbody>
-            <tr><td class="strong">SMM-менеджерка</td><td><span class="status-pill st-good">Активне</span></td><td>2026-07-20</td><td>2026-08-19</td>
-              <td style="display:flex;gap:6px"><button class="btn btn-light btn-sm">Редагувати</button><button class="btn btn-light btn-sm">Приховати</button></td></tr>
-          </tbody>
+          <thead><tr><th>Резюме</th><th>Статус</th><th>Оновлено</th><th></th></tr></thead>
+          <tbody id="my-resumes-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -62,7 +59,7 @@
     </div>
 
     <div class="cab-pane" data-cab="synergy" style="display:none">
-      <div class="dash-head"><div><h1>Рекомендації «Синергія»</h1><div class="sub">На основі резюме «SMM-менеджерка». Кожна рекомендація пояснена — це не автоматичне рішення про найм.</div></div></div>
+      <div class="dash-head"><div><h1>Рекомендації «Синергія»</h1><div class="sub" id="synergy-sub">Кожна рекомендація пояснена — це не автоматичне рішення про найм.</div></div></div>
       <div class="cards-grid cols-2" id="synergy-list"></div>
     </div>
 
@@ -102,8 +99,9 @@ if (requireAuth("candidate")) {
     document.querySelectorAll(".cab-pane").forEach((p) => p.style.display = p.dataset.cab === b.dataset.pane ? "" : "none");
   }));
 
-  const myResume = RESUMES[0];
-  const matches = VACANCIES.map((v) => ({ v, m: computeMatch(myResume, v) })).filter((x) => x.m).sort((a, b) => b.m.pct - a.m.pct);
+  const myResume = myCandidateResume();
+  document.getElementById("synergy-sub").textContent = `На основі резюме «${myResume.title}». Кожна рекомендація пояснена — це не автоматичне рішення про найм.`;
+  const matches = allVacancies().map((v) => ({ v, m: computeMatch(myResume, v) })).filter((x) => x.m).sort((a, b) => b.m.pct - a.m.pct);
   function matchCardHtml(v, m) {
     return `<div class="job-card">
       <div class="jc-top"><div class="jc-logo" style="background:${companyColor(v)}">${companyLetter(v)}</div>
@@ -136,6 +134,39 @@ if (requireAuth("candidate")) {
     : '<tr><td colspan="4" class="empty-state">Ще немає збережених вакансій — натисніть ☆ на будь-якій картці.</td></tr>';
   document.getElementById("kpi-saved").textContent = savedRows.length;
   bindSaveButtons();
+
+  function myResumeRowHtml(r) {
+    const hidden = r.visibility === "hidden";
+    const statusPill = hidden ? '<span class="status-pill st-bad">Приховане</span>' : '<span class="status-pill st-good">Активне</span>';
+    const toggleBtn = hidden
+      ? `<button class="btn btn-light btn-sm" onclick="showMyResume('${r.id}')">Показати</button>`
+      : `<button class="btn btn-light btn-sm" onclick="hideMyResume('${r.id}')">Приховати</button>`;
+    return `<tr><td class="strong">${r.name} — ${r.title}</td><td>${statusPill}</td><td>${r.updatedAt}</td>
+      <td style="display:flex;gap:6px"><a class="btn btn-light btn-sm" href="create-resume.html?edit=${r.id}">Редагувати</a>${toggleBtn}</td></tr>`;
+  }
+  window.renderMyResumes = function () {
+    const list = getMyResumes();
+    document.getElementById("my-resumes-tbody").innerHTML = list.length ? list.map(myResumeRowHtml).join("")
+      : '<tr><td colspan="4" class="empty-state">Ще немає резюме — натисніть «+ Нове резюме».</td></tr>';
+    document.getElementById("kpi-resumes").textContent = list.filter((r) => r.visibility !== "hidden").length;
+  };
+  window.hideMyResume = function (id) {
+    const list = getMyResumes();
+    const r = list.find((x) => x.id === id);
+    if (r) r.visibility = "hidden";
+    saveMyResumes(list);
+    renderMyResumes();
+    toast("Резюме приховано");
+  };
+  window.showMyResume = function (id) {
+    const list = getMyResumes();
+    const r = list.find((x) => x.id === id);
+    if (r) r.visibility = "open";
+    saveMyResumes(list);
+    renderMyResumes();
+    toast("Резюме знову видиме");
+  };
+  renderMyResumes();
 
   const myApps = lsGet(LS.applications, []);
   document.getElementById("applications-tbl").innerHTML = myApps.length ? myApps.map((a) => `

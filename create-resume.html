@@ -17,8 +17,8 @@
 
 <main class="wrap" style="padding:26px 24px 70px">
   <div class="eyebrow">Резюме</div>
-  <h1 style="font-family:var(--serif);margin:0 0 4px">Створення резюме</h1>
-  <p style="color:var(--muted)">Завантажте CV — система запропонує структуровані поля, які ви перевірите й підтвердите, — або заповніть усе вручну.</p>
+  <h1 id="page-title" style="font-family:var(--serif);margin:0 0 4px">Створення резюме</h1>
+  <p id="page-lede" style="color:var(--muted)">Завантажте CV — система запропонує структуровані поля, які ви перевірите й підтвердите, — або заповніть усе вручну.</p>
 
   <div class="wizard">
     <div class="wizard-steps">
@@ -72,13 +72,22 @@
             <select id="f-level"><option value="intern">Стажер</option><option value="junior" selected>Junior</option><option value="middle">Middle</option><option value="senior">Senior</option></select>
           </div>
         </div>
-        <div class="field"><label>Професійні категорії</label><input type="text" id="f-cats" placeholder="SMM, Контент-менеджмент" /></div>
+        <div class="field"><label>Професійні категорії <span class="hint">(можна кілька — утримуйте Ctrl/Cmd)</span></label><select id="f-cats" multiple size="6"></select></div>
+        <div class="field"><label>Ключові навички <span class="hint">(через кому — за ними працює «Синергія»)</span></label><input type="text" id="f-skills" placeholder="SMM, Canva, копірайтинг" /></div>
         <div class="field"><label>Короткий професійний профіль</label><textarea rows="3" id="f-profile" placeholder="Кілька речень про ваш досвід"></textarea></div>
         <div class="field-row-3">
           <div class="field"><label>Формат роботи</label><select id="f-format"><option value="remote">Дистанційно</option><option value="office">Офіс</option><option value="hybrid">Гібридно</option></select></div>
           <div class="field"><label>Тип зайнятості</label><select id="f-employment"><option value="full">Повна</option><option value="part">Часткова</option><option value="freelance">Фриланс</option></select></div>
           <div class="field"><label>Очікувана зарплата (грн, необов'язково)</label><input type="number" id="f-salary" placeholder="20000" /></div>
         </div>
+        <div class="field-row-3">
+          <div class="field"><label>Досвід (років)</label><input type="number" step="0.5" id="f-exp-years" placeholder="1.5" /></div>
+          <div class="field"><label>Освіта</label><input type="text" id="f-education" placeholder="Не обов'язково" /></div>
+          <div class="field"><label>Коли готові почати</label><input type="text" id="f-availability" placeholder="Готова за 2 тижні" /></div>
+        </div>
+        <div class="field"><label>Знання мов <span class="hint">(через кому)</span></label><input type="text" id="f-lang" placeholder="Українська — рідна, англійська — середній" /></div>
+        <div class="check-row"><input type="checkbox" id="f-remote-ok" checked><label for="f-remote-ok">Готова(ий) працювати дистанційно</label></div>
+        <div class="check-row"><input type="checkbox" id="f-relocation"><label for="f-relocation">Готова(ий) до переїзду</label></div>
         <div class="wizard-actions">
           <button class="btn btn-light" onclick="goStep(2)">Назад</button>
           <button class="btn btn-primary" onclick="goStep(4)">Далі: видимість</button>
@@ -121,6 +130,37 @@
 <script src="js/app.js"></script>
 <script>
   if (requireAuth("candidate")) setRole("candidate");
+
+  document.getElementById("f-cats").innerHTML = CATEGORIES.map((c) => `<option value="${c.id}">${c.label}</option>`).join("");
+
+  const editId = qs("edit");
+  const editing = editId ? getMyResumes().find((r) => r.id === editId) : null;
+
+  if (editing) {
+    document.getElementById("page-title").textContent = "Редагувати резюме";
+    document.getElementById("page-lede").textContent = "Внесіть зміни та збережіть — резюме одразу оновиться в каталозі.";
+    document.getElementById("f-name").value = editing.name || "";
+    document.getElementById("f-title").value = editing.title || "";
+    document.getElementById("f-city").value = editing.city || "";
+    document.getElementById("f-level").value = editing.level || "junior";
+    Array.from(document.getElementById("f-cats").options).forEach((o) => { o.selected = (editing.categories || []).includes(o.value); });
+    document.getElementById("f-skills").value = (editing.skills || []).join(", ");
+    document.getElementById("f-profile").value = editing.profile || "";
+    document.getElementById("f-format").value = editing.desiredFormat || "remote";
+    document.getElementById("f-employment").value = editing.desiredEmploymentType || "full";
+    document.getElementById("f-salary").value = editing.expectedSalary || "";
+    document.getElementById("f-exp-years").value = editing.experienceYears || "";
+    document.getElementById("f-education").value = editing.education || "";
+    document.getElementById("f-availability").value = editing.availability || "";
+    document.getElementById("f-lang").value = (editing.languages || []).join(", ");
+    document.getElementById("f-remote-ok").checked = !!editing.remoteOk;
+    document.getElementById("f-relocation").checked = !!editing.relocation;
+    document.getElementById("f-visibility").value = editing.visibility || "open";
+    document.getElementById("f-contacts").value = editing.contactsVisible || "employers";
+    // Резюме вже існує — CV можна не перезавантажувати, одразу переходимо до полів.
+    goStep(3);
+  }
+
   function goStep(n) {
     document.querySelectorAll(".wizard-step").forEach((s) => {
       const sn = +s.dataset.step;
@@ -155,9 +195,40 @@
       </div>`).join("");
   });
 
+  function splitCommas(v) { return v.split(",").map((s) => s.trim()).filter(Boolean); }
+
   function publishResume() {
     if (!document.getElementById("f-terms").checked) { toast("Потрібна згода з правилами публікації"); return; }
-    toast("Резюме опубліковано (демо) — строк дії 30 днів");
+    const categories = Array.from(document.getElementById("f-cats").selectedOptions).map((o) => o.value);
+    if (!categories.length) { toast("Оберіть хоча б одну професійну категорію"); goStep(3); return; }
+    const name = document.getElementById("f-name").value || "Без імені";
+    const title = document.getElementById("f-title").value || "Без заголовка";
+    const resume = {
+      id: editing ? editing.id : "myr-" + Date.now(),
+      name, title,
+      city: document.getElementById("f-city").value,
+      country: "Україна",
+      categories, level: document.getElementById("f-level").value,
+      remoteOk: document.getElementById("f-remote-ok").checked,
+      relocation: document.getElementById("f-relocation").checked,
+      desiredFormat: document.getElementById("f-format").value,
+      desiredEmploymentType: document.getElementById("f-employment").value,
+      experienceYears: document.getElementById("f-exp-years").value ? +document.getElementById("f-exp-years").value : 0,
+      education: document.getElementById("f-education").value || "Не вказано",
+      skills: splitCommas(document.getElementById("f-skills").value),
+      tools: editing ? editing.tools : [],
+      languages: splitCommas(document.getElementById("f-lang").value),
+      profile: document.getElementById("f-profile").value,
+      desiredPositions: [title],
+      expectedSalary: document.getElementById("f-salary").value ? +document.getElementById("f-salary").value : 0,
+      currency: "UAH",
+      availability: document.getElementById("f-availability").value || "Не вказано",
+      visibility: document.getElementById("f-visibility").value,
+      contactsVisible: document.getElementById("f-contacts").value,
+      updatedAt: "2026-07-27",
+    };
+    upsertMyResume(resume);
+    toast(editing ? "Резюме оновлено" : "Резюме опубліковано — строк дії 30 днів");
     setTimeout(() => location.href = "candidate-cabinet.html", 900);
   }
 </script>

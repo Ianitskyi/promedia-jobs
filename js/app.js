@@ -14,6 +14,7 @@ const LS = {
   profileName: "pmj_profile_name",
   profileEmail: "pmj_profile_email",
   myVacancies: "pmj_my_vacancies",
+  myResumes: "pmj_my_resumes",
   employerVerified: "pmj_employer_verified",
   receivedApplications: "pmj_received_applications",
   companyProfile: "pmj_company_profile",
@@ -273,9 +274,29 @@ function renderFilteredResumes(list) {
   bindSaveButtons();
 }
 
+function getMyResumes() { return lsGet(LS.myResumes, []); }
+function saveMyResumes(list) { lsSet(LS.myResumes, list); }
+function addMyResume(r) {
+  const list = getMyResumes();
+  list.unshift(r);
+  saveMyResumes(list);
+}
+function upsertMyResume(r) {
+  const list = getMyResumes();
+  const idx = list.findIndex((x) => x.id === r.id);
+  if (idx >= 0) list[idx] = r; else list.unshift(r);
+  saveMyResumes(list);
+}
+function myCandidateResume() {
+  const mine = getMyResumes();
+  return mine[0] || RESUMES[0];
+}
+function allResumes() { return RESUMES.concat(getMyResumes()); }
+
 function initResumesPage() {
-  initResumesFilters(RESUMES);
-  renderFilteredResumes(RESUMES);
+  const list = allResumes();
+  initResumesFilters(list);
+  renderFilteredResumes(list);
 }
 
 /* ---------------- Деталі вакансії ---------------- */
@@ -393,8 +414,7 @@ function isMyVacancy(vacancyId) {
 function renderSynergyForVacancy(v) {
   const box = document.getElementById("synergy-box");
   if (!box) return;
-  const myResume = RESUMES[0]; // демо: показуємо як "моє" перше резюме
-  const m = computeMatch(myResume, v);
+  const m = computeMatch(myCandidateResume(), v);
   if (!m) { box.innerHTML = ""; return; }
   box.innerHTML = `
     <div class="synergy-box">
@@ -407,7 +427,7 @@ function renderSynergyForVacancy(v) {
 /* ---------------- Деталі резюме ---------------- */
 
 function initResumeDetail() {
-  const r = RESUMES.find((x) => x.id === qs("id"));
+  const r = allResumes().find((x) => x.id === qs("id") && x.visibility !== "hidden");
   const el = document.getElementById("resume-detail");
   if (!r) { el.innerHTML = '<div class="empty-state">Резюме не знайдено або приховане кандидатом. <a href="resumes.html">До каталогу резюме →</a></div>'; return; }
   document.title = `${r.name} — ${r.title} · ProMedia Jobs`;
