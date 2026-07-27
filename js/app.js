@@ -360,44 +360,7 @@ function openApplyModal(v) {
 
 /* ---------------- Вакансії та відгуки роботодавця ---------------- */
 
-const MY_VACANCIES_SEED = [
-  {
-    id: "myv-seed-1", title: "Контент-менеджер(ка)", companyId: null, companyName: "AdHouse Digital",
-    categories: ["content", "smm"], level: "middle",
-    city: "Дніпро", country: "Україна", format: "hybrid", remoteOk: false, fromAbroad: false,
-    employmentType: "full",
-    responsibilities: ["Вести контент-план для клієнтських акаунтів", "Готувати тексти й сценарії для соцмереж"],
-    mustHave: ["Досвід у контент-менеджменті від 1 року", "Грамотна українська мова"],
-    niceToHave: ["Досвід у performance-маркетингу"],
-    experience: "Від 1 року", education: "Не обов'язкова",
-    skills: ["Контент-план", "Копірайтинг", "SMM"], tools: ["Canva", "Meta Business Suite"],
-    languages: ["Українська — рідна"],
-    salaryMin: 22000, salaryMax: 30000, currency: "UAH", salaryHidden: false,
-    benefits: ["Гнучкий графік"], startDate: "", deadline: "2026-08-25",
-    contactName: "Ірина, HR", contactEmail: "jobs@adhouse.agency",
-    publishedAt: "2026-07-10", expiresAt: "2026-08-09",
-    direct: true, promoted: false, moderationStatus: "approved", active: true, status: "active",
-  },
-  {
-    id: "myv-seed-2", title: "Таргетолог(-ка)", companyId: null, companyName: "AdHouse Digital",
-    categories: ["advertising", "marketing"], level: "middle",
-    city: "Дніпро", country: "Україна", format: "remote", remoteOk: true, fromAbroad: true,
-    employmentType: "full",
-    responsibilities: ["Налаштовувати й вести рекламні кампанії Meta Ads", "Аналізувати ефективність та оптимізувати бюджети"],
-    mustHave: ["Досвід із Meta Ads від 1 року"],
-    niceToHave: ["Досвід із Google Ads"],
-    experience: "Від 1 року", education: "Не обов'язкова",
-    skills: ["Meta Ads", "Аналітика"], tools: ["Meta Ads Manager"],
-    languages: ["Українська — рідна"],
-    salaryMin: 0, salaryMax: 0, currency: "UAH", salaryHidden: true,
-    benefits: [], startDate: "", deadline: "2026-08-30",
-    contactName: "Ірина, HR", contactEmail: "jobs@adhouse.agency",
-    publishedAt: "2026-07-26", expiresAt: "2026-08-25",
-    direct: true, promoted: false, moderationStatus: "pending", active: true, status: "moderation",
-  },
-];
-
-function getMyVacancies() { return lsGet(LS.myVacancies, MY_VACANCIES_SEED); }
+function getMyVacancies() { return lsGet(LS.myVacancies, []); }
 function saveMyVacancies(list) { lsSet(LS.myVacancies, list); }
 function addMyVacancy(v) {
   const list = getMyVacancies();
