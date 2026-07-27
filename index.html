@@ -56,6 +56,16 @@
         <label class="filter-check"><input type="checkbox" id="f-insurance"> Лише з медичним страхуванням</label>
       </div>
       <button class="btn btn-light btn-block" style="margin-top:16px" id="f-reset">Скинути фільтри</button>
+
+      <div class="subscribe-box">
+        <div class="field">
+          <label>Підписатися на цей фільтр</label>
+          <p class="hint" style="margin:0 0 8px">Враховує ключове слово й усі обрані фільтри. Підписка зберігається у цьому браузері — у прототипі листи не надсилаються, але нижче видно, скільки вакансій уже відповідає.</p>
+          <input type="email" id="sub-email" placeholder="you@example.com" />
+        </div>
+        <button class="btn btn-primary btn-block" id="sub-btn">Підписатися</button>
+        <div id="sub-list" style="margin-top:10px"></div>
+      </div>
     </aside>
     <div>
       <p class="result-count" id="result-count"></p>

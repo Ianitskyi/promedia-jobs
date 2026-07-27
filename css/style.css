@@ -159,6 +159,11 @@ img, svg { max-width: 100%; display: block; }
 .check-row { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--muted); margin-top: 10px; }
 .check-row input { margin-top: 3px; accent-color: var(--ink); }
 
+.subscribe-box { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+.sub-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border); font-size: 13px; }
+.sub-row:first-child { border-top: none; }
+.sub-row b { font-size: 13px; }
+
 /* ---------- dashboard / cabinet layout ---------- */
 .dash-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 70vh; gap: 0; margin-top: 8px; }
 .dash-side { padding: 20px 12px; border-right: 1px solid var(--border); position: sticky; top: 72px; align-self: start; }

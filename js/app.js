@@ -10,6 +10,7 @@ const LS = {
   myVacancies: "pmj_my_vacancies",
   employerVerified: "pmj_employer_verified",
   companyProfile: "pmj_company_profile",
+  subscriptions: "pmj_subscriptions",
 };
 
 function lsGet(key, fallback) {
@@ -144,25 +145,43 @@ function checkedValues(containerId) {
   return [...document.querySelectorAll(`#${containerId} input:checked`)].map((i) => i.value);
 }
 
-function renderFilteredVacancies(list) {
-  const kw = (document.getElementById("f-keyword").value || "").toLowerCase();
-  const region = document.getElementById("f-region").value;
-  const arrs = checkedValues("f-arrangement");
-  const lvls = checkedValues("f-level");
-  const remoteOnly = document.getElementById("f-remote").checked;
-  const insuranceOnly = document.getElementById("f-insurance").checked;
-  const sortBy = document.getElementById("f-sort").value;
+function currentFilterSnapshot() {
+  return {
+    keyword: (document.getElementById("f-keyword").value || "").trim(),
+    region: document.getElementById("f-region").value,
+    arrangement: checkedValues("f-arrangement"),
+    level: checkedValues("f-level"),
+    remoteOnly: document.getElementById("f-remote").checked,
+    insuranceOnly: document.getElementById("f-insurance").checked,
+  };
+}
 
-  const filtered = list.filter((v) => {
-    if (!v.active) return false;
-    if (kw && !(v.title.toLowerCase().includes(kw) || companyName(v).toLowerCase().includes(kw) || v.skills.join(" ").toLowerCase().includes(kw))) return false;
-    if (region && v.region !== region) return false;
-    if (arrs.length && !arrs.includes(v.employmentArrangement)) return false;
-    if (lvls.length && !lvls.includes(v.level)) return false;
-    if (remoteOnly && !v.remoteOk) return false;
-    if (insuranceOnly && !(v.perks || []).includes("insurance")) return false;
-    return true;
-  });
+function filterMatches(v, f) {
+  const kw = f.keyword.toLowerCase();
+  if (kw && !(v.title.toLowerCase().includes(kw) || companyName(v).toLowerCase().includes(kw) || v.skills.join(" ").toLowerCase().includes(kw))) return false;
+  if (f.region && v.region !== f.region) return false;
+  if (f.arrangement.length && !f.arrangement.includes(v.employmentArrangement)) return false;
+  if (f.level.length && !f.level.includes(v.level)) return false;
+  if (f.remoteOnly && !v.remoteOk) return false;
+  if (f.insuranceOnly && !(v.perks || []).includes("insurance")) return false;
+  return true;
+}
+
+function filterSummary(f) {
+  const parts = [];
+  if (f.keyword) parts.push(`«${f.keyword}»`);
+  if (f.region) parts.push(f.region);
+  if (f.arrangement.length) parts.push(f.arrangement.map((a) => labelOf(EMPLOYMENT_ARRANGEMENTS, a)).join(" / "));
+  if (f.level.length) parts.push(f.level.map((l) => labelOf(LEVELS, l).split(" (")[0]).join(" / "));
+  if (f.remoteOnly) parts.push("лише дистанційно");
+  if (f.insuranceOnly) parts.push("лише з медстрахуванням");
+  return parts.length ? parts.join(" · ") : "усі вакансії";
+}
+
+function renderFilteredVacancies(list) {
+  const f = currentFilterSnapshot();
+  const sortBy = document.getElementById("f-sort").value;
+  const filtered = list.filter((v) => v.active && filterMatches(v, f));
 
   filtered.sort((a, b) => {
     if (sortBy === "salary-desc") return (b.salaryMax || b.salaryMin || 0) - (a.salaryMax || a.salaryMin || 0);
@@ -178,6 +197,56 @@ function renderFilteredVacancies(list) {
     : '<div class="empty-state">Нічого не знайдено. Спробуйте змінити фільтри.</div>';
 }
 
+/* ---------------- Підписки шукачів на фільтр ---------------- */
+
+function getSubscriptions() { return lsGet(LS.subscriptions, []); }
+function saveSubscriptions(list) { lsSet(LS.subscriptions, list); }
+
+function addSubscription(email) {
+  const subs = getSubscriptions();
+  subs.unshift({ id: "sub-" + Date.now(), email, filter: currentFilterSnapshot(), createdAt: "2026-07-27" });
+  saveSubscriptions(subs);
+}
+
+function removeSubscription(id) {
+  saveSubscriptions(getSubscriptions().filter((s) => s.id !== id));
+}
+
+function renderSubscriptions(list) {
+  const box = document.getElementById("sub-list");
+  if (!box) return;
+  const subs = getSubscriptions();
+  box.innerHTML = subs.length
+    ? subs.map((s) => {
+        const count = list.filter((v) => v.active && filterMatches(v, s.filter)).length;
+        return `<div class="sub-row">
+          <div><b>${filterSummary(s.filter)}</b><div class="hint">${s.email} · зараз відповідає: ${count}</div></div>
+          <button class="btn btn-light btn-sm" onclick="removeSubscriptionAndRerender('${s.id}')">Відписатися</button>
+        </div>`;
+      }).join("")
+    : '<p class="hint">Підписок ще немає.</p>';
+}
+
+window.removeSubscriptionAndRerender = function (id) {
+  removeSubscription(id);
+  renderSubscriptions(allVacancies());
+  toast("Підписку скасовано");
+};
+
+function initSubscribeBox(list) {
+  const btn = document.getElementById("sub-btn");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    const email = document.getElementById("sub-email").value.trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) { toast("Вкажіть коректний email"); return; }
+    addSubscription(email);
+    document.getElementById("sub-email").value = "";
+    renderSubscriptions(list);
+    toast("Підписку оформлено (демо — листи не надсилаються)");
+  });
+  renderSubscriptions(list);
+}
+
 function allVacancies() {
   return VACANCIES.concat(getMyVacancies().filter((v) => v.status === "active"));
 }
@@ -186,6 +255,7 @@ function initVacanciesPage() {
   const list = allVacancies();
   initVacanciesFilters(list);
   renderFilteredVacancies(list);
+  initSubscribeBox(list);
 }
 
 /* ---------------- Деталі вакансії ---------------- */
