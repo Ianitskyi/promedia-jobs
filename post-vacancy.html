@@ -79,12 +79,9 @@
 
       <div class="wizard-pane" data-pane="4" style="display:none">
         <h2>Подача заявок і контакти</h2>
-        <div class="field"><label>Спосіб подачі *</label>
-          <select id="v-apply-method"><option value="internal">Через ProMedia Jobs (резюме в системі)</option><option value="email">Електронною поштою</option><option value="external">Зовнішнє посилання</option></select>
-        </div>
+        <p style="color:var(--muted);font-size:13.5px;margin-top:-6px">Кандидати подаються резюме зі свого кабінету ProMedia Jobs. Про кожен відгук ви отримаєте сповіщення на вказану пошту.</p>
         <div class="field"><label>Контактна особа</label><input type="text" id="v-contact-name" placeholder="Ім'я HR-менеджера" /></div>
         <div class="field"><label>Контактна електронна адреса *</label><input type="email" id="v-contact-email" required placeholder="hr@company.com" /></div>
-        <div class="field"><label>Зовнішнє посилання для подачі (якщо є)</label><input type="url" id="v-external-url" placeholder="https://…" /></div>
         <div class="wizard-actions"><button class="btn btn-light" onclick="goStep(3)">Назад</button><button class="btn btn-primary" onclick="renderPreview();goStep(5)">Переглянути</button></div>
       </div>
 
@@ -139,6 +136,8 @@
       salMax: document.getElementById("v-sal-max").value,
       hideSalary: document.getElementById("v-hide-salary").checked,
       deadline: document.getElementById("v-deadline").value,
+      contactName: document.getElementById("v-contact-name").value,
+      contactEmail: document.getElementById("v-contact-email").value,
     };
   }
 
@@ -149,7 +148,8 @@
       <div><div class="jc-title" style="font-size:18px">${d.title}</div><div class="jc-company">${d.company} · ${d.city}</div></div></div>
       <div class="jc-meta" style="margin:12px 0"><span class="tag ink">${labelOf(FORMATS, d.format)}</span><span class="tag">${labelOf(EMPLOYMENT_TYPES, d.employment)}</span><span class="tag">${labelOf(LEVELS, d.level)}</span></div>
       <div class="jc-salary">${d.hideSalary ? "Зарплата прихована" : (d.salMin && d.salMax ? d.salMin+"–"+d.salMax+" грн" : "Не вказано")}</div>
-      <p style="color:var(--muted);font-size:13px;margin-top:10px">Дедлайн подачі: ${d.deadline || "не вказано"}</p>`;
+      <p style="color:var(--muted);font-size:13px;margin-top:10px">Дедлайн подачі: ${d.deadline || "не вказано"}</p>
+      <p style="color:var(--muted);font-size:13px">Сповіщення про відгуки: ${d.contactEmail || "не вказано"}</p>`;
   }
 
   function saveDraft() { toast("Чернетку збережено (демо)"); }
@@ -168,6 +168,8 @@
       salMax: d.salMax,
       hideSalary: d.hideSalary,
       deadline: d.deadline,
+      contactName: d.contactName,
+      contactEmail: d.contactEmail,
       status: firstVacancy ? "moderation" : "active",
     });
     setEmployerVerified(true);

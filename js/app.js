@@ -83,11 +83,24 @@ function bindSaveButtons(root) {
   });
 }
 
+/* ---------------- Джерела імпорту (дедуплікація) ---------------- */
+
+// Повертає всі підтверджені джерела вакансії. Якщо той самий запис
+// прийшов з кількох каналів (наприклад, і з Work.ua, і з Єдиного порталу
+// вакансій ДСЗ, який теж агрегує Work.ua), зберігаємо один запис із
+// кількома джерелами замість дублікатів-карток.
+function vacancySources(v) {
+  if (Array.isArray(v.sources) && v.sources.length) return v.sources;
+  if (v.source && v.source !== "direct") return [{ name: v.source, url: v.sourceUrl }];
+  return [];
+}
+
 /* ---------------- Картки ---------------- */
 
 function jobCardHtml(v) {
   const dl = daysLeft(v.expiresAt);
   const catLabels = v.categories.slice(0, 2).map(catLabel).join(" · ");
+  const sources = vacancySources(v);
   return `
   <a class="job-card" href="vacancy.html?id=${v.id}">
     ${v.promoted ? '<span class="promo-badge">Просунута вакансія</span>' : ""}
@@ -102,7 +115,7 @@ function jobCardHtml(v) {
       <span class="tag ink">${labelOf(FORMATS, v.format)}</span>
       <span class="tag">${labelOf(EMPLOYMENT_TYPES, v.employmentType)}</span>
       <span class="tag">${labelOf(LEVELS, v.level)}</span>
-      ${!v.direct ? `<span class="tag green">${v.source}</span>` : ""}
+      ${sources.map((s) => `<span class="tag green">${s.name}</span>`).join("")}
     </div>
     <div class="jc-salary">${formatSalary(v)}</div>
     <div class="jc-foot">
@@ -135,7 +148,6 @@ function resumeCardHtml(r) {
     <div class="jc-salary">${r.expectedSalary ? r.expectedSalary.toLocaleString("uk-UA") + " " + r.currency : "Не вказано"}</div>
     <div class="jc-foot">
       <span>${catLabels}</span>
-      <button class="save-btn" data-type="resume" data-id="${r.id}" title="Зберегти" onclick="return false">☆</button>
     </div>
   </a>`;
 }
@@ -270,11 +282,12 @@ function initVacancyDetail() {
   if (!v) { el.innerHTML = '<div class="empty-state">Вакансію не знайдено або її публікацію завершено. <a href="vacancies.html">До каталогу вакансій →</a></div>'; return; }
   document.title = `${v.title} — ${companyName(v)} · ProMedia Jobs`;
   const dl = daysLeft(v.expiresAt);
+  const sources = vacancySources(v);
   el.innerHTML = `
   <div class="detail-hero">
     <div class="jc-logo" style="background:${companyColor(v)}">${companyLetter(v)}</div>
     <div>
-      <div class="eyebrow" style="margin-bottom:6px">${v.direct ? "Пряма вакансія" : "Імпортовано з " + v.source} ${v.promoted ? " · Просунута вакансія" : ""}</div>
+      <div class="eyebrow" style="margin-bottom:6px">${v.direct ? "Пряма вакансія" : "Імпортовано з " + sources.map((s) => s.name).join(" та ")} ${v.promoted ? " · Просунута вакансія" : ""}</div>
       <h1>${v.title}</h1>
       <a class="company-link" href="${v.companyId ? "company.html?id=" + v.companyId : "#"}">${companyName(v)}</a> · ${v.city}, ${v.country}
     </div>
@@ -299,7 +312,7 @@ function initVacancyDetail() {
     <h3 style="font-size:14px;margin:14px 0 6px">Мови</h3>
     <p>${v.languages.join(", ")}</p>
     ${v.benefits.length ? `<h3 style="font-size:14px;margin:14px 0 6px">Переваги</h3><ul>${v.benefits.map((r) => `<li>${r}</li>`).join("")}</ul>` : ""}
-    ${!v.direct ? `<div class="source-note">Ця вакансія імпортована з джерела «${v.source}» у скороченому й нейтралізованому вигляді. Повний текст і подача — за посиланням на оригінал нижче.</div>` : ""}
+    ${!v.direct ? `<div class="source-note">Ця вакансія імпортована у скороченому й нейтралізованому вигляді.${sources.length > 1 ? " Знайдена одразу в кількох джерелах — показуємо один запис із посиланнями на всі:" : " Повне оголошення — за посиланням на джерело:"}<br>${sources.map((s) => s.url ? `<a href="${s.url}" target="_blank" rel="noopener">${s.name} →</a>` : s.name).join(" · ")}</div>` : ""}
   </div>
   `;
 
@@ -336,7 +349,7 @@ function openApplyModal(v) {
     date: "2026-07-26",
     status: "new",
   });
-  toast("Відгук надіслано");
+  toast(v.contactEmail ? `Відгук надіслано. Роботодавець отримає сповіщення на ${v.contactEmail}` : "Відгук надіслано");
 }
 
 /* ---------------- Вакансії та відгуки роботодавця ---------------- */
@@ -425,9 +438,7 @@ function initResumeDetail() {
       ${r.contactsVisible === "everyone"
         ? `<button class="btn btn-primary btn-block" onclick="toast('Контакти показано (демо): mail@example.com')">Показати контакти</button>`
         : `<button class="btn btn-primary btn-block" onclick="toast('Увійдіть як зареєстрований роботодавець, щоб побачити контакти')">Написати кандидату</button>`}
-      <button class="save-btn" data-type="resume" data-id="${r.id}" style="margin-top:12px;font-size:22px" onclick="return false">☆ Зберегти резюме</button>
     </div>`;
-  bindSaveButtons(apply);
 }
 
 /* ---------------- Компанія ---------------- */
