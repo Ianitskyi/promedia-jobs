@@ -19,8 +19,9 @@
     <button class="active" data-pane="overview">Огляд</button>
     <button data-pane="vacancies">Мої вакансії</button>
     <button data-pane="applications">Відгуки <span class="badge-count" id="app-badge" style="display:none"></span></button>
-    <button data-pane="synergy">Синергія <span class="badge-count">4</span></button>
+    <button data-pane="synergy">Синергія <span class="badge-count" id="synergy-badge" style="display:none"></span></button>
     <button data-pane="company">Профіль компанії</button>
+    <button data-pane="settings">Налаштування акаунта</button>
     <a class="dash-link-cta" href="resumes.html" style="margin-top:16px">Каталог резюме →</a>
   </aside>
 
@@ -74,6 +75,15 @@
       </div>
     </div>
 
+    <div class="cab-pane" data-cab="settings" style="display:none">
+      <div class="dash-head"><div><h1>Налаштування акаунта</h1></div></div>
+      <div class="panel">
+        <div class="field"><label>Електронна пошта</label><input type="email" id="settings-email" /></div>
+        <button class="btn btn-light" onclick="toast('Демо: список активних сесій показано в консолі')">Активні сесії</button>
+        <button class="btn btn-danger" style="margin-top:10px" onclick="if(confirm('Видалити акаунт і всі персональні дані без можливості відновлення?')) toast('Демо: акаунт видалено')">Видалити акаунт і мої дані</button>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -106,6 +116,7 @@ if (requireAuth("employer")) {
 
   const empName = (getProfileName() || "").split(" ")[0];
   document.getElementById("employer-sub").textContent = empName ? `${cp.name} · ${empName}` : `${cp.name} — демо-акаунт`;
+  document.getElementById("settings-email").value = getProfileEmail();
 
   document.querySelectorAll(".dash-side button").forEach((b) => b.addEventListener("click", () => {
     document.querySelectorAll(".dash-side button").forEach((x) => x.classList.remove("active"));
@@ -141,14 +152,22 @@ if (requireAuth("employer")) {
   vacancySelect.addEventListener("change", () => renderSynergyFor(vacancySelect.value));
   const firstMatches = activeVacancies.length ? renderSynergyFor(activeVacancies[0].id) : [];
   document.getElementById("ov-synergy").innerHTML = firstMatches.slice(0, 2).map((x) => matchCardHtml(x.r, x.m)).join("");
-  document.getElementById("kpi-synergy").textContent = activeVacancies.reduce((sum, v) => sum + RESUMES.filter((r) => computeMatch(r, v)).length, 0);
+  const synergyTotal = activeVacancies.reduce((sum, v) => sum + RESUMES.filter((r) => computeMatch(r, v)).length, 0);
+  document.getElementById("kpi-synergy").textContent = synergyTotal;
+  const synergyBadge = document.getElementById("synergy-badge");
+  synergyBadge.textContent = synergyTotal || "";
+  synergyBadge.style.display = synergyTotal ? "" : "none";
 
   function myVacancyRowHtml(v) {
     const statusPill = v.status === "active" ? '<span class="status-pill st-good">Активна</span>'
       : v.status === "moderation" ? '<span class="status-pill st-new">На модерації</span>'
+      : v.status === "draft" ? '<span class="status-pill st-progress">Чернетка</span>'
       : '<span class="status-pill st-bad">Архівовано</span>';
     const actions = v.status === "archived"
       ? `<button class="btn btn-light btn-sm" onclick="restoreMyVacancy('${v.id}')">Відновити</button>`
+      : v.status === "draft"
+      ? `<a class="btn btn-light btn-sm" href="post-vacancy.html?edit=${v.id}">Редагувати чернетку</a>
+         <button class="btn btn-light btn-sm" onclick="deleteMyVacancy('${v.id}')">Видалити</button>`
       : `<a class="btn btn-light btn-sm" href="post-vacancy.html?edit=${v.id}">Редагувати</a>
          <button class="btn btn-light btn-sm" onclick="duplicateMyVacancy('${v.id}')">Дублювати</button>
          <button class="btn btn-light btn-sm" onclick="archiveMyVacancy('${v.id}')">Архівувати</button>`;
@@ -183,6 +202,12 @@ if (requireAuth("employer")) {
     saveMyVacancies(list);
     renderMyVacancies();
     toast("Вакансію дубльовано");
+  };
+  window.deleteMyVacancy = function (id) {
+    if (!confirm("Видалити цю чернетку без можливості відновлення?")) return;
+    saveMyVacancies(getMyVacancies().filter((x) => x.id !== id));
+    renderMyVacancies();
+    toast("Чернетку видалено");
   };
   renderMyVacancies();
 

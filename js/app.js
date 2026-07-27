@@ -104,7 +104,6 @@ function jobCardHtml(v) {
   const sources = vacancySources(v);
   return `
   <a class="job-card" href="vacancy.html?id=${v.id}">
-    ${v.promoted ? '<span class="promo-badge">Просунута вакансія</span>' : ""}
     <div class="jc-top">
       <div class="jc-logo" style="background:${companyColor(v)}">${companyLetter(v)}</div>
       <div>
@@ -133,7 +132,6 @@ function resumeCardHtml(r) {
   const catLabels = r.categories.slice(0, 2).map(catLabel).join(" · ");
   return `
   <a class="resume-card" href="resume.html?id=${r.id}">
-    ${r.promoted ? '<span class="promo-badge">Просунуте резюме</span>' : ""}
     <div class="jc-top">
       <div class="jc-logo" style="background:#0d0c5c">${r.name[0]}</div>
       <div>
@@ -226,7 +224,7 @@ function allVacancies() {
 }
 
 function initVacanciesPage() {
-  const list = allVacancies().filter((v) => !v.promoted);
+  const list = allVacancies();
   initVacanciesFilters(list);
   renderFilteredVacancies(list);
 }
@@ -266,7 +264,7 @@ function renderFilteredResumes(list) {
     return true;
   });
 
-  filtered.sort((a, b) => (b.promoted - a.promoted) || b.updatedAt.localeCompare(a.updatedAt));
+  filtered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
   document.getElementById("result-count").textContent = `Знайдено ${filtered.length} резюме`;
   document.getElementById("results").innerHTML = filtered.length
@@ -293,7 +291,7 @@ function initVacancyDetail() {
   <div class="detail-hero">
     <div class="jc-logo" style="background:${companyColor(v)}">${companyLetter(v)}</div>
     <div>
-      <div class="eyebrow" style="margin-bottom:6px">${v.direct ? "Пряма вакансія" : "Імпортовано з " + sources.map((s) => s.name).join(" та ")} ${v.promoted ? " · Просунута вакансія" : ""}</div>
+      <div class="eyebrow" style="margin-bottom:6px">${v.direct ? "Пряма вакансія" : "Імпортовано з " + sources.map((s) => s.name).join(" та ")}</div>
       <h1>${v.title}</h1>
       <a class="company-link" href="${v.companyId ? "company.html?id=" + v.companyId : "#"}">${companyName(v)}</a> · ${v.city}, ${v.country}
     </div>
@@ -365,6 +363,12 @@ function saveMyVacancies(list) { lsSet(LS.myVacancies, list); }
 function addMyVacancy(v) {
   const list = getMyVacancies();
   list.unshift(v);
+  saveMyVacancies(list);
+}
+function upsertMyVacancy(v) {
+  const list = getMyVacancies();
+  const idx = list.findIndex((x) => x.id === v.id);
+  if (idx >= 0) list[idx] = v; else list.unshift(v);
   saveMyVacancies(list);
 }
 function isEmployerVerified() { return lsGet(LS.employerVerified, false); }
@@ -537,6 +541,7 @@ function isAuthed() { return lsGet(LS.authed, false); }
 function setAuthed(v) { lsSet(LS.authed, v); }
 
 function getProfileName() { return lsGet(LS.profileName, ""); }
+function getProfileEmail() { return lsGet(LS.profileEmail, ""); }
 function setProfile(name, email) {
   if (name) lsSet(LS.profileName, name);
   if (email) lsSet(LS.profileEmail, email);

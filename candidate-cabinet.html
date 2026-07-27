@@ -19,7 +19,7 @@
     <button class="active" data-pane="overview">Огляд</button>
     <button data-pane="resumes">Мої резюме</button>
     <button data-pane="saved">Збережені вакансії</button>
-    <button data-pane="synergy">Синергія <span class="badge-count">3</span></button>
+    <button data-pane="synergy">Синергія <span class="badge-count" id="synergy-badge" style="display:none"></span></button>
     <button data-pane="applications">Мої відгуки</button>
     <button data-pane="settings">Налаштування акаунта</button>
     <a class="dash-link-cta green" href="vacancies.html" style="margin-top:16px">Каталог вакансій →</a>
@@ -31,9 +31,9 @@
       <div class="dash-head"><div><h1>Кабінет працівника</h1><div class="sub" id="candidate-sub">Демо-акаунт</div></div><a class="btn btn-candidate" href="create-resume.html">+ Нове резюме</a></div>
       <div class="kpi-grid">
         <div class="stat-tile"><div class="val">1</div><div class="lbl">активне резюме</div></div>
-        <div class="stat-tile"><div class="val">4</div><div class="lbl">збережені вакансії</div></div>
-        <div class="stat-tile"><div class="val">3</div><div class="lbl">рекомендації «Синергія»</div></div>
-        <div class="stat-tile"><div class="val">2</div><div class="lbl">надіслані відгуки</div></div>
+        <div class="stat-tile"><div class="val" id="kpi-saved">—</div><div class="lbl">збережені вакансії</div></div>
+        <div class="stat-tile"><div class="val" id="kpi-synergy">—</div><div class="lbl">рекомендації «Синергія»</div></div>
+        <div class="stat-tile"><div class="val" id="kpi-apps">—</div><div class="lbl">надіслані відгуки</div></div>
       </div>
       <div class="panel"><h2>Останні рекомендації «Синергія»</h2><div class="cards-grid cols-2" id="ov-synergy"></div></div>
     </div>
@@ -79,7 +79,7 @@
     <div class="cab-pane" data-cab="settings" style="display:none">
       <div class="dash-head"><div><h1>Налаштування акаунта</h1></div></div>
       <div class="panel">
-        <div class="field"><label>Електронна пошта</label><input type="email" value="maria@example.com" /></div>
+        <div class="field"><label>Електронна пошта</label><input type="email" id="settings-email" /></div>
         <button class="btn btn-light" onclick="toast('Демо: список активних сесій показано в консолі')">Активні сесії</button>
         <button class="btn btn-danger" style="margin-top:10px" onclick="if(confirm('Видалити акаунт і всі персональні дані без можливості відновлення?')) toast('Демо: акаунт видалено')">Видалити акаунт і мої дані</button>
       </div>
@@ -95,6 +95,7 @@ if (requireAuth("candidate")) {
   setRole("candidate");
   const firstName = (getProfileName() || "").split(" ")[0];
   if (firstName) document.getElementById("candidate-sub").textContent = `Демо-акаунт · ${firstName}`;
+  document.getElementById("settings-email").value = getProfileEmail();
   document.querySelectorAll(".dash-side button").forEach((b) => b.addEventListener("click", () => {
     document.querySelectorAll(".dash-side button").forEach((x) => x.classList.remove("active"));
     b.classList.add("active");
@@ -118,6 +119,10 @@ if (requireAuth("candidate")) {
   }
   document.getElementById("synergy-list").innerHTML = matches.map((x) => matchCardHtml(x.v, x.m)).join("");
   document.getElementById("ov-synergy").innerHTML = matches.slice(0, 2).map((x) => matchCardHtml(x.v, x.m)).join("");
+  document.getElementById("kpi-synergy").textContent = matches.length;
+  const synergyBadge = document.getElementById("synergy-badge");
+  synergyBadge.textContent = matches.length || "";
+  synergyBadge.style.display = matches.length ? "" : "none";
 
   const savedIds = lsGet(LS.savedV, []);
   const savedRows = VACANCIES.filter((v) => savedIds.includes(v.id));
@@ -129,7 +134,14 @@ if (requireAuth("candidate")) {
     <td><input type="text" placeholder="Ваша нотатка…" style="border:1px solid var(--border);border-radius:8px;padding:6px 8px;width:100%"/></td>
     <td>${v.deadline || "—"}</td></tr>`).join("")
     : '<tr><td colspan="4" class="empty-state">Ще немає збережених вакансій — натисніть ☆ на будь-якій картці.</td></tr>';
+  document.getElementById("kpi-saved").textContent = savedRows.length;
   bindSaveButtons();
+
+  const myApps = lsGet(LS.applications, []);
+  document.getElementById("applications-tbl").innerHTML = myApps.length ? myApps.map((a) => `
+    <tr><td class="strong">${a.title}</td><td>${a.company}</td><td>${a.date}</td><td><span class="status-pill st-good">Надіслано</span></td></tr>`).join("")
+    : '<tr><td colspan="4" class="empty-state">Відгуків поки немає — знайдіть вакансію в каталозі.</td></tr>';
+  document.getElementById("kpi-apps").textContent = myApps.length;
 }
 </script>
 </body>
