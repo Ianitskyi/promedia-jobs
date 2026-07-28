@@ -51,7 +51,8 @@
         <table class="tbl"><thead><tr><th>Джерело</th><th>Активні вакансії</th><th>Останнє оновлення</th><th>Розклад</th></tr></thead>
           <tbody>
             <tr><td class="strong">Прямі (роботодавці)</td><td class="num" id="a-direct">—</td><td>—</td><td>—</td></tr>
-            <tr><td>Work.ua</td><td class="num">1</td><td>2026-07-25</td><td>Щоденно</td></tr>
+            <tr><td>Знайдені командою «ПроМедіа»</td><td class="num" id="a-promedia-found">—</td><td>2026-07-28</td><td>Ручна перевірка</td></tr>
+            <tr><td>Work.ua</td><td class="num" id="a-workua">—</td><td>2026-07-28</td><td>Ручна перевірка</td></tr>
             <tr><td>Robota.ua</td><td class="num">0</td><td>—</td><td>Не підключено</td></tr>
             <tr><td>Telegram-канали</td><td class="num">0</td><td>—</td><td>Ручна модерація</td></tr>
           </tbody>
@@ -135,6 +136,8 @@
   document.getElementById("a-salary").textContent = allActive.filter((v) => v.salaryMin || v.salaryMax).length;
   document.getElementById("a-comp").textContent = COMPANIES.length;
   document.getElementById("a-direct").textContent = VACANCIES.filter((v) => v.direct && v.active).length + myActiveVacancies.length;
+  document.getElementById("a-promedia-found").textContent = VACANCIES.filter((v) => v.foundBy === "promedia" && v.active).length;
+  document.getElementById("a-workua").textContent = VACANCIES.filter((v) => v.source === "Work.ua" && v.active).length;
   document.getElementById("an-1").textContent = Math.round((allActive.filter((v) => v.salaryMin || v.salaryMax).length / allActive.length) * 100) + "%";
   document.getElementById("an-2").textContent = Math.round((allActive.filter((v) => (v.perks || []).includes("insurance")).length / allActive.length) * 100) + "%";
   document.getElementById("an-3").textContent = Math.round((allActive.filter((v) => v.employmentArrangement === "labor").length / allActive.length) * 100) + "%";
