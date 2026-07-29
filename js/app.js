@@ -243,7 +243,8 @@ function initSubscribeBox(list) {
 }
 
 function allVacancies() {
-  return VACANCIES.concat(getMyVacancies().filter((v) => v.status === "active"));
+  const imported = typeof IMPORTED_VACANCIES !== "undefined" ? IMPORTED_VACANCIES : [];
+  return VACANCIES.concat(imported).concat(getMyVacancies().filter((v) => v.status === "active"));
 }
 
 function initVacanciesPage() {
@@ -303,7 +304,7 @@ function initVacancyDetail() {
             ? `<a class="btn btn-primary btn-block" href="mailto:${v.contactEmail}?subject=${encodeURIComponent("Відгук на вакансію: " + v.title)}">Написати на ${v.contactEmail}</a>`
             : `<p style="color:var(--muted);font-size:13px">Контакти роботодавця не вказано.</p>`)
         : `<a class="btn btn-primary btn-block" href="${v.sourceUrl}" target="_blank" rel="noopener">Перейти до оригіналу →</a>`}
-      <p style="font-size:12.5px;color:var(--muted);margin-top:10px">Подача — напряму на пошту роботодавця, без реєстрації на порталі.</p>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:10px">${v.direct ? "Подача — напряму на пошту роботодавця, без реєстрації на порталі." : "Подача заявки — за посиланням на оригінал вакансії, поза цим порталом."}</p>
     </div>`;
 }
 
