@@ -137,13 +137,20 @@ function isPromediaFound(v) {
   return v.foundBy === "promedia";
 }
 
+const MILITARY_KEYWORDS = ["зсу", "військов", "дпсу", "збройні сили", "міноборони", "мобілізаці"];
+function isMilitaryVacancy(v) {
+  const text = `${v.title} ${companyName(v)} ${(v.responsibilities || []).join(" ")} ${(v.mustHave || []).join(" ")} ${(v.benefits || []).join(" ")}`.toLowerCase();
+  return MILITARY_KEYWORDS.some((kw) => text.includes(kw));
+}
+
 /* ---------------- Картки ---------------- */
 
 function jobCardHtml(v) {
   const dl = daysLeft(v.expiresAt);
   const sources = vacancySources(v);
   const perks = (v.remoteOk ? '<span class="tag green">Дистанційно</span>' : "") + perkTagsHtml(v);
-  const cardClasses = `job-card${isPromediaFound(v) ? " curated" : ""}`;
+  const military = isMilitaryVacancy(v);
+  const cardClasses = `job-card${isPromediaFound(v) ? " curated" : ""}${military ? " military" : ""}`;
   return `
   <a class="${cardClasses}" href="vacancy.html?id=${encodeURIComponent(v.id)}">
     <div class="jc-top">
@@ -157,6 +164,7 @@ function jobCardHtml(v) {
       <span class="tag ink">${labelOf(FORMATS, v.format)}</span>
       <span class="tag">${labelOf(EMPLOYMENT_TYPES, v.employmentType)}</span>
       ${perks}
+      ${military ? '<span class="tag military">Вакансія у Збройних силах / війську</span>' : ""}
       ${isPromediaFound(v) ? '<span class="tag promedia">Додано ПроМедіа</span>' : ""}
       ${sources.map((s) => `<span class="tag green">${esc(s.name)}</span>`).join("")}
     </div>
@@ -334,6 +342,7 @@ function initVacancyDetail() {
     <span class="tag">${labelOf(EMPLOYMENT_TYPES, v.employmentType)}</span>
     ${v.remoteOk ? '<span class="tag green">Дистанційно</span>' : ""}
     ${perkTagsHtml(v)}
+    ${isMilitaryVacancy(v) ? '<span class="tag military">Вакансія у Збройних силах / війську</span>' : ""}
   </div>
   <div class="panel">
     <h2>Опис вакансії</h2>
