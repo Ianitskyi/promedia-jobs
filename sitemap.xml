@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://jobs.promedia.report/index.html</loc></url>
-  <url><loc>https://jobs.promedia.report/vacancies.html</loc></url>
-  <url><loc>https://jobs.promedia.report/resumes.html</loc></url>
-  <url><loc>https://jobs.promedia.report/pricing.html</loc></url>
+  <url><loc>https://jobs.promedia.report/</loc></url>
+  <url><loc>https://jobs.promedia.report/vacancy.html</loc></url>
+  <url><loc>https://jobs.promedia.report/company.html</loc></url>
+  <url><loc>https://jobs.promedia.report/employer-login.html</loc></url>
+  <url><loc>https://jobs.promedia.report/post-vacancy.html</loc></url>
   <url><loc>https://jobs.promedia.report/how-it-works.html</loc></url>
+  <url><loc>https://jobs.promedia.report/terms.html</loc></url>
   <url><loc>https://jobs.promedia.report/privacy.html</loc></url>
+  <url><loc>https://jobs.promedia.report/report.html</loc></url>
 </urlset>

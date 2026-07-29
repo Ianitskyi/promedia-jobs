@@ -13,7 +13,7 @@
 </script>
 <title>Додати вакансію · ProMedia Jobs</title>
 <link rel="icon" href="favicon.svg" />
-<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/style.css?v=20260729-3" />
 </head>
 <body>
 
@@ -55,7 +55,7 @@
           <div class="field"><label>Тип зайнятості *</label><select id="v-employment"><option value="full">Повна</option><option value="part">Часткова</option><option value="project">Проєктна</option><option value="freelance">Фриланс</option><option value="temporary">Тимчасова</option><option value="internship">Стажування</option><option value="volunteering">Волонтерство</option></select></div>
           <div class="field"><label>Мінімальний досвід (років) <span class="hint">(за ним можна сортувати каталог)</span></label><input type="number" step="0.5" min="0" id="v-exp-years" placeholder="2" /></div>
         </div>
-        <div class="wizard-actions"><span></span><button class="btn btn-primary" onclick="goStep(2)">Далі</button></div>
+        <div class="wizard-actions"><span></span><button class="btn btn-primary" onclick="if(validateStep(1)) goStep(2)">Далі</button></div>
       </div>
 
       <div class="wizard-pane" data-pane="2" style="display:none">
@@ -83,7 +83,7 @@
         <div class="field" style="margin-top:10px"><label>Щось своє <span class="hint">(через кому, якщо кілька)</span></label><input type="text" id="v-perks-other" placeholder="Наприклад, спортзал у офісі" /></div>
         <div class="field" style="margin-top:14px"><label>Оформлення *</label><select id="v-arrangement" required><option value="">Оберіть варіант</option></select></div>
         <div class="field" style="margin-top:10px"><label>Інші переваги <span class="hint">(якщо немає жодної — нічого не пишіть)</span></label><textarea rows="2" id="v-benefits" placeholder="Кожна перевага з нового рядка"></textarea></div>
-        <div class="wizard-actions"><button class="btn btn-light" onclick="goStep(2)">Назад</button><button class="btn btn-primary" onclick="goStep(4)">Далі</button></div>
+        <div class="wizard-actions"><button class="btn btn-light" onclick="goStep(2)">Назад</button><button class="btn btn-primary" onclick="if(validateStep(3)) goStep(4)">Далі</button></div>
       </div>
 
       <div class="wizard-pane" data-pane="4" style="display:none">
@@ -92,7 +92,7 @@
         <p style="color:var(--muted);font-size:13.5px">Кандидати пишуть напряму на вказану пошту — подачі всередині порталу немає.</p>
         <div class="field"><label>Контактна особа</label><input type="text" id="v-contact-name" placeholder="Ім'я HR-менеджера" /></div>
         <div class="field"><label>Контактна електронна адреса *</label><input type="email" id="v-contact-email" required placeholder="hr@company.com" /></div>
-        <div class="wizard-actions"><button class="btn btn-light" onclick="goStep(3)">Назад</button><button class="btn btn-primary" onclick="renderPreview();goStep(5)">Переглянути</button></div>
+        <div class="wizard-actions"><button class="btn btn-light" onclick="goStep(3)">Назад</button><button class="btn btn-primary" onclick="if(validateStep(4)){renderPreview();goStep(5)}">Переглянути</button></div>
       </div>
 
       <div class="wizard-pane" data-pane="5" style="display:none">
@@ -113,15 +113,16 @@
   </div>
 </main>
 
-<script src="js/data.js"></script>
-<script src="js/imported-vacancies.js"></script>
-<script src="js/app.js"></script>
+<script src="js/data.js?v=20260729-3"></script>
+<script src="js/imported-vacancies.js?v=20260729-3"></script>
+<script src="js/app.js?v=20260729-3"></script>
 <script>
   if (requireAuth()) { /* лише роботодавці мають доступ до цієї сторінки */ }
 
   document.getElementById("v-region").innerHTML = '<option value="">Оберіть область</option>' + REGIONS.map((r) => `<option value="${r}">${r}</option>`).join("");
   document.getElementById("v-perks-box").innerHTML = PERKS.map((p) => `<div class="check-row"><input type="checkbox" class="v-perk" value="${p.id}" id="v-perk-${p.id}"><label for="v-perk-${p.id}">${p.label}</label></div>`).join("");
   document.getElementById("v-arrangement").innerHTML += EMPLOYMENT_ARRANGEMENTS.map((a) => `<option value="${a.id}">${a.label}</option>`).join("");
+  document.getElementById("v-expires").min = todayIsoDate();
 
   function updateRegionVisibility() {
     const isUkraine = document.getElementById("v-country").value.trim() === "Україна";
@@ -167,6 +168,9 @@
   } else {
     const cp = getCompanyProfile();
     if (cp && cp.name) document.getElementById("v-company").value = cp.name;
+    const defaultExpires = new Date();
+    defaultExpires.setDate(defaultExpires.getDate() + 30);
+    document.getElementById("v-expires").value = defaultExpires.toISOString().slice(0, 10);
   }
 
   function goStep(n) {
@@ -180,6 +184,7 @@
   }
 
   function checkDiscrimination() {
+    if (!validateStep(2)) return;
     const text = (document.getElementById("v-must").value + " " + document.getElementById("v-resp").value).toLowerCase();
     const flagged = /тільки (чоловік|жінок|дівчат)|лише (чоловік|жінок)|до 30 років|не старше/.test(text);
     document.getElementById("discrimination-warning").style.display = flagged ? "" : "none";
@@ -189,10 +194,15 @@
   function splitLines(v) { return v.split("\n").map((s) => s.trim()).filter(Boolean); }
   function splitCommas(v) { return v.split(",").map((s) => s.trim()).filter(Boolean); }
 
+  function focusField(id) {
+    const el = document.getElementById(id);
+    if (el) el.focus();
+  }
+
   function collectDraft() {
     return {
-      title: document.getElementById("v-title").value || "Без назви",
-      company: document.getElementById("v-company").value || "Компанія не вказана",
+      title: document.getElementById("v-title").value.trim(),
+      company: document.getElementById("v-company").value.trim(),
       country: document.getElementById("v-country").value.trim() || "Україна",
       region: document.getElementById("v-region").value,
       format: document.getElementById("v-format").value,
@@ -217,23 +227,50 @@
     };
   }
 
+  function validateStep(step) {
+    const d = collectDraft();
+    if (step === 1) {
+      if (!d.title.trim()) { toast("Вкажіть назву посади"); focusField("v-title"); return false; }
+      if (!d.company.trim()) { toast("Вкажіть компанію"); focusField("v-company"); return false; }
+      if (!d.country.trim()) { toast("Вкажіть країну"); focusField("v-country"); return false; }
+      if (d.country === "Україна" && !d.region) { toast("Оберіть область або «Вся Україна»"); focusField("v-region"); return false; }
+    }
+    if (step === 2) {
+      if (!d.responsibilities.length) { toast("Додайте хоча б один обов'язок"); focusField("v-resp"); return false; }
+      if (!d.skills.length) { toast("Додайте ключові навички"); focusField("v-skills"); return false; }
+    }
+    if (step === 3) {
+      if (!d.salMin) { toast("Вкажіть зарплату — портал не публікує вакансії без неї"); focusField("v-sal-min"); return false; }
+      if (d.salMax && +d.salMax < +d.salMin) { toast("Зарплата «до» не може бути меншою за «від»"); focusField("v-sal-max"); return false; }
+      if (!d.employmentArrangement) { toast("Оберіть варіант оформлення"); focusField("v-arrangement"); return false; }
+      if (!d.perks.length && !d.perksOther.length && !d.benefits.length) { toast("Додайте хоча б одну умову або перевагу"); focusField("v-benefits"); return false; }
+    }
+    if (step === 4) {
+      if (!d.expiresAt) { toast("Вкажіть, до якої дати активна вакансія"); focusField("v-expires"); return false; }
+      if (d.expiresAt < todayIsoDate()) { toast("Дата завершення не може бути в минулому"); focusField("v-expires"); return false; }
+      if (!d.contactEmail) { toast("Вкажіть контактну пошту для кандидатів"); focusField("v-contact-email"); return false; }
+      if (!/^\S+@\S+\.\S+$/.test(d.contactEmail)) { toast("Вкажіть коректну контактну пошту"); focusField("v-contact-email"); return false; }
+    }
+    return true;
+  }
+
   function renderPreview() {
     const d = collectDraft();
     document.getElementById("vacancy-preview").innerHTML = `
       <div class="jc-top"><div class="jc-logo">${(d.company[0]||"?").toUpperCase()}</div>
-      <div><div class="jc-title" style="font-size:18px">${d.title}</div><div class="jc-company">${d.company} · ${d.country === "Україна" && d.region ? d.region + ", Україна" : d.country}</div></div></div>
-      <div class="jc-meta" style="margin:12px 0"><span class="tag ink">${labelOf(FORMATS, d.format)}</span><span class="tag">${labelOf(EMPLOYMENT_TYPES, d.employment)}</span>${d.perks.map((p) => `<span class="tag green">${labelOf(PERKS, p)}</span>`).join("")}${d.perksOther.map((p) => `<span class="tag green">${p}</span>`).join("")}${d.employmentArrangement === "labor" ? '<span class="tag green">Офіційне оформлення</span>' : ""}</div>
-      <div class="jc-salary">${d.salMin && d.salMax ? d.salMin+"–"+d.salMax+" "+d.currency : (d.salMin ? "від "+d.salMin+" "+d.currency : "Не вказано")}</div>
-      <p style="color:var(--muted);font-size:13px;margin-top:10px">Вакансія активна до: ${d.expiresAt || "не вказано"}</p>
-      <p style="color:var(--muted);font-size:13px">Контакт для кандидатів: ${d.contactEmail || "не вказано"}</p>`;
+      <div><div class="jc-title" style="font-size:18px">${esc(d.title)}</div><div class="jc-company">${esc(d.company)} · ${esc(d.country === "Україна" && d.region ? (d.region === "Вся Україна" ? "Вся Україна" : d.region + ", Україна") : d.country)}</div></div></div>
+      <div class="jc-meta" style="margin:12px 0"><span class="tag ink">${labelOf(FORMATS, d.format)}</span><span class="tag">${labelOf(EMPLOYMENT_TYPES, d.employment)}</span>${d.perks.map((p) => `<span class="tag green">${labelOf(PERKS, p)}</span>`).join("")}${d.perksOther.map((p) => `<span class="tag green">${esc(p)}</span>`).join("")}${d.employmentArrangement ? `<span class="tag green">${esc(labelOf(EMPLOYMENT_ARRANGEMENTS, d.employmentArrangement))}</span>` : ""}</div>
+      <div class="jc-salary">${d.salMin && d.salMax ? esc(d.salMin+"–"+d.salMax+" "+d.currency) : (d.salMin ? esc("від "+d.salMin+" "+d.currency) : "Не вказано")}</div>
+      <p style="color:var(--muted);font-size:13px;margin-top:10px">Вакансія активна до: ${esc(d.expiresAt || "не вказано")}</p>
+      <p style="color:var(--muted);font-size:13px">Контакт для кандидатів: ${esc(d.contactEmail || "не вказано")}</p>`;
   }
 
   function buildVacancyFromForm(d) {
     return {
       id: editing ? editing.id : "myv-" + Date.now(),
-      title: d.title,
+      title: d.title || "Без назви",
       companyId: null,
-      companyName: d.company,
+      companyName: d.company || "Компанія не вказана",
       region: d.country === "Україна" ? d.region : "",
       country: d.country,
       format: d.format,
@@ -276,16 +313,14 @@
 
   function publishVacancy() {
     if (!document.getElementById("v-terms").checked) { toast("Потрібно підтвердити достовірність і правила публікації"); return; }
+    for (const step of [1, 2, 3, 4]) {
+      if (!validateStep(step)) { goStep(step); return; }
+    }
     const d = collectDraft();
-    if (d.country === "Україна" && !d.region) { toast("Оберіть область"); goStep(1); return; }
-    if (!d.salMin) { toast("Вкажіть зарплату — портал не публікує вакансії без неї"); goStep(3); return; }
-    if (!d.employmentArrangement) { toast("Оберіть варіант оформлення"); goStep(3); return; }
-    if (!d.expiresAt) { toast("Вкажіть, до якої дати активна вакансія"); goStep(4); return; }
-    if (!d.contactEmail) { toast("Вкажіть контактну пошту для кандидатів"); goStep(4); return; }
     const firstVacancy = !editing && !isEmployerVerified();
     const wasDraft = editing && editing.status === "draft";
     const vacancy = Object.assign(buildVacancyFromForm(d), {
-      publishedAt: (editing && !wasDraft) ? editing.publishedAt : "2026-07-27",
+      publishedAt: (editing && !wasDraft) ? editing.publishedAt : todayIsoDate(),
       moderationStatus: (editing && !wasDraft) ? editing.moderationStatus : ((firstVacancy || wasDraft) ? "moderation" : "approved"),
       active: true,
       status: (editing && !wasDraft) ? editing.status : ((firstVacancy || wasDraft) ? "moderation" : "active"),
