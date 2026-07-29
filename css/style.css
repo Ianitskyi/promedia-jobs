@@ -99,7 +99,8 @@ img, svg { max-width: 100%; display: block; }
 .tag.ink { background: rgba(13, 12, 92, .08); color: var(--ink); }
 .tag.green { background: var(--green-tint); color: var(--green); }
 .tag.promedia { background: var(--accent-tint); color: var(--accent-dark); }
-.jc-salary { font-family: var(--serif); font-weight: 700; font-size: 15px; color: var(--ink); }
+.jc-salary { font-family: var(--serif); font-weight: 700; font-size: 21px; color: var(--ink); }
+.vacancy-salary { font-family: var(--serif); font-weight: 700; font-size: 26px; color: var(--ink); margin: 0 0 16px; }
 .jc-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
 
 /* ---------- catalog layout ---------- */

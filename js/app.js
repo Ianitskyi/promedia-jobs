@@ -337,7 +337,7 @@ function initVacancyDetail() {
   </div>
   <div class="panel">
     <h2>Опис вакансії</h2>
-    <p><b>Зарплата:</b> ${formatSalary(v)}</p>
+    <div class="vacancy-salary">${formatSalary(v)}</div>
     <h3 style="font-size:14px;margin:14px 0 6px">Обов'язки</h3>
     <ul>${(v.responsibilities || []).map((r) => `<li>${esc(r)}</li>`).join("")}</ul>
     ${(v.mustHave || []).length ? `<h3 style="font-size:14px;margin:14px 0 6px">Обов'язкові вимоги</h3><ul>${v.mustHave.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
