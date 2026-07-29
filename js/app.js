@@ -164,7 +164,7 @@ function jobCardHtml(v) {
       <span class="tag ink">${labelOf(FORMATS, v.format)}</span>
       <span class="tag">${labelOf(EMPLOYMENT_TYPES, v.employmentType)}</span>
       ${perks}
-      ${military ? '<span class="tag military">Вакансія у Збройних силах / війську</span>' : ""}
+      ${military ? '<span class="tag military">Вакансія у Силах оборони</span>' : ""}
       ${isPromediaFound(v) ? '<span class="tag promedia">Додано ПроМедіа</span>' : ""}
       ${sources.map((s) => `<span class="tag green">${esc(s.name)}</span>`).join("")}
     </div>
@@ -342,7 +342,7 @@ function initVacancyDetail() {
     <span class="tag">${labelOf(EMPLOYMENT_TYPES, v.employmentType)}</span>
     ${v.remoteOk ? '<span class="tag green">Дистанційно</span>' : ""}
     ${perkTagsHtml(v)}
-    ${isMilitaryVacancy(v) ? '<span class="tag military">Вакансія у Збройних силах / війську</span>' : ""}
+    ${isMilitaryVacancy(v) ? '<span class="tag military">Вакансія у Силах оборони</span>' : ""}
   </div>
   <div class="panel">
     <h2>Опис вакансії</h2>
