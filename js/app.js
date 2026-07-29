@@ -317,7 +317,7 @@ function initVacancyDetail() {
     ? `<a href="${esc(safeUrl(s.url))}" target="_blank" rel="noopener">${esc(s.name)} →</a>`
     : esc(s.name)).join(" · ");
   const sourceNote = isPromediaFound(v)
-    ? `<div class="source-note promedia">Цю вакансію знайшла команда «ПроМедіа» на ${esc(source?.name || v.source || "публічному джерелі")}. Ми показуємо скорочений опис і ключові умови, а повне оголошення та відгук — у першоджерелі:<br>${sourceLinks}</div>`
+    ? `<div class="source-note promedia">Цю вакансію додала команда «ПроМедіа» з ${esc(source?.name || v.source || "публічного джерела")}. Ми показуємо скорочений опис і ключові умови, а повне оголошення та відгук — у першоджерелі:<br>${sourceLinks}</div>`
     : (!v.direct ? `<div class="source-note">Ця вакансія імпортована у скороченому й нейтралізованому вигляді.${sources.length > 1 ? " Знайдена одразу в кількох джерелах — показуємо один запис із посиланнями на всі:" : " Повне оголошення — за посиланням на джерело:"}<br>${sourceLinks}</div>` : "");
   el.innerHTML = `
   <div class="detail-hero">
