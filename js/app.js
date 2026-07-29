@@ -157,7 +157,7 @@ function jobCardHtml(v) {
       <span class="tag ink">${labelOf(FORMATS, v.format)}</span>
       <span class="tag">${labelOf(EMPLOYMENT_TYPES, v.employmentType)}</span>
       ${perks}
-      ${isPromediaFound(v) ? '<span class="tag promedia">Знайдено ПроМедіа</span>' : ""}
+      ${isPromediaFound(v) ? '<span class="tag promedia">Додано ПроМедіа</span>' : ""}
       ${sources.map((s) => `<span class="tag green">${esc(s.name)}</span>`).join("")}
     </div>
     <div class="jc-salary">${formatSalary(v)}</div>
@@ -323,7 +323,7 @@ function initVacancyDetail() {
   <div class="detail-hero">
     ${logoOrLetterHtml(v, 56)}
     <div>
-      <div class="eyebrow" style="margin-bottom:6px">${v.direct ? "Пряма вакансія від роботодавця" : (isPromediaFound(v) ? "Знайдено командою «ПроМедіа»" : "Імпортовано з " + sources.map((s) => esc(s.name)).join(" та "))}</div>
+      <div class="eyebrow" style="margin-bottom:6px">${v.direct ? "Пряма вакансія від роботодавця" : (isPromediaFound(v) ? "Додано командою «ПроМедіа»" : "Імпортовано з " + sources.map((s) => esc(s.name)).join(" та "))}</div>
       <h1>${esc(v.title)}</h1>
       <a class="company-link" href="${v.companyId ? "company.html?id=" + encodeURIComponent(v.companyId) : "#"}">${esc(companyName(v))}</a> · ${esc(locationText(v))}
     </div>
