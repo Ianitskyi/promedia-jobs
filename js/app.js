@@ -147,8 +147,12 @@ function isMilitaryVacancy(v) {
 
 function jobCardHtml(v) {
   const dl = daysLeft(v.expiresAt);
+  const sources = vacancySources(v);
   const military = isMilitaryVacancy(v);
   const cardClasses = `job-card${isPromediaFound(v) ? " curated" : ""}${military ? " military" : ""}`;
+  const sourceTag = v.direct
+    ? '<span class="tag green">Пряма вакансія</span>'
+    : sources.map((s) => `<span class="tag green">${esc(s.name)}</span>`).join("");
   return `
   <a class="${cardClasses}" href="vacancy.html?id=${encodeURIComponent(v.id)}">
     <div class="jc-top">
@@ -161,6 +165,8 @@ function jobCardHtml(v) {
     <div class="jc-meta">
       <span class="tag ink">${labelOf(FORMATS, v.format)}</span>
       ${v.employmentArrangement && v.employmentArrangement !== "other" ? `<span class="tag">${labelOf(EMPLOYMENT_ARRANGEMENTS, v.employmentArrangement)}</span>` : ""}
+      ${sourceTag}
+      ${isPromediaFound(v) ? '<span class="tag promedia">Додано ПроМедіа</span>' : ""}
     </div>
     <div class="jc-salary">${formatSalary(v)}</div>
     ${dl !== null ? `<div class="jc-foot"><span>${dl > 0 ? dl + " дн. до завершення" : "публікацію завершено"}</span></div>` : ""}
