@@ -53,10 +53,36 @@ async function fetchJson(url) {
   return res.json();
 }
 
-async function fetchText(url) {
+async function fetchBuffer(url) {
   const res = await fetch(url, { headers: { "User-Agent": "promedia-jobs-import/1.0" } });
   if (!res.ok) throw new Error(`HTTP ${res.status} для ${url}`);
-  return res.text();
+  return Buffer.from(await res.arrayBuffer());
+}
+
+// Файли ДСЗ на data.gov.ua трапляються у windows-1251 замість UTF-8 (типово
+// для застарілих державних систем). Якщо наївне UTF-8-декодування дає купу
+// символів заміни (U+FFFD) у перших байтах — перекодовуємо як windows-1251.
+function decodeCsvBuffer(buf) {
+  const utf8 = buf.toString("utf8");
+  const sample = utf8.slice(0, 2000);
+  const replacementCount = (sample.match(/�/g) || []).length;
+  if (replacementCount > 5) {
+    log(`UTF-8-декодування дало ${replacementCount} символів заміни — пробую windows-1251.`);
+    try {
+      return new TextDecoder("windows-1251").decode(buf);
+    } catch (e) {
+      log("windows-1251 недоступне в цьому Node, залишаю UTF-8:", e.message);
+    }
+  }
+  return utf8;
+}
+
+// Дані data.gov.ua трапляються і з комами, і з крапками з комою як роздільником
+// (крапка з комою типова для держдатасетів, де кома — десятковий роздільник).
+function detectDelimiter(headerLine) {
+  const semicolons = (headerLine.match(/;/g) || []).length;
+  const commas = (headerLine.match(/,/g) || []).length;
+  return semicolons > commas ? ";" : ",";
 }
 
 async function resolveDataset() {
@@ -85,8 +111,9 @@ function pickResource(pkg) {
   return pool[0];
 }
 
-function parseCsv(text) {
-  // Мінімальний RFC4180-парсер: лапки, коми й переноси рядків усередині полів.
+function parseCsv(text, delimiter) {
+  // Мінімальний RFC4180-парсер: лапки, роздільник і переноси рядків усередині полів.
+  delimiter = delimiter || ",";
   const rows = [];
   let row = [];
   let field = "";
@@ -99,7 +126,7 @@ function parseCsv(text) {
         else inQuotes = false;
       } else field += c;
     } else if (c === '"') inQuotes = true;
-    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === delimiter) { row.push(field); field = ""; }
     else if (c === "\r") { /* skip */ }
     else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
     else field += c;
@@ -169,8 +196,12 @@ async function main() {
   const resource = pickResource(pkg);
   log("Обраний ресурс:", resource.name || resource.id, "·", resource.format, "·", resource.url);
 
-  const csvText = await fetchText(resource.url);
-  const rows = parseCsv(csvText);
+  const csvBuffer = await fetchBuffer(resource.url);
+  const csvText = decodeCsvBuffer(csvBuffer);
+  const firstLine = csvText.slice(0, csvText.indexOf("\n") !== -1 ? csvText.indexOf("\n") : 1000);
+  const delimiter = detectDelimiter(firstLine);
+  log("Визначений роздільник:", JSON.stringify(delimiter));
+  const rows = parseCsv(csvText, delimiter);
   if (rows.length < 2) throw new Error("Файл порожній або не розпізнався як CSV.");
 
   const headers = rows[0];
