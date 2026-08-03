@@ -1,0 +1,142 @@
+/* Мінімальний читач .xlsx (ZIP + XML) без зовнішніх залежностей — навмисно,
+ * а не npm-пакет `xlsx`: опублікована на npm версія (0.18.5) має відомі
+ * незакриті вразливості (prototype pollution, ReDoS), а офіційний
+ * патчений білд SheetJS роздають лише зі свого CDN, недоступного з цього
+ * середовища розробки для перевірки. Читає лише перший аркуш і лише
+ * значення клітинок (без формул і стилів) — саме стільки, скільки треба
+ * для табличних держдатасетів. */
+const zlib = require("zlib");
+
+function findEocd(buf) {
+  const sig = Buffer.from([0x50, 0x4b, 0x05, 0x06]);
+  const minLen = 22;
+  const searchStart = Math.max(0, buf.length - 65557);
+  for (let i = buf.length - minLen; i >= searchStart; i--) {
+    if (buf[i] === sig[0] && buf[i + 1] === sig[1] && buf[i + 2] === sig[2] && buf[i + 3] === sig[3]) {
+      return i;
+    }
+  }
+  throw new Error("Не ZIP-файл (не знайдено End Of Central Directory).");
+}
+
+function readZipEntries(buf) {
+  const eocdOffset = findEocd(buf);
+  const cdOffset = buf.readUInt32LE(eocdOffset + 16);
+  const totalEntries = buf.readUInt16LE(eocdOffset + 10);
+  const entries = {};
+  let p = cdOffset;
+  for (let i = 0; i < totalEntries; i++) {
+    const sig = buf.readUInt32LE(p);
+    if (sig !== 0x02014b50) throw new Error(`Пошкоджений ZIP: неочікуваний сигнатура центрального каталогу на ${p}.`);
+    const compressionMethod = buf.readUInt16LE(p + 10);
+    const compressedSize = buf.readUInt32LE(p + 20);
+    const uncompressedSize = buf.readUInt32LE(p + 24);
+    const nameLen = buf.readUInt16LE(p + 28);
+    const extraLen = buf.readUInt16LE(p + 30);
+    const commentLen = buf.readUInt16LE(p + 32);
+    const localHeaderOffset = buf.readUInt32LE(p + 42);
+    const name = buf.slice(p + 46, p + 46 + nameLen).toString("utf8");
+    entries[name] = { compressionMethod, compressedSize, uncompressedSize, localHeaderOffset };
+    p += 46 + nameLen + extraLen + commentLen;
+  }
+  return entries;
+}
+
+function readZipEntryData(buf, entry) {
+  const p = entry.localHeaderOffset;
+  const sig = buf.readUInt32LE(p);
+  if (sig !== 0x04034b50) throw new Error(`Пошкоджений ZIP: неочікувана сигнатура локального заголовка на ${p}.`);
+  const nameLen = buf.readUInt16LE(p + 26);
+  const extraLen = buf.readUInt16LE(p + 28);
+  const dataStart = p + 30 + nameLen + extraLen;
+  const compressed = buf.slice(dataStart, dataStart + entry.compressedSize);
+  if (entry.compressionMethod === 0) return compressed;
+  if (entry.compressionMethod === 8) return zlib.inflateRawSync(compressed);
+  throw new Error(`Непідтримуваний метод стиснення ZIP: ${entry.compressionMethod}.`);
+}
+
+function xmlUnescape(s) {
+  return s
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&amp;/g, "&");
+}
+
+function parseSharedStrings(xml) {
+  if (!xml) return [];
+  const strings = [];
+  const siRe = /<si>([\s\S]*?)<\/si>/g;
+  let m;
+  while ((m = siRe.exec(xml))) {
+    const inner = m[1];
+    let text = "";
+    const tRe = /<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/g;
+    let tm;
+    while ((tm = tRe.exec(inner))) text += xmlUnescape(tm[1]);
+    strings.push(text);
+  }
+  return strings;
+}
+
+function colLettersToIndex(letters) {
+  let idx = 0;
+  for (let i = 0; i < letters.length; i++) {
+    idx = idx * 26 + (letters.charCodeAt(i) - 64);
+  }
+  return idx - 1;
+}
+
+function parseSheetRows(xml, sharedStrings) {
+  const rows = [];
+  const rowRe = /<row[^>]*>([\s\S]*?)<\/row>/g;
+  let rm;
+  while ((rm = rowRe.exec(xml))) {
+    const rowXml = rm[1];
+    const cells = [];
+    const cellRe = /<c\s([^>]*)(?:\/>|>([\s\S]*?)<\/c>)/g;
+    let cm;
+    while ((cm = cellRe.exec(rowXml))) {
+      const attrs = cm[1];
+      const inner = cm[2] || "";
+      const refMatch = attrs.match(/r="([A-Z]+)\d+"/);
+      const typeMatch = attrs.match(/t="([^"]+)"/);
+      const type = typeMatch ? typeMatch[1] : "n";
+      let value = "";
+      if (type === "s") {
+        const vMatch = inner.match(/<v>([\s\S]*?)<\/v>/);
+        if (vMatch) value = sharedStrings[parseInt(vMatch[1], 10)] || "";
+      } else if (type === "inlineStr") {
+        const tMatch = inner.match(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/);
+        if (tMatch) value = xmlUnescape(tMatch[1]);
+      } else {
+        const vMatch = inner.match(/<v>([\s\S]*?)<\/v>/);
+        if (vMatch) value = xmlUnescape(vMatch[1]);
+      }
+      const colIdx = refMatch ? colLettersToIndex(refMatch[1]) : cells.length;
+      cells[colIdx] = value;
+    }
+    for (let i = 0; i < cells.length; i++) if (cells[i] === undefined) cells[i] = "";
+    rows.push(cells);
+  }
+  return rows;
+}
+
+function parseXlsxRows(buf) {
+  const entries = readZipEntries(buf);
+  const sheetName = Object.keys(entries)
+    .filter((n) => /^xl\/worksheets\/sheet\d+\.xml$/.test(n))
+    .sort()[0];
+  if (!sheetName) throw new Error("У .xlsx не знайдено xl/worksheets/sheet*.xml.");
+  const sheetXml = readZipEntryData(buf, entries[sheetName]).toString("utf8");
+  let sharedStrings = [];
+  if (entries["xl/sharedStrings.xml"]) {
+    const sharedXml = readZipEntryData(buf, entries["xl/sharedStrings.xml"]).toString("utf8");
+    sharedStrings = parseSharedStrings(sharedXml);
+  }
+  const rows = parseSheetRows(sheetXml, sharedStrings);
+  return rows.filter((r) => r.length && r.some((c) => String(c).trim() !== ""));
+}
+
+module.exports = { parseXlsxRows };

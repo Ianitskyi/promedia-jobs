@@ -14,6 +14,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { parseXlsxRows } = require("./xlsx-mini.js");
 
 const CKAN_BASE = "https://data.gov.ua/api/3/action";
 // Найкращий відомий кандидат на slug датасету "Перелік актуальних вакансій
@@ -53,9 +54,9 @@ async function fetchJson(url) {
   return res.json();
 }
 
-async function fetchBuffer(url, extraHeaders) {
-  const res = await fetch(url, { headers: { "User-Agent": "promedia-jobs-import/1.0", ...extraHeaders } });
-  if (!res.ok && res.status !== 206) throw new Error(`HTTP ${res.status} для ${url}`);
+async function fetchBuffer(url) {
+  const res = await fetch(url, { headers: { "User-Agent": "promedia-jobs-import/1.0" } });
+  if (!res.ok) throw new Error(`HTTP ${res.status} для ${url}`);
   return Buffer.from(await res.arrayBuffer());
 }
 
@@ -100,18 +101,21 @@ async function resolveDataset() {
   return search.result.results[0];
 }
 
-// Заголовки одного ресурсу (без завантаження всього файлу) — HTTP Range на
-// перші кілька КБ. windows-1251 — однобайтове кодування, тож різати посеред
-// символу неможливо, на відміну від UTF-8/багатобайтових кодувань.
-const HEADER_PEEK_BYTES = 8000;
-async function peekHeaders(url) {
-  const buf = await fetchBuffer(url, { Range: `bytes=0-${HEADER_PEEK_BYTES - 1}` });
+// Табличні дані з ресурсу як масив рядків (rows[0] — заголовки). Розпізнає
+// CSV/TXT (з визначенням кодування й роздільника) та XLS/XLSX (через
+// scripts/xlsx-mini.js — Range-запитом тут не обійтися: .xlsx це ZIP-архів,
+// а обрізати його посередині без пошкодження не можна).
+async function readResourceRows(resource) {
+  const fmt = (resource.format || "").toUpperCase();
+  const buf = await fetchBuffer(resource.url);
+  if (fmt.includes("XLS")) {
+    return parseXlsxRows(buf);
+  }
   const text = decodeCsvBuffer(buf);
-  const nl = text.indexOf("\n");
-  const firstLine = nl !== -1 ? text.slice(0, nl) : text;
+  const firstLine = text.slice(0, text.indexOf("\n") !== -1 ? text.indexOf("\n") : text.length);
   const delimiter = detectDelimiter(firstLine);
-  const parsed = parseCsv(firstLine + "\n", delimiter);
-  return { headers: parsed[0] || [], delimiter };
+  log("Визначений роздільник:", JSON.stringify(delimiter));
+  return parseCsv(text, delimiter);
 }
 
 function resourceLooksLikeVacancyList(headers) {
@@ -122,34 +126,37 @@ function resourceLooksLikeVacancyList(headers) {
 }
 
 // Датасети ДСЗ інколи об'єднують під одним package_id кілька різних звітів
-// (наприклад, список вакансій і список уже працевлаштованих осіб) — тож
-// перебираємо ресурси від найновішого, дивимось лише заголовки (без
-// завантаження мільйонів рядків), і беремо перший, що справді схожий на
-// список вакансій (є назва посади, роботодавець і зарплата).
+// (наприклад, список вакансій і список уже працевлаштованих осіб), і
+// переважна більшість щомісячних знімків — у форматі XLS/XLSX, не CSV. Тож
+// перебираємо ресурси від найновішого (CSV/XLS/XLSX), завантажуємо кожен і
+// беремо перший, що справді схожий на список вакансій (є назва посади,
+// роботодавець і зарплата) — інші кандидати не чіпаємо.
 async function selectVacancyResource(pkg) {
   const resources = (pkg.resources || []).slice();
   if (!resources.length) throw new Error("У датасеті немає жодного ресурсу (файлу).");
-  const csvResources = resources.filter((r) => (r.format || "").toUpperCase().includes("CSV"));
-  const pool = (csvResources.length ? csvResources : resources).slice();
+  const tabular = resources.filter((r) => /CSV|XLS/.test((r.format || "").toUpperCase()));
+  const pool = (tabular.length ? tabular : resources).slice();
   pool.sort((a, b) => new Date(b.created || b.last_modified || 0) - new Date(a.created || a.last_modified || 0));
 
-  const MAX_CANDIDATES = 15;
+  const MAX_CANDIDATES = 6;
   const candidates = pool.slice(0, MAX_CANDIDATES);
   const tried = [];
   for (const resource of candidates) {
     const label = resource.name || resource.id;
     tried.push(label);
-    log(`Перевіряю заголовки ресурсу «${label}»...`);
-    let headers;
+    log(`Перевіряю ресурс «${label}» (${resource.format})...`);
+    let rows;
     try {
-      ({ headers } = await peekHeaders(resource.url));
+      rows = await readResourceRows(resource);
     } catch (e) {
-      log(`  не вдалося прочитати заголовки: ${e.message}`);
+      log(`  не вдалося прочитати: ${e.message}`);
       continue;
     }
+    if (!rows.length) { log("  порожній файл"); continue; }
+    const headers = rows[0];
     if (resourceLooksLikeVacancyList(headers)) {
       log(`  підходить: ${JSON.stringify(headers)}`);
-      return resource;
+      return { resource, rows };
     }
     log(`  не схоже на список вакансій: ${JSON.stringify(headers)}`);
   }
@@ -241,16 +248,9 @@ async function main() {
   const pkg = await resolveDataset();
   log("Датасет:", pkg.title || pkg.name || pkg.id);
 
-  const resource = await selectVacancyResource(pkg);
+  const { resource, rows } = await selectVacancyResource(pkg);
   log("Обраний ресурс:", resource.name || resource.id, "·", resource.format, "·", resource.url);
-
-  const csvBuffer = await fetchBuffer(resource.url);
-  const csvText = decodeCsvBuffer(csvBuffer);
-  const firstLine = csvText.slice(0, csvText.indexOf("\n") !== -1 ? csvText.indexOf("\n") : 1000);
-  const delimiter = detectDelimiter(firstLine);
-  log("Визначений роздільник:", JSON.stringify(delimiter));
-  const rows = parseCsv(csvText, delimiter);
-  if (rows.length < 2) throw new Error("Файл порожній або не розпізнався як CSV.");
+  if (rows.length < 2) throw new Error("Файл порожній або не розпізнався.");
 
   const headers = rows[0];
   const col = {
