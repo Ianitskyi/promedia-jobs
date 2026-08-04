@@ -7,7 +7,14 @@
  * для табличних держдатасетів. */
 const zlib = require("zlib");
 
+const OLE2_SIGNATURE = Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
+
 function findEocd(buf) {
+  if (buf.length >= 8 && buf.slice(0, 8).equals(OLE2_SIGNATURE)) {
+    throw new Error(
+      "Це старий бінарний .xls (OLE2/Compound File), а не .xlsx (ZIP) — потрібен інший парсер для цього формату."
+    );
+  }
   const sig = Buffer.from([0x50, 0x4b, 0x05, 0x06]);
   const minLen = 22;
   const searchStart = Math.max(0, buf.length - 65557);
@@ -16,7 +23,10 @@ function findEocd(buf) {
       return i;
     }
   }
-  throw new Error("Не ZIP-файл (не знайдено End Of Central Directory).");
+  const head = buf.slice(0, Math.min(16, buf.length)).toString("hex");
+  throw new Error(
+    `Не ZIP-файл (не знайдено End Of Central Directory). Розмір: ${buf.length} байт, перші байти: ${head}.`
+  );
 }
 
 function readZipEntries(buf) {
