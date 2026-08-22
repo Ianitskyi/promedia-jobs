@@ -33,6 +33,11 @@ const TOPIC_KEYWORDS = [
   "факт-чек", "фактчек", "медіамоніторинг", "монтажер", "сценарист",
 ];
 
+// Назви посад, які точно не про медіа/PR/маркетинг, навіть якщо в описі
+// трапилося щось із TOPIC_KEYWORDS (наприклад, "дизайнер" з держкласифікатора
+// ловить і промислового дизайнера-конструктора виробів).
+const EXCLUDE_KEYWORDS = ["промислов", "виробнич"];
+
 const HEADER_CANDIDATES = {
   title: ["назва вакансії", "назва посади", "посада", "професія", "найменування вакансії", "вакансія"],
   company: ["роботодавець", "назва роботодавця", "найменування роботодавця", "підприємство", "організація", "юридична особа"],
@@ -223,9 +228,26 @@ function matchRegion(raw) {
   return found || "";
 }
 
+// Шукає стем kw у text, але лише на межі слова: символ перед збігом має
+// бути не-літерою/не-цифрою (або початок рядка). Без цього стем "комунікац"
+// (навмисно неповне слово — щоб зловити "комунікація"/"комунікацій"/
+// "комунікаційний") хибно спрацьовує всередині зовсім іншого слова, як-от
+// "телекомунікаційних".
+function containsKeywordStem(text, kw) {
+  let start = 0;
+  for (;;) {
+    const i = text.indexOf(kw, start);
+    if (i === -1) return false;
+    const before = i === 0 ? "" : text[i - 1];
+    if (!/[a-zа-яіїєґ0-9]/i.test(before)) return true;
+    start = i + 1;
+  }
+}
+
 function isOnTopic(title, description) {
   const text = `${title} ${description || ""}`.toLowerCase();
-  return TOPIC_KEYWORDS.some((kw) => text.includes(kw));
+  if (EXCLUDE_KEYWORDS.some((kw) => text.includes(kw))) return false;
+  return TOPIC_KEYWORDS.some((kw) => containsKeywordStem(text, kw));
 }
 
 function stableId(title, company, region) {
@@ -272,6 +294,8 @@ async function main() {
 
   const dataRows = rows.slice(1);
   const candidates = [];
+  const seenIds = new Set();
+  let duplicateCount = 0;
   for (const r of dataRows) {
     const title = (r[col.title] || "").trim();
     const company = (r[col.company] || "").trim();
@@ -281,14 +305,20 @@ async function main() {
     const salary = col.salary !== -1 ? parseSalary(r[col.salary]) : 0;
     if (!salary) continue; // сайт публікує лише вакансії з указаною зарплатою
     const region = col.region !== -1 ? matchRegion(r[col.region]) : "";
-    candidates.push({ title, company, description, salary, region });
+    // Держдатасет часто містить кілька рядків для однієї й тієї ж масової
+    // вакансії (одна компанія відкриває багато однакових позицій) — на
+    // сайті це один запис, а не N однакових карток.
+    const id = stableId(title, company, region);
+    if (seenIds.has(id)) { duplicateCount++; continue; }
+    seenIds.add(id);
+    candidates.push({ id, title, company, description, salary, region });
   }
 
-  log(`На тему сайту й із зарплатою: ${candidates.length} з ${dataRows.length} рядків.`);
+  log(`На тему сайту й із зарплатою: ${candidates.length} з ${dataRows.length} рядків (${duplicateCount} дублікатів пропущено).`);
 
   const picked = candidates.slice(0, MAX_IMPORTED);
   const vacancies = picked.map((c) => ({
-    id: stableId(c.title, c.company, c.region),
+    id: c.id,
     title: c.title,
     companyId: null,
     companyName: c.company,
