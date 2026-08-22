@@ -201,7 +201,20 @@ function parseSpreadsheetMlRows(xml) {
 function parseXlsxRows(rawBuf) {
   const buf = stripBom(rawBuf);
   if (looksLikeXmlProlog(buf)) {
-    return parseSpreadsheetMlRows(decodeXmlBuffer(buf));
+    const xml = decodeXmlBuffer(buf);
+    const rows = parseSpreadsheetMlRows(xml);
+    if (!rows.length) {
+      // Файл справді XML, але не в очікуваній структурі SpreadsheetML
+      // (<Table>/<Row>/<Cell>/<Data>) — швидше здатися з діагностикою, ніж
+      // мовчки повернути "порожній файл" і втратити слід, чому саме.
+      const rootTags = [...xml.slice(0, 3000).matchAll(/<([a-zA-Z][\w:.-]*)[ >]/g)].map((m) => m[1]);
+      const uniqueTags = [...new Set(rootTags)].slice(0, 15);
+      throw new Error(
+        `XML-файл не розпізнано як SpreadsheetML: 0 рядків із <Table>/<Row>/<Cell>. ` +
+        `Перші теги в документі: ${JSON.stringify(uniqueTags)}. Фрагмент: ${xml.slice(0, 300)}`
+      );
+    }
+    return rows;
   }
 
   const entries = readZipEntries(buf);
