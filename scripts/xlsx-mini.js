@@ -198,19 +198,68 @@ function parseSpreadsheetMlRows(xml) {
   return rows.filter((r) => r.length && r.some((c) => String(c).trim() !== ""));
 }
 
+// Реальні "XLSX"-ресурси ДСЗ за 2025-2026 роки виявились не Excel-файлами
+// взагалі (ні ZIP-.xlsx, ні SpreadsheetML) — а плоским XML-фідом вакансій
+// власного формату dcz.gov.ua: <jobs><job id="..."><link>/<name>/<region>/
+// /<description>/<pubdate>/<salary>/<company>/<expire>/<jobtype>/<phone>
+// (кожне поле — у <![CDATA[...]]>, а всередині опису — ще й HTML-розмітка).
+// data.gov.ua лише неправильно підписав формат ресурсу як XLSX.
+function looksLikeJobsFeed(xml) {
+  return /<jobs[\s>]/i.test(xml.slice(0, 500)) && /<job[\s>]/i.test(xml.slice(0, 3000));
+}
+
+function extractCdataOrText(inner) {
+  // Зазвичай <![CDATA[ ... ]]>, але деякі ресурси ДСЗ віддають дещо
+  // пошкоджений варіант без "<!" — тож приймаємо обидва.
+  const m = inner.match(/<?!?\[CDATA\[([\s\S]*?)\]\]>?/);
+  return xmlUnescape((m ? m[1] : inner)).trim();
+}
+
+function stripHtmlTags(text) {
+  return text.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function extractJobField(jobXml, tag) {
+  const m = jobXml.match(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
+  return m ? extractCdataOrText(m[1]) : "";
+}
+
+function parseJobsFeedRows(xml) {
+  const header = ["назва вакансії", "роботодавець", "область", "заробітна плата", "опис вакансії"];
+  const rows = [header];
+  const jobRe = /<job\b[^>]*>([\s\S]*?)<\/job>/g;
+  let m;
+  while ((m = jobRe.exec(xml))) {
+    const jobXml = m[1];
+    const title = extractJobField(jobXml, "name");
+    if (!title) continue;
+    const company = extractJobField(jobXml, "company");
+    const region = extractJobField(jobXml, "region");
+    const salary = extractJobField(jobXml, "salary");
+    const description = stripHtmlTags(extractJobField(jobXml, "description"));
+    rows.push([title, company, region, salary, description]);
+  }
+  return rows;
+}
+
 function parseXlsxRows(rawBuf) {
   const buf = stripBom(rawBuf);
   if (looksLikeXmlProlog(buf)) {
     const xml = decodeXmlBuffer(buf);
+    if (looksLikeJobsFeed(xml)) {
+      const rows = parseJobsFeedRows(xml);
+      if (rows.length < 2) throw new Error("XML-фід вакансій ДСЗ розпізнано, але жодного <job> з назвою не знайдено.");
+      return rows;
+    }
     const rows = parseSpreadsheetMlRows(xml);
     if (!rows.length) {
-      // Файл справді XML, але не в очікуваній структурі SpreadsheetML
-      // (<Table>/<Row>/<Cell>/<Data>) — швидше здатися з діагностикою, ніж
-      // мовчки повернути "порожній файл" і втратити слід, чому саме.
+      // Файл справді XML, але не в жодній із двох відомих структур — швидше
+      // здатися з діагностикою, ніж мовчки повернути "порожній файл" і
+      // втратити слід, чому саме.
       const rootTags = [...xml.slice(0, 3000).matchAll(/<([a-zA-Z][\w:.-]*)[ >]/g)].map((m) => m[1]);
       const uniqueTags = [...new Set(rootTags)].slice(0, 15);
       throw new Error(
-        `XML-файл не розпізнано як SpreadsheetML: 0 рядків із <Table>/<Row>/<Cell>. ` +
+        `XML-файл не розпізнано ні як SpreadsheetML, ні як фід вакансій ДСЗ. ` +
         `Перші теги в документі: ${JSON.stringify(uniqueTags)}. Фрагмент: ${xml.slice(0, 300)}`
       );
     }
