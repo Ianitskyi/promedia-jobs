@@ -33,10 +33,11 @@ const TOPIC_KEYWORDS = [
   "факт-чек", "фактчек", "медіамоніторинг", "монтажер", "сценарист",
 ];
 
-// Назви посад, які точно не про медіа/PR/маркетинг, навіть якщо в описі
-// трапилося щось із TOPIC_KEYWORDS (наприклад, "дизайнер" з держкласифікатора
-// ловить і промислового дизайнера-конструктора виробів).
-const EXCLUDE_KEYWORDS = ["промислов", "виробнич"];
+// Назви посад, які точно не про медіа/PR/маркетинг, навіть якщо в назві
+// трапилося щось із TOPIC_KEYWORDS: "дизайнер" з держкласифікатора ловить і
+// промислового дизайнера-конструктора виробів; "комунікац" — і "оператора
+// інформаційно-комунікаційних мереж" (IT/телеком, не PR-комунікації).
+const EXCLUDE_KEYWORDS = ["промислов", "виробнич", "комунікаційних мереж", "художник-конструктор"];
 
 const HEADER_CANDIDATES = {
   title: ["назва вакансії", "назва посади", "посада", "професія", "найменування вакансії", "вакансія"],
@@ -244,8 +245,16 @@ function containsKeywordStem(text, kw) {
   }
 }
 
-function isOnTopic(title, description) {
-  const text = `${title} ${description || ""}`.toLowerCase();
+// Навмисно перевіряємо лише назву посади, а не опис: реальний "опис
+// вакансії" ДСЗ — це весь текст форми №3-ПН одним полем (умови праці,
+// вид договору, соціальні переваги, вимоги до кандидата тощо), і майже
+// кожна вакансія — байдуже, якої професії — включає стандартну фразу на
+// кшталт "навички комунікації" в переліку особистісних компетенцій. Пошук
+// теми в такому описі ловив екскаваторників, бухгалтерів і стоматологічних
+// медсестер лише через це слово. Назва посади з держкласифікатора — значно
+// надійніший сигнал теми.
+function isOnTopic(title) {
+  const text = title.toLowerCase();
   if (EXCLUDE_KEYWORDS.some((kw) => text.includes(kw))) return false;
   return TOPIC_KEYWORDS.some((kw) => containsKeywordStem(text, kw));
 }
@@ -301,7 +310,7 @@ async function main() {
     const company = (r[col.company] || "").trim();
     if (!title || !company) continue;
     const description = col.description !== -1 ? (r[col.description] || "").trim() : "";
-    if (!isOnTopic(title, description)) continue;
+    if (!isOnTopic(title)) continue;
     const salary = col.salary !== -1 ? parseSalary(r[col.salary]) : 0;
     if (!salary) continue; // сайт публікує лише вакансії з указаною зарплатою
     const region = col.region !== -1 ? matchRegion(r[col.region]) : "";
