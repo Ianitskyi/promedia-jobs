@@ -1,10 +1,20 @@
-/* Мінімальний читач .xlsx (ZIP + XML) без зовнішніх залежностей — навмисно,
- * а не npm-пакет `xlsx`: опублікована на npm версія (0.18.5) має відомі
- * незакриті вразливості (prototype pollution, ReDoS), а офіційний
- * патчений білд SheetJS роздають лише зі свого CDN, недоступного з цього
- * середовища розробки для перевірки. Читає лише перший аркуш і лише
- * значення клітинок (без формул і стилів) — саме стільки, скільки треба
- * для табличних держдатасетів. */
+/* Мінімальний читач .xlsx/.xls без зовнішніх залежностей — навмисно, а не
+ * npm-пакет `xlsx`: опублікована на npm версія (0.18.5) має відомі незакриті
+ * вразливості (prototype pollution, ReDoS), а офіційний патчений білд
+ * SheetJS роздають лише зі свого CDN, недоступного з цього середовища
+ * розробки для перевірки. Читає лише перший аркуш і лише значення клітинок
+ * (без формул і стилів) — саме стільки, скільки треба для табличних
+ * держдатасетів.
+ *
+ * Підтримує два різні формати під розширенням .xls/.xlsx, які реально
+ * трапляються на data.gov.ua:
+ *   1. Справжній .xlsx — ZIP-архів з xl/worksheets/sheet1.xml усередині.
+ *   2. "Excel XML Spreadsheet 2003" (SpreadsheetML) — попри розширення
+ *      .xls/.xlsx це насправді один текстовий XML-файл (<?xml ...?>
+ *      <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet">...),
+ *      без жодного стиснення чи ZIP-контейнера. Виявлено на реальних
+ *      ресурсах ДСЗ за 2025-2026: усі вони саме такі, тож без підтримки
+ *      цього формату імпорт бачив лише дані 2020 року. */
 const zlib = require("zlib");
 
 const OLE2_SIGNATURE = Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
@@ -133,7 +143,67 @@ function parseSheetRows(xml, sharedStrings) {
   return rows;
 }
 
-function parseXlsxRows(buf) {
+function stripBom(buf) {
+  if (buf.length >= 3 && buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf) return buf.slice(3);
+  return buf;
+}
+
+function looksLikeXmlProlog(buf) {
+  return buf.length >= 5 && buf.slice(0, 5).toString("latin1") === "<?xml";
+}
+
+// Кодування декларується в самому пролозі (encoding="..."), і саме йому
+// довіряємо — на відміну від CSV, тут немає сенсу вгадувати евристикою:
+// SpreadsheetML державних систем трапляється як у windows-1251, так і в UTF-8.
+function decodeXmlBuffer(buf) {
+  const prolog = buf.slice(0, 200).toString("latin1");
+  const m = prolog.match(/encoding="([^"]+)"/i);
+  const enc = (m ? m[1] : "utf-8").toLowerCase();
+  try {
+    if (enc.includes("1251")) return new TextDecoder("windows-1251").decode(buf);
+    return new TextDecoder("utf-8").decode(buf);
+  } catch (e) {
+    return buf.toString("utf8");
+  }
+}
+
+// "Excel XML Spreadsheet 2003" (SpreadsheetML): <Row><Cell ss:Index="N">
+// <Data>текст</Data></Cell></Row>. ss:Index — це 1-based позиція колонки і
+// трапляється, лише коли попередні клітинки в рядку пропущені (порожні), тож
+// без нього рахуємо позицію послідовно.
+function parseSpreadsheetMlRows(xml) {
+  const wsMatch = xml.match(/<(?:ss:)?Table\b[^>]*>([\s\S]*?)<\/(?:ss:)?Table>/i);
+  const tableXml = wsMatch ? wsMatch[1] : xml;
+  const rows = [];
+  const rowRe = /<(?:ss:)?Row\b[^>]*>([\s\S]*?)<\/(?:ss:)?Row>/g;
+  let rm;
+  while ((rm = rowRe.exec(tableXml))) {
+    const rowXml = rm[1];
+    const cells = [];
+    let cursor = 0;
+    const cellRe = /<(?:ss:)?Cell\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:ss:)?Cell>)/g;
+    let cm;
+    while ((cm = cellRe.exec(rowXml))) {
+      const attrs = cm[1] || "";
+      const inner = cm[2] || "";
+      const idxMatch = attrs.match(/(?:ss:)?Index="(\d+)"/);
+      if (idxMatch) cursor = parseInt(idxMatch[1], 10) - 1;
+      const dataMatch = inner.match(/<(?:ss:)?Data\b[^>]*>([\s\S]*?)<\/(?:ss:)?Data>/);
+      cells[cursor] = dataMatch ? xmlUnescape(dataMatch[1]) : "";
+      cursor++;
+    }
+    for (let i = 0; i < cells.length; i++) if (cells[i] === undefined) cells[i] = "";
+    rows.push(cells);
+  }
+  return rows.filter((r) => r.length && r.some((c) => String(c).trim() !== ""));
+}
+
+function parseXlsxRows(rawBuf) {
+  const buf = stripBom(rawBuf);
+  if (looksLikeXmlProlog(buf)) {
+    return parseSpreadsheetMlRows(decodeXmlBuffer(buf));
+  }
+
   const entries = readZipEntries(buf);
   const sheetName = Object.keys(entries)
     .filter((n) => /^xl\/worksheets\/sheet\d+\.xml$/.test(n))
