@@ -151,7 +151,7 @@
 
   function moderationCardHtml(v) {
     const tags = [
-      v.contactEmail ? '<span class="tag green">Контакти вказано</span>' : '<span class="tag" style="background:var(--red-tint);color:var(--red)">Контакт відсутній</span>',
+      (v.contactEmail || v.contactPhone) ? '<span class="tag green">Контакти вказано</span>' : '<span class="tag" style="background:var(--red-tint);color:var(--red)">Контакт відсутній</span>',
       (v.responsibilities && v.responsibilities.length) ? '<span class="tag green">Обов\'язки заповнені</span>' : '<span class="tag" style="background:var(--red-tint);color:var(--red)">Обов\'язки не заповнені</span>',
       (v.salaryMin || v.salaryMax) ? '<span class="tag green">Зарплата вказана</span>' : '<span class="tag" style="background:var(--red-tint);color:var(--red)">Зарплата не вказана</span>',
     ].join("");

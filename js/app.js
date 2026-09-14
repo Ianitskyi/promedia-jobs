@@ -327,7 +327,9 @@ function initVacancyDetail() {
     : esc(s.name)).join(" · ");
   const sourceNote = isPromediaFound(v)
     ? `<div class="source-note promedia">Цю вакансію додала команда «ПроМедіа» з ${esc(source?.name || v.source || "публічного джерела")}. Ми показуємо скорочений опис і ключові умови, а повне оголошення та відгук — у першоджерелі:<br>${sourceLinks}</div>`
-    : (!v.direct ? `<div class="source-note">Ця вакансія імпортована у скороченому й нейтралізованому вигляді.${sources.length > 1 ? " Знайдена одразу в кількох джерелах — показуємо один запис із посиланнями на всі:" : " Повне оголошення — за посиланням на джерело:"}<br>${sourceLinks}</div>` : "");
+    : (!v.direct
+        ? `<div class="source-note">Ця вакансія імпортована у скороченому й нейтралізованому вигляді.${sources.length > 1 ? " Знайдена одразу в кількох джерелах — показуємо один запис із посиланнями на всі:" : " Повне оголошення — за посиланням на джерело:"}<br>${sourceLinks}</div>`
+        : (v.source ? `<div class="source-note">Джерело: ${esc(v.source)}.</div>` : ""));
   el.innerHTML = `
   <div class="detail-hero">
     ${logoOrLetterHtml(v, 56)}
@@ -368,9 +370,11 @@ function initVacancyDetail() {
       ${v.direct
         ? (v.contactEmail
             ? `<a class="btn btn-primary btn-block" href="mailto:${esc(v.contactEmail)}?subject=${encodeURIComponent("Відгук на вакансію: " + v.title)}">Написати на ${esc(v.contactEmail)}</a>`
-            : `<p style="color:var(--muted);font-size:13px">Контакти роботодавця не вказано.</p>`)
+            : (v.contactPhone
+                ? `<a class="btn btn-primary btn-block" href="tel:${esc(v.contactPhone.replace(/[^\d+]/g, ""))}">Подзвонити: ${esc(v.contactPhone)}</a>`
+                : `<p style="color:var(--muted);font-size:13px">Контакти роботодавця не вказано.</p>`))
         : `<a class="btn btn-primary btn-block" href="${esc(safeUrl(source?.url || v.sourceUrl))}" target="_blank" rel="noopener">Перейти до оригіналу →</a>`}
-      <p style="font-size:12.5px;color:var(--muted);margin-top:10px">${v.direct ? "Подача — напряму на пошту роботодавця, без реєстрації на порталі." : "Подача заявки — за посиланням на оригінал вакансії, поза цим порталом."}</p>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:10px">${v.direct ? (v.contactEmail ? "Подача — напряму на пошту роботодавця, без реєстрації на порталі." : "Зв'язок — напряму з роботодавцем, без реєстрації на порталі.") : "Подача заявки — за посиланням на оригінал вакансії, поза цим порталом."}</p>
     </div>`;
 }
 

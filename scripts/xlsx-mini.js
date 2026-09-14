@@ -225,7 +225,7 @@ function extractJobField(jobXml, tag) {
 }
 
 function parseJobsFeedRows(xml) {
-  const header = ["назва вакансії", "роботодавець", "область", "заробітна плата", "опис вакансії"];
+  const header = ["назва вакансії", "роботодавець", "область", "заробітна плата", "опис вакансії", "телефон"];
   const rows = [header];
   const jobRe = /<job\b[^>]*>([\s\S]*?)<\/job>/g;
   let m;
@@ -237,7 +237,8 @@ function parseJobsFeedRows(xml) {
     const region = extractJobField(jobXml, "region");
     const salary = extractJobField(jobXml, "salary");
     const description = stripHtmlTags(extractJobField(jobXml, "description"));
-    rows.push([title, company, region, salary, description]);
+    const phone = extractJobField(jobXml, "phone");
+    rows.push([title, company, region, salary, description, phone]);
   }
   return rows;
 }

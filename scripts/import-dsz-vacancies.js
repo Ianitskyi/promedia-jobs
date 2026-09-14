@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 /* Щоденний імпорт вакансій з відкритих даних Єдиного порталу вакансій ДСЗ
  * (форма №3-ПН, data.gov.ua) — відфільтрований за темами медіа/PR/маркетингу
- * й обмежений обов'язковою наявністю зарплати (те саме правило, що діє для
- * вакансій, які подають роботодавці напряму через post-vacancy.html).
+ * й обмежений обов'язковою наявністю зарплати та прямого контакту роботодавця
+ * (телефону). Вакансія копіюється повністю (без скорочення опису) і без
+ * посилань на інші сайти — публікується як пряма (те саме правило про
+ * зарплату, що діє для вакансій, які подають роботодавці напряму через
+ * post-vacancy.html).
  *
  * Принцип: якщо джерело не вдалося впевнено розпізнати (немає очікуваних
  * колонок), скрипт падає з помилкою і НЕ чіпає js/imported-vacancies.js —
@@ -49,6 +52,7 @@ const HEADER_CANDIDATES = {
   region: ["область", "регіон", "адміністративно-територіальна одиниця", "територія"],
   salary: ["заробітна плата", "зарплата", "оплата праці", "розмір заробітної плати", "зп"],
   description: ["опис вакансії", "опис", "додаткова інформація", "вимоги", "умови"],
+  phone: ["телефон", "контактний телефон", "контакти", "phone"],
 };
 
 function log(...args) { console.log("[import-dsz-vacancies]", ...args); }
@@ -294,8 +298,12 @@ async function main() {
     region: findColumn(headers, HEADER_CANDIDATES.region),
     salary: findColumn(headers, HEADER_CANDIDATES.salary),
     description: findColumn(headers, HEADER_CANDIDATES.description),
+    phone: findColumn(headers, HEADER_CANDIDATES.phone),
   };
   log("Знайдені колонки:", JSON.stringify(col), "з заголовків:", JSON.stringify(headers));
+  if (col.phone === -1) {
+    log("Колонку контактного телефону не знайдено в цьому ресурсі — вакансій без контактів не публікуємо, тож записів сьогодні, найімовірніше, не буде.");
+  }
 
   if (col.title === -1 || col.company === -1) {
     fail(
@@ -309,6 +317,7 @@ async function main() {
   const candidates = [];
   const seenIds = new Set();
   let duplicateCount = 0;
+  let noContactCount = 0;
   for (const r of dataRows) {
     const title = (r[col.title] || "").trim();
     const company = (r[col.company] || "").trim();
@@ -317,6 +326,8 @@ async function main() {
     if (!isOnTopic(title)) continue;
     const salary = col.salary !== -1 ? parseSalary(r[col.salary]) : 0;
     if (!salary) continue; // сайт публікує лише вакансії з указаною зарплатою
+    const phone = col.phone !== -1 ? (r[col.phone] || "").trim() : "";
+    if (!phone) { noContactCount++; continue; } // і лише ті, де є прямий контакт роботодавця
     const region = col.region !== -1 ? matchRegion(r[col.region]) : "";
     // Держдатасет часто містить кілька рядків для однієї й тієї ж масової
     // вакансії (одна компанія відкриває багато однакових позицій) — на
@@ -324,10 +335,10 @@ async function main() {
     const id = stableId(title, company, region);
     if (seenIds.has(id)) { duplicateCount++; continue; }
     seenIds.add(id);
-    candidates.push({ id, title, company, description, salary, region });
+    candidates.push({ id, title, company, description, salary, region, phone });
   }
 
-  log(`На тему сайту й із зарплатою: ${candidates.length} з ${dataRows.length} рядків (${duplicateCount} дублікатів пропущено).`);
+  log(`На тему сайту, із зарплатою й контактами: ${candidates.length} з ${dataRows.length} рядків (${duplicateCount} дублікатів, ${noContactCount} без контактів пропущено).`);
 
   const picked = candidates.slice(0, MAX_IMPORTED);
   const vacancies = picked.map((c) => ({
@@ -341,6 +352,7 @@ async function main() {
     remoteOk: /дистанц|віддален/i.test(c.description),
     employmentType: "full",
     experienceYears: 0,
+    // Повний, нескорочений опис вакансії з держдатасету — без обрізання.
     responsibilities: c.description ? [c.description] : [],
     mustHave: [],
     niceToHave: [],
@@ -356,19 +368,24 @@ async function main() {
     employmentArrangement: "",
     benefits: [],
     contactEmail: "",
+    contactPhone: c.phone,
     publishedAt: todayPlusDays(0),
     expiresAt: todayPlusDays(30),
     source: "Єдиний портал вакансій ДСЗ",
-    sourceUrl: "https://www.dcz.gov.ua/job",
-    direct: false,
+    sourceUrl: "",
+    // Пряма вакансія з реальним контактом роботодавця (телефон) — показуємо
+    // повністю, без посилань на інші сайти, як і подані напряму роботодавцями.
+    direct: true,
     moderationStatus: "approved",
     active: true,
   }));
 
   const header = `/* Автоматично згенеровано scripts/import-dsz-vacancies.js — не редагувати вручну.
    Щоденний імпорт із відкритих даних Єдиного порталу вакансій ДСЗ (форма №3-ПН),
-   відфільтрований за темами медіа/комунікацій/маркетингу. Порожньо, якщо імпорт
-   ще жодного разу не запускався успішно.
+   відфільтрований за темами медіа/комунікацій/маркетингу, лише вакансії із
+   зарплатою й прямим контактом роботодавця (телефон). Копіюються повністю, без
+   скорочень і без посилань на інші сайти. Порожньо, якщо імпорт ще жодного
+   разу не запускався успішно.
    Останнє оновлення: ${new Date().toISOString()} */
 `;
   const body = `const IMPORTED_VACANCIES = ${JSON.stringify(vacancies, null, 2)};\n`;
