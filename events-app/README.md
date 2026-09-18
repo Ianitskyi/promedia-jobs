@@ -45,6 +45,7 @@ Summary:
 | `NEXT_PUBLIC_APP_URL` | The app's public URL (used to build ticket URLs embedded in QR codes and emails) |
 | `EMAIL_PROVIDER` | `console` (default, logs emails) or `resend` |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Only needed if `EMAIL_PROVIDER=resend` |
+| `ALLOW_SELF_SERVICE_ORG_CREATION` | `false` by default. See below and `ARCHITECTURE.md` §7a. |
 
 Never commit `.env.local` or any file containing real keys — `.gitignore`
 excludes `.env*` except the checked-in `.env.example` template.
@@ -101,12 +102,22 @@ by token) — see `ARCHITECTURE.md` §3 for why.
 
 ## How to create the first organization/admin
 
-1. Go to `/login`, switch to "Create an account", and sign up.
-2. If your Supabase project requires email confirmation, confirm the
+Organization creation is invite-only by default
+(`ALLOW_SELF_SERVICE_ORG_CREATION=false`) — see `ARCHITECTURE.md` §7a
+for why. There is no platform-admin invitation flow yet, so to
+bootstrap the very first organization on a fresh deployment:
+
+1. Set `ALLOW_SELF_SERVICE_ORG_CREATION=true` (locally in `.env.local`,
+   or temporarily in your deployment's environment variables).
+2. Go to `/login`, switch to "Create an account", and sign up.
+3. If your Supabase project requires email confirmation, confirm the
    email, then sign in.
-3. You'll land on `/dashboard/onboarding` — create an organization. You
+4. You'll land on `/dashboard/onboarding` — create an organization. You
    become its `OWNER`.
-4. From there, create an event, invite teammates by adding rows to
+5. **Set the flag back to `false`** (or unset it) once you've created
+   the organizations you need — leaving it on means any new sign-up can
+   create their own organization.
+6. From there, create an event, invite teammates by adding rows to
    `organization_users` (there's no invite UI yet — see **Known MVP
    limitations**), and go.
 
@@ -180,9 +191,21 @@ of a scanned token.
   Postgres functions with `EXECUTE` revoked from `anon`/`authenticated`
   and granted only to `service_role` — they cannot be called directly
   through Supabase's public REST API, only from this app's server code.
-- **Rate limiting**: a minimal in-memory limiter
-  (`lib/rate-limit.ts`) guards public registration and check-in. It's
-  process-local — see limitations below.
+  `create_organization_with_owner` does **not** get this treatment (it
+  needs the caller's own session) and is a known, documented exception
+  — see `ARCHITECTURE.md` §7a.
+- **Duplicate registration never discloses the existing ticket token**
+  — an email already registered for an event gets an
+  `ALREADY_REGISTERED` result with no token, never the original
+  attendee's ticket. See `ARCHITECTURE.md` §5a.
+- **Check-in event/ticket consistency is a database-enforced
+  invariant**, not just an application check: `perform_checkin` derives
+  `event_id` from the ticket itself, and a `before insert or update`
+  trigger on `checkins` independently rejects any row whose `event_id`
+  disagrees with its ticket's — see `ARCHITECTURE.md` §6a.
+- **Rate limiting**: `lib/rate-limit.ts` — development/single-instance
+  protection only, explicitly not production-grade. See limitations
+  below.
 - **Input validation**: every public-facing mutation is validated with
   `zod` before touching the database.
 - **Anti-spam**: the registration form has a hidden honeypot field;
@@ -199,21 +222,37 @@ of a scanned token.
 
 - **No member invite UI** — adding a teammate to an organization (and
   setting their role) is currently a manual `organization_users` insert.
-- **Rate limiting is per-instance**, not shared across serverless
-  instances. Fine for a single-region MVP; a durable store (e.g. Upstash
-  Redis) is the natural upgrade behind the same `checkRateLimit()` call
-  site.
-- **No live Supabase project in the environment this was built in** —
-  `lib/database.types.ts` is hand-written to match the SQL migration
-  rather than generated from a live project, and the test suite (see
-  below) exercises application logic against a mocked Supabase client
-  rather than a real database. Both should be revisited (regenerate
-  types, add integration tests) once linked to a real project.
+- **Organization creation is a known, documented gap, not a solved
+  problem** — see `ARCHITECTURE.md` §7a. The app-level
+  `ALLOW_SELF_SERVICE_ORG_CREATION` flag (default off) is a stopgap;
+  the underlying `create_organization_with_owner` RPC remains callable
+  by any authenticated user directly against Supabase's REST API. A
+  real fix requires the future platform-admin invitation model, not
+  tighter gating of the current mechanism.
+- **Rate limiting is development/single-instance protection, not
+  production-grade** — `lib/rate-limit.ts` says so explicitly and
+  defines a `RateLimiter` interface for the purpose; the shipped
+  `InMemoryRateLimiter` does not share state across serverless
+  instances or survive a restart. A durable store (e.g. Upstash Redis)
+  behind the same interface is the pre-launch upgrade.
+- **The database security/integrity model is designed and unit-tested
+  against a mock, not verified against a real database.** This
+  environment had no live Supabase project and no network access to
+  provision one, so `lib/database.types.ts` is hand-written to match
+  the SQL migration rather than generated from a live project, and
+  nothing here has exercised the actual RLS policies, the
+  `checkins.ticket_id` unique constraint, the
+  `checkins_event_matches_ticket` trigger, or the `register_attendee`
+  row lock against a running Postgres instance. Do not treat these as
+  verified. Run [`supabase/INTEGRATION_TESTS.md`](./supabase/INTEGRATION_TESTS.md)
+  against a real project before relying on this in production.
 - **Timezone handling** is deliberately simple: event start/end are
-  stored and displayed as the organizer's chosen local date/time/zone
-  triple (no UTC conversion needed for display); only the registration
-  deadline is converted to a UTC instant for comparison, via a small
+  stored as the organizer's chosen local date/time/zone triple.
+  Display always renders those values in the event's own configured
+  timezone (`lib/format-event-time.ts`), and the registration deadline
+  is converted to a UTC instant for comparison — both via a small
   Intl-based helper (`lib/timezone.ts`) rather than a timezone library.
+  See `ARCHITECTURE.md` §9a.
 - Everything listed in `ARCHITECTURE.md` §11 as out of scope (payments,
   custom fields, wallet passes, bulk import, analytics, webhooks/API,
   etc.) — deliberately not built.
@@ -233,16 +272,19 @@ registration state machines: invalid token, wrong event, revoked
 ticket, first successful check-in, "loses the race" → already checked
 in (the concurrency case), manual check-in reusing the same path, and
 registration error mapping (event not found/published, deadline passed,
-capacity reached, duplicate registration returning the existing
-ticket).
+capacity reached, duplicate registration reporting `ALREADY_REGISTERED`
+without ever exposing the existing ticket token — including a test
+that defends this even if a future/buggy RPC response carried one).
 
 What these tests do **not** cover: the actual Postgres-level guarantees
-(the `checkins.ticket_id` unique constraint, RLS policies, the
-`register_attendee` row lock). Those are integration-level properties
-of the schema in `supabase/migrations/0001_init.sql` and should be
-verified against a real (or local, via `supabase start`) Postgres
-instance before relying on this in production — see **Known MVP
-limitations**.
+(the `checkins.ticket_id` unique constraint and its enforcing trigger,
+RLS policies, the `register_attendee` row lock, the capacity race, a
+truly simultaneous duplicate scan). Those are integration-level
+properties of the schema in `supabase/migrations/0001_init.sql` that
+only a real database can verify, and **have not been run against
+one** — see [`supabase/INTEGRATION_TESTS.md`](./supabase/INTEGRATION_TESTS.md)
+for the concrete checklist to run before relying on this in production,
+and **Known MVP limitations** below.
 
 ## Roadmap
 

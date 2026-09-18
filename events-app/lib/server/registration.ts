@@ -7,6 +7,7 @@ export type RegisterAttendeeError =
   | "EVENT_NOT_PUBLISHED"
   | "REGISTRATION_CLOSED"
   | "CAPACITY_REACHED"
+  | "ALREADY_REGISTERED"
   | "UNKNOWN";
 
 export interface RegisterAttendeeInput {
@@ -18,8 +19,26 @@ export interface RegisterAttendeeInput {
   position?: string;
 }
 
+/**
+ * SECURITY: on success this is the only place a ticket's public_token
+ * ever leaves the server for a *new* registration. A duplicate
+ * registration (an email already registered for this event) is
+ * reported as the ALREADY_REGISTERED error below — never as a success
+ * carrying the existing token. The token is a bearer credential; if
+ * knowing someone's email were enough to get their ticket token back,
+ * anyone who knew a registered attendee's email could obtain (and use)
+ * their ticket. See the SECURITY note on register_attendee in
+ * supabase/migrations/0001_init.sql.
+ *
+ * A future "resend my ticket" flow belongs here as a separate,
+ * explicitly-invoked function (e.g. requestTicketResend(eventId, email)
+ * that always responds the same way regardless of whether the email is
+ * registered, and emails the link rather than returning it) — not as a
+ * side effect of registration. Not implemented yet; deliberately out of
+ * scope for this fix.
+ */
 export type RegisterAttendeeResult =
-  | { ok: true; publicToken: string; alreadyRegistered: boolean }
+  | { ok: true; publicToken: string }
   | { ok: false; error: RegisterAttendeeError };
 
 const KNOWN_ERRORS: RegisterAttendeeError[] = [
@@ -61,9 +80,14 @@ export async function registerAttendee(
     return { ok: false, error: "UNKNOWN" };
   }
 
-  return {
-    ok: true,
-    publicToken: data.public_token,
-    alreadyRegistered: data.already_registered,
-  };
+  if (data.already_registered) {
+    return { ok: false, error: "ALREADY_REGISTERED" };
+  }
+
+  if (!data.public_token) {
+    // Defensive: a fresh registration should always carry a token.
+    return { ok: false, error: "UNKNOWN" };
+  }
+
+  return { ok: true, publicToken: data.public_token };
 }

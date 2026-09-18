@@ -72,5 +72,6 @@ provision one. Phases are implemented and typechecked against the
 Supabase JS types generated from the migration SQL, and unit-tested with
 a mocked client. End-to-end verification against a real Supabase
 instance is left to the person running `supabase db push` from the
-README steps — this is called out explicitly rather than claimed as
-tested.
+README steps, against the concrete checklist in
+`supabase/INTEGRATION_TESTS.md` — this is called out explicitly
+rather than claimed as tested.

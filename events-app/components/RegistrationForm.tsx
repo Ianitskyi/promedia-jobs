@@ -61,6 +61,11 @@ export function RegistrationForm({ action }: RegistrationFormProps) {
           {state.error}
         </p>
       )}
+      {state.info && (
+        <p role="status" className="border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-muted">
+          {state.info}
+        </p>
+      )}
 
       <Button type="submit" disabled={pending}>
         {pending ? "Registering…" : "Register"}

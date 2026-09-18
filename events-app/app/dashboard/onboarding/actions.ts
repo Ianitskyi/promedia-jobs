@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { slugify, withRandomSuffix } from "@/lib/slug";
+import { isSelfServiceOrgCreationEnabled } from "@/lib/config";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Enter your organization's name."),
@@ -17,6 +18,16 @@ export async function createOrganization(
   _prev: OnboardingState,
   formData: FormData,
 ): Promise<OnboardingState> {
+  // Defense in depth: the onboarding page already hides the form when
+  // this is off, but a server action is a reachable endpoint on its
+  // own regardless of what the page renders.
+  if (!isSelfServiceOrgCreationEnabled()) {
+    return {
+      error:
+        "Organization creation is currently invite-only. Contact your platform administrator.",
+    };
+  }
+
   const parsed = schema.safeParse({ name: formData.get("name") });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };

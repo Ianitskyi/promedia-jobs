@@ -110,6 +110,30 @@ Lookups by token use an exact-match indexed query
 (`unique` index on `tickets.public_token`); there is no prefix search or
 enumeration surface.
 
+### 5a. Duplicate registration never discloses the existing ticket
+
+Registering again with an email already registered for the event is a
+normal outcome (`unique(event_id, normalized_email)`), not an error —
+but it must **never** hand back the existing ticket's `public_token`.
+That token is a bearer credential: whoever has it can view the ticket
+and, at the door, is indistinguishable from the real attendee. If
+submitting a known email were enough to get the token back, knowing a
+registered attendee's email would be enough to steal their ticket.
+
+So `register_attendee` always returns `already_registered=true` with
+`ticket_id`/`public_token` both `null`, `lib/server/registration.ts`
+surfaces this as `{ ok: false, error: "ALREADY_REGISTERED" }` (a
+sibling of the other registration errors, not a success variant that
+happens to carry a token), and the registration form shows a neutral
+"this email is already registered" message and does **not** redirect
+anywhere — there is nothing to redirect to. A "resend my ticket by
+email" flow is the correct way to help a legitimate attendee who lost
+their ticket link, and the code is deliberately structured (a single
+`registerAttendee()` entry point, a distinct error case) so that can be
+added later as its own explicitly-invoked, always-emails-never-returns
+function — not implemented in this pass, to avoid building a recovery
+system nobody has asked for the shape of yet.
+
 ## 6. Check-in concurrency
 
 Two phones can scan the same ticket within milliseconds. Correctness
@@ -129,6 +153,36 @@ races). Instead:
 This makes the "only one first check-in" guarantee a database invariant,
 not a convention every call site has to remember to honor.
 
+### 6a. A check-in's event_id can never disagree with its ticket's
+
+`checkins.event_id` is denormalized (kept alongside `ticket_id`) purely
+so per-event queries don't need a join. Denormalized data can drift, so
+this is enforced twice, deliberately redundantly:
+
+1. **`perform_checkin` derives `event_id` from the ticket row itself**
+   (`select event_id from tickets where id = p_ticket_id`) rather than
+   trusting the `p_event_id` argument for the value it stores — the
+   ticket is the source of truth. `p_event_id` is still required and
+   compared against it; a mismatch raises `EVENT_MISMATCH` rather than
+   silently inserting a row with two different ideas of which event it
+   belongs to.
+2. **A `before insert or update on checkins` trigger**
+   (`enforce_checkin_event_matches_ticket`) independently re-checks
+   `new.event_id = tickets.event_id for new.ticket_id` and raises if
+   they disagree. Postgres `CHECK` constraints can't reference another
+   table, so a trigger is the mechanism for a genuine cross-table
+   invariant here.
+
+The trigger is the one that actually matters: it holds regardless of
+which function or future code path writes to `checkins`, not just
+`perform_checkin`. `lib/server/checkin.ts` also checks
+`ticket.event_id === eventId` in TypeScript before ever calling
+`perform_checkin`, and that's what produces the friendly `WRONG_EVENT`
+scanner state — but that check alone was never the safety guarantee,
+only the UX for the common case; the trigger is what makes it a
+database-level invariant instead of something that depends on every
+call site (this one, and any future one) getting the TypeScript right.
+
 ## 7. Authentication & roles
 
 Supabase Auth (email/password) issues the session; `@supabase/ssr`
@@ -146,6 +200,34 @@ Permission summary:
 | View attendees | ✅ | ✅ | ✅ (search only, via scanner UI) |
 | Export CSV | ✅ | ✅ | ❌ |
 | Scanner / manual check-in | ✅ | ✅ | ✅ |
+
+### 7a. Organization creation is currently a known, gated gap
+
+`create_organization_with_owner` is `SECURITY DEFINER` and its
+`EXECUTE` is granted to `authenticated` (see §3/§10) — **at the
+database level, any signed-in user can currently call it directly and
+bootstrap a new organization**, becoming its `OWNER`. It can't be
+tightened the way `register_attendee`/`perform_checkin` are (grant
+`EXECUTE` only to `service_role`), because the function reads
+`auth.uid()` from the caller's own session to know who to make
+`OWNER` — a `service_role` call carries no end-user session, so it
+would have no `auth.uid()` to use. Properly closing this means
+reworking the function to take an explicit target user id and be
+invoked only by a trusted, authenticated-as-platform-admin server
+path — that's the future platform-admin invitation model, and
+deliberately not built in this pass.
+
+For now, the only application path to this RPC —
+`/dashboard/onboarding` and its `createOrganization` server action —
+is gated behind `isSelfServiceOrgCreationEnabled()`
+(`lib/config.ts`), reading `ALLOW_SELF_SERVICE_ORG_CREATION`, which
+**defaults to off**. Both the onboarding page (which shows an
+"invite-only" message instead of the form when off) and the action
+itself (which refuses independently, since a server action is a
+reachable endpoint regardless of what the page renders) check it.
+This does not close the direct-RPC-call gap described above — it
+only removes the ordinary way through this app to reach it, and
+that residual gap is intentionally documented rather than hidden.
 
 ## 8. Email
 
@@ -177,6 +259,44 @@ same interface — nothing else in the app changes.
 The client never receives or infers anything about the ticket other than
 the final status shown to the operator.
 
+### 9a. Event date/time display always uses the event's own timezone
+
+`events.start_date`/`start_time` are the wall-clock time the organizer
+entered for `events.timezone` (§4) — there's no UTC conversion to undo
+for display, but rendering them still needs a real timezone-database
+lookup (weekday names, DST-adjacent instants), which an earlier version
+of this code got wrong: it built `new Date(\`${date}T${time}\`)` — parsed
+as local time in whatever zone the *server process* happens to run in —
+and then merely appended `event.timezone` as a trailing label. The
+digits displayed only looked right because parsing and formatting both
+implicitly used the same ambient zone; the display never actually
+depended on `event.timezone`, and it broke outright for a date exactly
+at that ambient zone's DST transition.
+
+Fixed by `lib/format-event-time.ts`'s `formatEventDateTime()`: it
+round-trips through `zonedTimeToUtc()` (`lib/timezone.ts`, already used
+for `registration_deadline`) and formats with `Intl.DateTimeFormat`'s
+own `timeZone` option — both steps take `event.timezone` explicitly, so
+the result is independent of where the code executes and is actually
+derived from the configured zone rather than coincidentally matching
+it. Used by the ticket page, the public registration page, and the
+confirmation email. Unit-tested across `Europe/Kyiv`, `Europe/Berlin`,
+and `America/New_York`, including a DST-boundary date, in
+`lib/format-event-time.test.ts`.
+
+Two related fixes in the same pass: `EventCard`'s dashboard list used
+`new Date("YYYY-MM-DD")` (parsed as **UTC midnight** per spec) formatted
+in the ambient local zone — a classic off-by-one-day bug in any
+negative-UTC-offset zone, fixed by `formatCalendarDate()` formatting
+explicitly in UTC to match how the date-only string was parsed. And the
+event-edit form's registration-deadline field was pre-filled using the
+*browser's* local timezone (`Date`'s local getters) while the form
+submits that same field interpreted as being in the *event's* timezone
+— silently shifting the stored deadline on any save where the editor's
+browser zone differed from the event's, even without touching that
+field. Fixed via `utcToZonedDatetimeLocal()` (`lib/timezone.ts`), the
+inverse of `zonedTimeToUtc()`.
+
 ## 10. Security decisions worth calling out
 
 - Service role key (`SUPABASE_SERVICE_ROLE_KEY`) is read only in
@@ -186,12 +306,20 @@ the final status shown to the operator.
   boundary plus the `server-only` package enforce this at build time.
 - All public-facing mutations (registration, check-in) validate input
   with `zod` before touching the database.
-- Rate limiting: a minimal in-memory token-bucket per-IP limiter
-  (`lib/rate-limit.ts`) guards the public registration and check-in
-  endpoints against basic abuse. This is process-local (fine for a
-  single Vercel/Node instance MVP) and documented as a known limitation
-  for horizontal scaling — a durable store (Upstash Redis, etc.) is the
-  natural upgrade and is intentionally not added now.
+- Rate limiting: `lib/rate-limit.ts` defines a `RateLimiter` interface
+  and one implementation, `InMemoryRateLimiter` — a per-key fixed-window
+  counter guarding public registration and check-in against basic
+  abuse. It is explicitly documented (in the file itself, not just
+  here) as **development/single-instance protection only, not
+  production-grade rate limiting**: it's a plain in-memory `Map`, so it
+  doesn't share counts across multiple serverless instances, doesn't
+  survive a restart, and offers no real protection once more than one
+  instance is running — the normal case once deployed. Every call site
+  goes through the interface (`checkRateLimit()`/`getRateLimiter()`),
+  so swapping in a durable-store implementation (Upstash Redis or
+  similar) before public launch means changing one assignment in that
+  file, not touching any call site. Intentionally not added now — no
+  paid dependency this MVP doesn't yet need.
 - Errors shown to attendees/operators are always mapped to a small set
   of known states (see §22 of the brief); raw exceptions/stack traces
   are logged server-side only.
@@ -204,6 +332,15 @@ the final status shown to the operator.
 - ID enumeration: organization and event **numeric** ordering isn't
   exposed anywhere; slugs are used in URLs, tokens are random. Listing
   endpoints are always scoped to the caller's organization.
+- `create_organization_with_owner` does **not** get the same
+  service-role-only grant as the two functions above (it can't — see
+  §7a for why) and remains callable by any `authenticated` user at the
+  database level. This is a known, documented residual gap, mitigated
+  today only by gating the application's one path to it behind
+  `ALLOW_SELF_SERVICE_ORG_CREATION` (default off), not eliminated.
+- A duplicate registration never returns or exposes the existing
+  ticket's `public_token` — see §5a. Returning it would let anyone who
+  merely knows a registered attendee's email obtain their ticket.
 
 ## 11. What's deliberately not built yet
 

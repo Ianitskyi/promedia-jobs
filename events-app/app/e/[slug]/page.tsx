@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getPublicEventBySlug } from "@/lib/server/public-events";
+import { formatEventDateTime } from "@/lib/format-event-time";
 import { Logo } from "@/components/Logo";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { register } from "./actions";
@@ -19,10 +20,7 @@ export default async function PublicEventPage({
     ? ({ "--accent": organization.primary_color } as React.CSSProperties)
     : undefined;
 
-  const dateLabel = new Date(`${event.start_date}T${event.start_time}`).toLocaleString(
-    undefined,
-    { dateStyle: "long", timeStyle: "short" },
-  );
+  const dateLabel = formatEventDateTime(event.start_date, event.start_time, event.timezone);
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-6 py-12" style={accentStyle}>

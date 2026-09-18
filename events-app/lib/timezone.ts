@@ -19,6 +19,32 @@ export function zonedTimeToUtc(
   return new Date(utcGuess - offsetMs);
 }
 
+/**
+ * Inverse of zonedTimeToUtc: renders a UTC instant as the
+ * "YYYY-MM-DDTHH:mm" wall-clock digits it corresponds to in the given
+ * IANA timezone, suitable for pre-filling an
+ * `<input type="datetime-local">` so editing a stored timestamptz
+ * (e.g. registration_deadline) round-trips through the *event's*
+ * timezone rather than the browser's.
+ */
+export function utcToZonedDatetimeLocal(isoUtc: string, timeZone: string): string {
+  const date = new Date(isoUtc);
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const parts = dtf.formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
+
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+}
+
 /** How far `timeZone`'s wall clock is ahead of UTC at `date`, in ms. */
 function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
   const dtf = new Intl.DateTimeFormat("en-US", {

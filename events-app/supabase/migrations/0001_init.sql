@@ -153,6 +153,31 @@ create table checkins (
 create index checkins_event_id_idx on checkins(event_id);
 
 -- ---------------------------------------------------------------------
+-- Database-level invariant: a checkins row's event_id must always agree
+-- with the event_id of the ticket it references. Postgres CHECK
+-- constraints can't reference another table, so this is enforced with a
+-- trigger instead — deliberately not left to application code (neither
+-- perform_checkin below nor the TypeScript pre-check in
+-- lib/server/checkin.ts) to get right, because this must hold for any
+-- present or future write path into checkins, not just the one we
+-- happen to be careful about today.
+-- ---------------------------------------------------------------------
+
+create function enforce_checkin_event_matches_ticket() returns trigger as $$
+begin
+  if new.event_id <> (select t.event_id from tickets t where t.id = new.ticket_id) then
+    raise exception 'checkins.event_id (%) does not match tickets.event_id for ticket %',
+      new.event_id, new.ticket_id;
+  end if;
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger checkins_event_matches_ticket
+  before insert or update on checkins
+  for each row execute function enforce_checkin_event_matches_ticket();
+
+-- ---------------------------------------------------------------------
 -- perform_checkin: atomic, race-safe check-in.
 --
 -- Returns the checkins row (existing or newly created) and whether this
@@ -160,6 +185,16 @@ create index checkins_event_id_idx on checkins(event_id);
 -- authenticated roles without granting them direct INSERT on checkins,
 -- keeping the single code path in control of the invariant "at most one
 -- checkin per ticket" via the unique constraint + ON CONFLICT.
+--
+-- event_id for the inserted row is derived from the ticket itself
+-- (the authoritative source), not trusted from p_event_id — p_event_id
+-- is still required and compared against it, so a caller that somehow
+-- reaches this function with a mismatched pair gets a clear
+-- EVENT_MISMATCH error rather than either a silently-wrong row (which
+-- the trigger above would refuse anyway) or a confusing constraint
+-- violation. In the normal app flow, lib/server/checkin.ts already
+-- rejects this earlier as WRONG_EVENT and never calls this function at
+-- all — this is the defense-in-depth backstop, not the primary check.
 -- ---------------------------------------------------------------------
 
 create function perform_checkin(
@@ -172,11 +207,21 @@ create function perform_checkin(
   checked_in_at timestamptz,
   was_created boolean
 ) as $$
+declare
+  v_ticket_event_id uuid;
 begin
+  select event_id into v_ticket_event_id from tickets where id = p_ticket_id;
+  if not found then
+    raise exception 'TICKET_NOT_FOUND';
+  end if;
+  if v_ticket_event_id <> p_event_id then
+    raise exception 'EVENT_MISMATCH';
+  end if;
+
   return query
   with ins as (
     insert into checkins (ticket_id, event_id, method, checked_in_by)
-    values (p_ticket_id, p_event_id, p_method, p_checked_in_by)
+    values (p_ticket_id, v_ticket_event_id, p_method, p_checked_in_by)
     on conflict (ticket_id) do nothing
     returning id, checkins.checked_in_at, true as was_created
   )
@@ -319,8 +364,18 @@ $$ language plpgsql security definer set search_path = public;
 -- registration. Locks the event row for the duration of the call so
 -- concurrent registrations can't both slip past the capacity check
 -- (classic check-then-insert race), and treats "already registered" as
--- a normal outcome rather than an error, returning the existing
--- ticket so the UI can point the attendee back to it.
+-- a normal outcome rather than an error.
+--
+-- SECURITY: a duplicate registration must NEVER return the existing
+-- ticket's public_token. That token is a bearer credential — anyone
+-- who has it can view the attendee's ticket and (via the scanner) is
+-- indistinguishable from the real attendee at the door. If submitting
+-- a known email were enough to get the token back, knowing someone's
+-- email would be enough to steal their ticket. already_registered=true
+-- therefore always carries a null public_token and a null ticket_id;
+-- callers must not attempt to route around this by querying tickets
+-- directly for the returned attendee_id (lib/server/registration.ts
+-- deliberately never exposes attendee_id to the browser either).
 -- ---------------------------------------------------------------------
 
 create type registration_result as (
@@ -344,7 +399,6 @@ declare
   v_event events%rowtype;
   v_normalized_email text := lower(trim(p_email));
   v_existing_attendee_id uuid;
-  v_existing_token text;
   v_consent_id uuid;
   v_attendee_id uuid;
   v_ticket_id uuid;
@@ -362,13 +416,16 @@ begin
     raise exception 'REGISTRATION_CLOSED';
   end if;
 
-  select a.id, t.public_token into v_existing_attendee_id, v_existing_token
+  select a.id into v_existing_attendee_id
     from attendees a
-    join tickets t on t.attendee_id = a.id
     where a.event_id = p_event_id and a.normalized_email = v_normalized_email;
 
   if found then
-    return (v_existing_attendee_id, null, v_existing_token, true)::registration_result;
+    -- Never return the existing ticket's public_token here — see the
+    -- SECURITY note on this function. ticket_id and public_token are
+    -- both null; only already_registered=true distinguishes this from
+    -- a fresh registration.
+    return (v_existing_attendee_id, null, null, true)::registration_result;
   end if;
 
   if v_event.capacity is not null then

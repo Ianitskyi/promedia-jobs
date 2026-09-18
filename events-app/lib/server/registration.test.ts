@@ -30,14 +30,22 @@ describe("registerAttendee", () => {
     });
     const { registerAttendee } = await import("./registration");
     const result = await registerAttendee(INPUT);
-    expect(result).toEqual({ ok: true, publicToken: "A".repeat(43), alreadyRegistered: false });
+    expect(result).toEqual({ ok: true, publicToken: "A".repeat(43) });
   });
 
-  it("returns the existing ticket, not an error, for a duplicate registration", async () => {
+  it("SECURITY: never returns a ticket token for a duplicate registration, even if the RPC sent one", async () => {
+    // The register_attendee RPC (as of the fix) always returns a null
+    // public_token when already_registered is true — but this test
+    // defends the app-layer contract independently of that: even if a
+    // future/buggy RPC response carried a token alongside
+    // already_registered: true, registerAttendee() must still report
+    // ALREADY_REGISTERED and must never surface that token. A duplicate
+    // registration must never let someone who merely knows a
+    // registered attendee's email obtain their ticket.
     mockRpc.mockResolvedValue({
       data: {
         attendee_id: "attendee-1",
-        ticket_id: null,
+        ticket_id: "leaked-ticket-id",
         public_token: "B".repeat(43),
         already_registered: true,
       },
@@ -45,7 +53,38 @@ describe("registerAttendee", () => {
     });
     const { registerAttendee } = await import("./registration");
     const result = await registerAttendee(INPUT);
-    expect(result).toEqual({ ok: true, publicToken: "B".repeat(43), alreadyRegistered: true });
+    expect(result).toEqual({ ok: false, error: "ALREADY_REGISTERED" });
+    expect(JSON.stringify(result)).not.toContain("B".repeat(43));
+  });
+
+  it("reports ALREADY_REGISTERED for the normal (token-less) duplicate response", async () => {
+    mockRpc.mockResolvedValue({
+      data: {
+        attendee_id: "attendee-1",
+        ticket_id: null,
+        public_token: null,
+        already_registered: true,
+      },
+      error: null,
+    });
+    const { registerAttendee } = await import("./registration");
+    const result = await registerAttendee(INPUT);
+    expect(result).toEqual({ ok: false, error: "ALREADY_REGISTERED" });
+  });
+
+  it("reports UNKNOWN if a fresh registration somehow comes back without a token", async () => {
+    mockRpc.mockResolvedValue({
+      data: {
+        attendee_id: "attendee-1",
+        ticket_id: "ticket-1",
+        public_token: null,
+        already_registered: false,
+      },
+      error: null,
+    });
+    const { registerAttendee } = await import("./registration");
+    const result = await registerAttendee(INPUT);
+    expect(result).toEqual({ ok: false, error: "UNKNOWN" });
   });
 
   it.each([

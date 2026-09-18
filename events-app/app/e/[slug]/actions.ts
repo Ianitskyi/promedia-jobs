@@ -9,6 +9,8 @@ import { checkRateLimit, clientIpFrom } from "@/lib/rate-limit";
 
 export interface RegisterFormState {
   error: string | null;
+  /** Neutral (non-error-styled) message — currently only ALREADY_REGISTERED. */
+  info?: string | null;
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -18,6 +20,13 @@ const ERROR_MESSAGES: Record<string, string> = {
   CAPACITY_REACHED: "This event has reached its registration capacity.",
   UNKNOWN: "Something went wrong. Please try again in a moment.",
 };
+
+// Deliberately not in ERROR_MESSAGES: ALREADY_REGISTERED is not an
+// error, and its message is rendered via `info`, not `error` — see the
+// SECURITY note on RegisterAttendeeResult in lib/server/registration.ts
+// for why this path must never carry a ticket token or redirect to one.
+const ALREADY_REGISTERED_MESSAGE =
+  "This email is already registered for this event. Check your inbox for your original confirmation email with your ticket.";
 
 export async function register(
   eventId: string,
@@ -52,18 +61,15 @@ export async function register(
   });
 
   if (!result.ok) {
+    if (result.error === "ALREADY_REGISTERED") {
+      return { error: null, info: ALREADY_REGISTERED_MESSAGE };
+    }
     return { error: ERROR_MESSAGES[result.error] };
   }
 
-  if (!result.alreadyRegistered) {
-    await sendTicketEmail(result.publicToken).catch((err) => {
-      console.error("[registration] confirmation email failed", err);
-    });
-  }
+  await sendTicketEmail(result.publicToken).catch((err) => {
+    console.error("[registration] confirmation email failed", err);
+  });
 
-  redirect(
-    result.alreadyRegistered
-      ? `/t/${result.publicToken}?existing=1`
-      : `/t/${result.publicToken}`,
-  );
+  redirect(`/t/${result.publicToken}`);
 }

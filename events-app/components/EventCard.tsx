@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { StatusBadge } from "@/components/StatusBadge";
+import { formatCalendarDate } from "@/lib/format-event-time";
 import type { EventStatus } from "@/lib/database.types";
 
 interface EventCardProps {
@@ -27,11 +28,7 @@ export function EventCard({ id, name, slug, startDate, venueName, status }: Even
       <div>
         <p className="font-serif text-xl italic">{name}</p>
         <p className="mt-1 text-sm text-muted">
-          {new Date(startDate).toLocaleDateString(undefined, {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
+          {formatCalendarDate(startDate)}
           {venueName ? ` · ${venueName}` : ""} · /e/{slug}
         </p>
       </div>

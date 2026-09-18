@@ -1,17 +1,15 @@
 import { getTicketByToken } from "@/lib/server/tickets";
 import { renderQrSvg } from "@/lib/qr";
 import { ticketUrl } from "@/lib/url";
+import { formatEventDateTime } from "@/lib/format-event-time";
 import { Ticket } from "@/components/Ticket";
 
 export default async function TicketPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ existing?: string }>;
 }) {
   const { token } = await params;
-  const { existing } = await searchParams;
   const details = await getTicketByToken(token);
 
   if (!details) {
@@ -35,18 +33,10 @@ export default async function TicketPage({
   const { attendee, event, organization, ticket } = details;
   const qrSvg = await renderQrSvg(ticketUrl(ticket.public_token));
 
-  const dateLabel = new Date(`${event.start_date}T${event.start_time}`).toLocaleString(
-    undefined,
-    { dateStyle: "long", timeStyle: "short" },
-  );
+  const dateLabel = formatEventDateTime(event.start_date, event.start_time, event.timezone);
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-4 py-12">
-      {existing && (
-        <p className="mx-auto mb-6 max-w-sm text-center text-sm text-muted">
-          You&apos;re already registered for this event — here&apos;s your ticket.
-        </p>
-      )}
       <Ticket
         organizationName={organization.name}
         organizationLogoUrl={organization.logo_url}

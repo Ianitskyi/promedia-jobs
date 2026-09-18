@@ -79,6 +79,14 @@ describe("checkInByToken", () => {
   });
 
   it("reports WRONG_EVENT when the ticket belongs to a different event", async () => {
+    // This is the app-level UX check: it runs before perform_checkin is
+    // ever called, so the scanner shows "WRONG EVENT" instead of a
+    // generic failure. It is not the actual safety guarantee — that's
+    // the enforce_checkin_event_matches_ticket trigger and
+    // perform_checkin's own p_event_id-vs-ticket check at the database
+    // level (see ARCHITECTURE.md §6a and the integration-test checklist
+    // in supabase/INTEGRATION_TESTS.md), which hold even if this
+    // TypeScript check were ever removed or buggy.
     const { checkInByToken } = await import("./checkin");
     const result = await checkInByToken(VALID_TOKEN, "some-other-event", {
       userId: "user-1",

@@ -4,6 +4,7 @@ import { getEmailProvider } from "@/lib/email";
 import { buildTicketEmail } from "@/lib/email/templates";
 import { renderQrDataUrl } from "@/lib/qr";
 import { ticketUrl } from "@/lib/url";
+import { formatEventDateTime } from "@/lib/format-event-time";
 
 /**
  * Sends the ticket confirmation email for a freshly created ticket.
@@ -43,10 +44,7 @@ export async function sendTicketEmail(token: string): Promise<void> {
     .single();
   if (!organization) return;
 
-  const dateLabel = `${new Date(`${event.start_date}T${event.start_time}`).toLocaleString(
-    undefined,
-    { dateStyle: "long", timeStyle: "short" },
-  )} (${event.timezone})`;
+  const dateLabel = `${formatEventDateTime(event.start_date, event.start_time, event.timezone)} (${event.timezone})`;
 
   const url = ticketUrl(ticket.public_token);
   const qrDataUrl = await renderQrDataUrl(url);
