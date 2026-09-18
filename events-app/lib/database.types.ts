@@ -186,7 +186,7 @@ export type Database = {
           p_consent_version: string;
           p_consent_text: string;
         };
-        Returns: RegistrationResult[];
+        Returns: RegistrationResult;
       };
       perform_checkin: {
         Args: {
