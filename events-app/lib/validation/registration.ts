@@ -8,5 +8,8 @@ export const registrationFormSchema = z.object({
   position: z.string().trim().max(200).optional().or(z.literal("")),
   consent: z.literal("on", { message: "Please accept the consent notice to continue." }),
   // Honeypot: real visitors never fill a field hidden with CSS/aria-hidden.
-  website: z.string().max(0, "").optional().or(z.literal("")),
+  // Deliberately unconstrained here — the server action checks it and
+  // returns a generic error, rather than this schema surfacing a
+  // field-specific validation message that would hint at the mechanism.
+  website: z.string().optional().or(z.literal("")),
 });

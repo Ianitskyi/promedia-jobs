@@ -69,7 +69,8 @@ export async function getFirstMembership(): Promise<CurrentMembership | null> {
 }
 
 export function can(role: OrgRole, permission: Permission): boolean {
-  return (PERMISSIONS[permission] as readonly OrgRole[]).includes(role);
+  const allowedRoles = PERMISSIONS[permission] as readonly OrgRole[] | undefined;
+  return allowedRoles?.includes(role) ?? false;
 }
 
 /**
