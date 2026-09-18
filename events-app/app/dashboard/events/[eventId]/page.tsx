@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMembership, can } from "@/lib/authz";
+import { listEventAttendees } from "@/lib/server/attendees";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/Button";
+import { AttendeeTable } from "@/components/AttendeeTable";
 
 const statusTone = {
   DRAFT: "neutral",
@@ -29,6 +31,13 @@ export default async function EventDetailPage({
 
   const membership = await getMembership(event.organization_id);
   const canManage = membership ? can(membership.role, "manageEvents") : false;
+  const canExport = membership ? can(membership.role, "exportAttendees") : false;
+
+  const attendees = await listEventAttendees(event.id);
+  const registered = attendees.length;
+  const checkedIn = attendees.filter((a) => a.checkedInAt).length;
+  const notCheckedIn = registered - checkedIn;
+  const attendanceRate = registered > 0 ? Math.round((checkedIn / registered) * 100) : 0;
 
   return (
     <div>
@@ -54,8 +63,33 @@ export default async function EventDetailPage({
               <Button variant="secondary">Edit</Button>
             </Link>
           )}
+          {canExport && (
+            <a href={`/api/events/${event.id}/export`}>
+              <Button variant="secondary">Export CSV</Button>
+            </a>
+          )}
         </div>
       </div>
+
+      <dl className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <Stat label="Registered" value={registered} />
+        <Stat label="Checked in" value={checkedIn} />
+        <Stat label="Not checked in" value={notCheckedIn} />
+        <Stat label="Attendance rate" value={`${attendanceRate}%`} />
+      </dl>
+
+      <div className="mt-10">
+        <AttendeeTable attendees={attendees} />
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="border border-[var(--border)] px-4 py-3">
+      <dt className="text-xs uppercase tracking-wide text-muted">{label}</dt>
+      <dd className="mt-1 font-serif text-2xl italic">{value}</dd>
     </div>
   );
 }
