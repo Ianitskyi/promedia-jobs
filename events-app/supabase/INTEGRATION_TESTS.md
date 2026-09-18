@@ -183,3 +183,25 @@ forgotten:
       makes the `createOrganization` server action refuse, **without**
       changing the RPC-level exposure above (the app-level gate is not
       a database-level fix, by design — see §7a).
+
+## 10. Internationalization (uk/en)
+
+See `ARCHITECTURE.md` §12.
+
+- [ ] Creating an event with `event_language='uk'` and no `name_en`
+      succeeds; the same with no `name_uk` fails
+      (`events_name_matches_language`).
+- [ ] Same for `event_language='en'` (requires `name_en`, not `name_uk`).
+- [ ] Creating a `event_language='bilingual'` event with only one of
+      `name_uk`/`name_en` set fails; with both set, succeeds.
+- [ ] `register_attendee` against a `uk` event with `p_language='en'`
+      raises `INVALID_LANGUAGE`; against a `bilingual` event, both
+      `'uk'` and `'en'` succeed.
+- [ ] After a successful registration, `attendees.preferred_language`
+      and `registration_consents.language` both equal the `p_language`
+      passed in.
+- [ ] Register the same email twice in different languages against a
+      bilingual event (`p_language='uk'` then `'en'`) — confirm the
+      second call reports `already_registered=true` (language doesn't
+      bypass the one-registration-per-email-per-event rule) and, as
+      always, returns no token.

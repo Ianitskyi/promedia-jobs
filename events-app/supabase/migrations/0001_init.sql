@@ -12,6 +12,15 @@ create type org_role as enum ('OWNER', 'ADMIN', 'CHECKIN_STAFF');
 create type event_status as enum ('DRAFT', 'PUBLISHED', 'CLOSED', 'ARCHIVED');
 create type checkin_method as enum ('QR', 'MANUAL', 'KIOSK');
 
+-- A person's own interface language — always exactly one of these two,
+-- for the MVP's two supported languages (attendees, consent records).
+create type ui_language as enum ('uk', 'en');
+
+-- An event's *publishing* language, which is a distinct concept from a
+-- person's language: an event can require both, so this has a third
+-- option 'bilingual' that ui_language deliberately does not.
+create type event_language as enum ('uk', 'en', 'bilingual');
+
 -- ---------------------------------------------------------------------
 -- updated_at trigger helper
 -- ---------------------------------------------------------------------
@@ -60,18 +69,27 @@ create index organization_users_user_id_idx on organization_users(user_id);
 -- events
 -- ---------------------------------------------------------------------
 
+-- name/description/venue_name are localized per event_language (§5 of
+-- the i18n brief): a 'uk' or 'en' event only ever needs its own
+-- language's column populated; a 'bilingual' event needs both. Dates,
+-- times, timezone, address, capacity, deadline, and branding are
+-- language-neutral by design and are not duplicated.
 create table events (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references organizations(id) on delete cascade,
-  name text not null check (char_length(trim(name)) > 0),
   slug text not null unique check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
-  description text,
+  event_language event_language not null default 'uk',
+  name_uk text check (name_uk is null or char_length(trim(name_uk)) > 0),
+  name_en text check (name_en is null or char_length(trim(name_en)) > 0),
+  description_uk text,
+  description_en text,
   start_date date not null,
   start_time time not null,
   end_date date not null,
   end_time time not null,
   timezone text not null,
-  venue_name text,
+  venue_name_uk text,
+  venue_name_en text,
   address text,
   capacity integer check (capacity is null or capacity > 0),
   registration_deadline timestamptz,
@@ -79,7 +97,12 @@ create table events (
   logo_url text,
   primary_color text check (primary_color is null or primary_color ~ '^#[0-9a-fA-F]{6}$'),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint events_name_matches_language check (
+    (event_language = 'uk' and name_uk is not null)
+    or (event_language = 'en' and name_en is not null)
+    or (event_language = 'bilingual' and name_uk is not null and name_en is not null)
+  )
 );
 
 create index events_organization_id_idx on events(organization_id);
@@ -96,6 +119,11 @@ create trigger events_set_updated_at
 create table registration_consents (
   id uuid primary key default gen_random_uuid(),
   version text not null,
+  -- Which language's consent text was actually shown to and accepted
+  -- by the attendee — an audit fact, recorded alongside the exact text
+  -- snapshot rather than assumed from the attendee's current preferred
+  -- language (which could change later; this must not).
+  language ui_language not null,
   text_snapshot text not null,
   consented_at timestamptz not null default now()
 );
@@ -113,6 +141,12 @@ create table attendees (
   normalized_email text generated always as (lower(trim(email))) stored,
   company text,
   position text,
+  -- The language the attendee registered in (for a bilingual event,
+  -- whichever of uk/en they picked). Used to send later emails (e.g. a
+  -- future resend-ticket flow) in the same language, independent of
+  -- registration_consents.language, which is an audit fact about one
+  -- specific past consent, not a standing preference.
+  preferred_language ui_language not null,
   consent_id uuid not null references registration_consents(id),
   registered_at timestamptz not null default now(),
   unique (event_id, normalized_email)
@@ -392,6 +426,7 @@ create function register_attendee(
   p_email text,
   p_company text,
   p_position text,
+  p_language ui_language,
   p_consent_version text,
   p_consent_text text
 ) returns registration_result as $$
@@ -415,6 +450,13 @@ begin
   if v_event.registration_deadline is not null and now() > v_event.registration_deadline then
     raise exception 'REGISTRATION_CLOSED';
   end if;
+  -- A single-language event only ever accepts registrations in that
+  -- language; a bilingual event accepts either. Re-validated here
+  -- (not just in the public registration form) because this function
+  -- is the actual trust boundary for what gets stored.
+  if v_event.event_language <> 'bilingual' and v_event.event_language::text <> p_language::text then
+    raise exception 'INVALID_LANGUAGE';
+  end if;
 
   select a.id into v_existing_attendee_id
     from attendees a
@@ -435,12 +477,12 @@ begin
     end if;
   end if;
 
-  insert into registration_consents (version, text_snapshot)
-    values (p_consent_version, p_consent_text)
+  insert into registration_consents (version, language, text_snapshot)
+    values (p_consent_version, p_language, p_consent_text)
     returning id into v_consent_id;
 
-  insert into attendees (event_id, first_name, last_name, email, company, position, consent_id)
-    values (p_event_id, trim(p_first_name), trim(p_last_name), p_email, nullif(trim(p_company), ''), nullif(trim(p_position), ''), v_consent_id)
+  insert into attendees (event_id, first_name, last_name, email, company, position, preferred_language, consent_id)
+    values (p_event_id, trim(p_first_name), trim(p_last_name), p_email, nullif(trim(p_company), ''), nullif(trim(p_position), ''), p_language, v_consent_id)
     returning id into v_attendee_id;
 
   v_token := translate(encode(gen_random_bytes(32), 'base64'), '+/=', '-_');

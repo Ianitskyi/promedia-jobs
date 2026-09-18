@@ -1,9 +1,17 @@
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import type { Locale } from "@/lib/i18n/locale";
+
 /**
  * Registration consent text, versioned. Each registration stores a
- * snapshot of this text and the version at the time of consent
- * (registration_consents table), so changing the copy here never
- * affects the audit trail of past registrations — only new ones.
+ * snapshot of this text, its version, and the language it was shown in
+ * (registration_consents table), so changing the copy here — in either
+ * language — never affects the audit trail of past registrations, only
+ * new ones. Bump the version when either language's wording changes,
+ * even if only one language actually changed: the version identifies
+ * "this revision of the consent language" as a whole, not per-locale.
  */
 export const CONSENT_VERSION = "2026-01";
-export const CONSENT_TEXT =
-  "I agree that my information will be processed for the purpose of registration and participation in this event.";
+
+export function getConsentText(locale: Locale): string {
+  return getDictionary(locale).registration.consentText;
+}

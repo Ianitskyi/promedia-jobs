@@ -342,7 +342,145 @@ inverse of `zonedTimeToUtc()`.
   ticket's `public_token` — see §5a. Returning it would let anyone who
   merely knows a registered attendee's email obtain their ticket.
 
-## 11. What's deliberately not built yet
+## 12. Internationalization (Ukrainian / English)
+
+Two independent things are localized, on purpose kept separate:
+
+1. **Platform locale** — the organizer dashboard/auth interface
+   language. Cookie `pm_locale`, default `uk`. Set explicitly via the
+   `LanguageSwitcher` (UA | EN, visible on `/`, `/login`, and every
+   `/dashboard/*` page), or, on a visitor's very first request (no
+   cookie yet), inferred from the browser's `Accept-Language` header by
+   `middleware.ts` → `lib/i18n/middleware.ts` → `lib/i18n/detect.ts` —
+   English if the browser prefers English, Ukrainian otherwise. Once
+   set (by the switcher or that first-visit default), the cookie is
+   never overwritten, so an explicit choice always sticks.
+2. **Public/event locale** — what language `/e/[slug]`, `/t/[token]`,
+   and their emails render in. Driven by the event's own
+   `event_language` (`uk` / `en` / `bilingual`), not the viewer's
+   platform cookie — an organizer can run their dashboard in Ukrainian
+   while publishing an English-only event. A single-language event
+   *is* that language, full stop; a bilingual event additionally
+   consults a `pm_public_locale` cookie (the attendee's remembered
+   choice from the switcher), defaulting to `uk` if unset. The ticket
+   page's default for a bilingual event is the *attendee's own
+   registered language* (`attendees.preferred_language`), not the
+   generic default — see `resolveTicketLocale` in `lib/i18n/server.ts`.
+
+Neither cookie, nor any other signal used here, is ever derived from
+nationality or other personal data — only an explicit choice or the
+browser's own stated language preference.
+
+### Why no `/uk/...` or `/en/...` URL prefix
+
+Ticket and event URLs must stay stable regardless of language (§10 of
+the brief: existing QR codes must keep working) — a locale-in-the-URL
+scheme (`[lang]` route segments) is the conventional Next.js i18n
+pattern but was rejected specifically because it would make the URL
+itself carry the language, which these URLs can't do without breaking
+that stability guarantee. Locale is cookie-only, for both the platform
+and public sides, everywhere in this app.
+
+### Architecture: dictionaries, not a translation library
+
+`lib/i18n/`:
+
+- `locale.ts` — the `Locale` (`uk`/`en`) and `EventLanguage`
+  (`uk`/`en`/`bilingual`) types, cookie names, defaults.
+- `dictionaries/{en,uk}.ts` — plain nested objects, one per domain
+  (`common`, `auth`, `dashboard`, `events`, `registration`, `ticket`,
+  `scanner`, `kiosk`, `errors`), each a straightforward object of
+  strings. `en` is canonical; `dictionaries/types.ts` derives the
+  `Dictionary` type from it (widening its literal strings to `string`),
+  so `uk.ts` is checked against the same *keys* at compile time — a key
+  added to one dictionary and forgotten in the other is a build
+  failure, not a runtime gap.
+- `translate.ts` — `t(dict, "a.b.c", vars?)`, a dot-path lookup with a
+  runtime fallback chain (the given dict → English → the literal path
+  string) for the handful of call sites with a genuinely dynamic key
+  (e.g. `ScannerResult` mapping a `CheckinResultState` to a label).
+  Everywhere else, code reads `dict.events.title` directly — plain,
+  compile-checked property access, no runtime lookup needed.
+- `server.ts` / `actions.ts` — server-only cookie reads
+  (`getPlatformLocale`, `resolvePublicLocale`, `resolveTicketLocale`,
+  `getKioskLocale`) and the three `"use server"` actions that set each
+  cookie.
+- `client.tsx` — `<I18nProvider locale dict>` + `useI18n()`, so Client
+  Components (forms, the scanner, the language switcher itself) read
+  the already-resolved dictionary without doing their own cookie/locale
+  work. Every top-level entry point (`/`, `/login`, `/dashboard/*` via
+  its layout, `/e/[slug]`, `/t/[token]`, `/kiosk/[eventId]`) resolves
+  its own locale server-side and wraps its subtree once.
+- `event-content.ts` — `eventName`/`eventDescription`/`eventVenueName`,
+  resolving an event's localized columns for a given display locale
+  with graceful fallback to whichever language the event actually has
+  content in (so a `uk`-only event still shows *something* to an
+  organizer whose own dashboard locale is English).
+
+No translation library was added — `avoid a large dependency unless it
+provides a clear advantage` (the brief), and two static, mutually
+type-checked dictionaries plus one lookup function don't need one.
+
+### Validation messages are locale-aware too
+
+`lib/validation/event.ts` and `lib/validation/registration.ts` export
+`createEventFormSchema(dict)` / `createRegistrationFormSchema(dict)` —
+factories, not static schemas — because the Zod messages inside them
+must follow the caller's resolved locale (platform locale for the
+organizer's event form, the resolved public locale for the attendee's
+registration form). Every server action that validates one calls the
+factory with its own `getDictionary(locale)` first.
+
+### Localized event content: data model
+
+`events` carries `event_language` (`uk`/`en`/`bilingual`, default
+`uk`) plus `name_uk`/`name_en`, `description_uk`/`description_en`,
+`venue_name_uk`/`venue_name_en`. A `CHECK` constraint
+(`events_name_matches_language`) enforces exactly the brief's rule: a
+single-language event only needs its own language's name; a bilingual
+event needs both. Everything language-neutral by nature — dates,
+times, timezone, address, capacity, deadline, the QR token — is not
+duplicated per language (§5).
+
+`attendees.preferred_language` and `registration_consents.language`
+(both `ui_language`, i.e. exactly `uk`/`en` — `bilingual` is only ever
+an event setting, never a person's own language) record, respectively,
+"what language to use for this attendee going forward" and "what
+language this specific consent was shown and accepted in" — two
+different facts that happen to start out equal at registration time
+but are kept as separate columns because they could diverge later
+(e.g. a future language-change without re-consenting). `register_attendee`
+takes a new `p_language` parameter, validates it against the event's
+`event_language` (raising `INVALID_LANGUAGE` on a mismatch — the same
+"don't trust the client, recheck at the real trust boundary" pattern
+as everything else in that function), and stores it on both columns.
+
+### Ticket & email language
+
+The ticket page and confirmation email render in
+`attendees.preferred_language` (for a bilingual event's ticket page,
+overridable per-viewing via the switcher, same as the public event
+page — see `resolveTicketLocale`). The QR code and `public_token`
+remain exactly what they always were: derived from the token alone,
+with no language parameter anywhere in `ticketUrl()` or the scanner's
+validation path — a ticket's identity cannot depend on which language
+someone happens to view it in, and a language switch never mints a new
+ticket or a new token. `lib/email/templates.ts`'s `buildTicketEmail`
+takes a resolved `Dictionary` and renders a single-language email —
+never a combined Ukrainian+English send, matching §7 of the brief.
+
+### Scanner and kiosk
+
+The staff scanner (`/dashboard/events/[eventId]/scanner`) follows the
+logged-in organizer's platform locale — it's inside the `/dashboard`
+layout's `I18nProvider`, so it needs no locale logic of its own. Kiosk
+mode is different on purpose: it's a physical station at the door, so
+its language is a property of *that device*, not of whoever happens to
+be logged in — a dedicated `pm_kiosk_locale` cookie (set via its own
+switcher in the kiosk view's corner) falls back to the platform locale
+only the first time a kiosk is opened.
+
+## 13. What's deliberately not built yet
 
 Per the brief: custom fields, paid tickets/Stripe, multiple ticket
 types, wallet passes, custom domains, white-label portals, badge

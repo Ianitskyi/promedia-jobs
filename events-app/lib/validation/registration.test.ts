@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { registrationFormSchema } from "./registration";
+import { createRegistrationFormSchema } from "./registration";
+import { en, uk } from "@/lib/i18n/dictionaries";
+
+const registrationFormSchema = createRegistrationFormSchema(en);
 
 const VALID = {
   first_name: "Andrii",
@@ -47,5 +50,31 @@ describe("registrationFormSchema", () => {
     const result = registrationFormSchema.safeParse({ ...VALID, website: "http://spam.example" });
     expect(result.success).toBe(true);
     expect(result.data?.website).toBe("http://spam.example");
+  });
+
+  describe("localization", () => {
+    it("returns English messages when built from the English dictionary", () => {
+      const schema = createRegistrationFormSchema(en);
+      const result = schema.safeParse({ ...VALID, email: "not-an-email" });
+      expect(result.success).toBe(false);
+      expect(result.success || result.error.issues[0]?.message).toBe(en.registration.validationEmail);
+    });
+
+    it("returns Ukrainian messages when built from the Ukrainian dictionary", () => {
+      const schema = createRegistrationFormSchema(uk);
+      const result = schema.safeParse({ ...VALID, email: "not-an-email" });
+      expect(result.success).toBe(false);
+      expect(result.success || result.error.issues[0]?.message).toBe(uk.registration.validationEmail);
+      expect(result.success || result.error.issues[0]?.message).not.toBe(en.registration.validationEmail);
+    });
+
+    it("localizes the missing-consent message per dictionary", () => {
+      const ukSchema = createRegistrationFormSchema(uk);
+      const result = ukSchema.safeParse({ ...VALID, consent: undefined });
+      expect(result.success).toBe(false);
+      expect(result.success || result.error.issues[0]?.message).toBe(
+        uk.registration.validationConsentRequired,
+      );
+    });
   });
 });

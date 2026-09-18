@@ -11,6 +11,7 @@ const INPUT = {
   firstName: "Andrii",
   lastName: "Ianitskyi",
   email: "andrii@example.com",
+  language: "uk" as const,
 };
 
 beforeEach(() => {
@@ -125,9 +126,37 @@ describe("registerAttendee", () => {
         p_email: "andrii@example.com",
         p_company: null,
         p_position: null,
+        p_language: "uk",
         p_consent_version: expect.any(String),
         p_consent_text: expect.any(String),
       }),
     );
+  });
+
+  it("stores the consent text in the attendee's chosen language, not always the same one (consent language/version storage)", async () => {
+    // Both languages must reach the RPC call with the matching consent
+    // copy — register_attendee persists p_language onto both
+    // attendees.preferred_language and registration_consents.language
+    // (see supabase/migrations/0001_init.sql), so what this app sends
+    // here is what gets recorded as "the language this consent was
+    // shown and accepted in".
+    mockRpc.mockResolvedValue({
+      data: { attendee_id: "a", ticket_id: "t", public_token: "D".repeat(43), already_registered: false },
+      error: null,
+    });
+    const { registerAttendee } = await import("./registration");
+
+    await registerAttendee({ ...INPUT, language: "uk" });
+    const ukCall = mockRpc.mock.calls.at(-1)?.[1] as { p_language: string; p_consent_text: string };
+    expect(ukCall.p_language).toBe("uk");
+
+    await registerAttendee({ ...INPUT, language: "en" });
+    const enCall = mockRpc.mock.calls.at(-1)?.[1] as { p_language: string; p_consent_text: string };
+    expect(enCall.p_language).toBe("en");
+
+    // Same consent *version*, different consent *text* per language —
+    // the version identifies a revision of the wording as a whole
+    // (see lib/consent.ts), the text is what was actually shown.
+    expect(ukCall.p_consent_text).not.toBe(enCall.p_consent_text);
   });
 });

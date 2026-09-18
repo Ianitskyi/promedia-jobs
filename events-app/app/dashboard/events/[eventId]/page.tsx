@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMembership, can } from "@/lib/authz";
 import { listEventAttendees } from "@/lib/server/attendees";
+import { getPlatformLocale } from "@/lib/i18n/server";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { eventName, eventVenueName } from "@/lib/i18n/event-content";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/Button";
 import { AttendeeTable } from "@/components/AttendeeTable";
@@ -20,6 +23,8 @@ export default async function EventDetailPage({
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = await params;
+  const locale = await getPlatformLocale();
+  const dict = getDictionary(locale);
   const supabase = await createClient();
   const { data: event } = await supabase
     .from("events")
@@ -39,16 +44,23 @@ export default async function EventDetailPage({
   const notCheckedIn = registered - checkedIn;
   const attendanceRate = registered > 0 ? Math.round((checkedIn / registered) * 100) : 0;
 
+  const statusLabel: Record<string, string> = {
+    DRAFT: dict.events.statusDraft,
+    PUBLISHED: dict.events.statusPublished,
+    CLOSED: dict.events.statusClosed,
+    ARCHIVED: dict.events.statusArchived,
+  };
+
   return (
     <div>
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="font-serif text-3xl italic">{event.name}</h1>
-            <StatusBadge tone={statusTone[event.status]}>{event.status}</StatusBadge>
+            <h1 className="font-serif text-3xl italic">{eventName(event, locale)}</h1>
+            <StatusBadge tone={statusTone[event.status]}>{statusLabel[event.status]}</StatusBadge>
           </div>
           <p className="mt-2 text-sm text-muted">
-            {event.start_date} · {event.venue_name ?? "No venue set"} ·{" "}
+            {event.start_date} · {eventVenueName(event, locale) ?? dict.events.noVenueSet} ·{" "}
             <Link href={`/e/${event.slug}`} className="underline underline-offset-2" target="_blank">
               /e/{event.slug}
             </Link>
@@ -56,29 +68,29 @@ export default async function EventDetailPage({
         </div>
         <div className="flex gap-2">
           <Link href={`/dashboard/events/${event.id}/scanner`}>
-            <Button variant="secondary">Scanner</Button>
+            <Button variant="secondary">{dict.events.scannerButton}</Button>
           </Link>
           <Link href={`/kiosk/${event.id}`} target="_blank">
-            <Button variant="secondary">Kiosk</Button>
+            <Button variant="secondary">{dict.events.kioskButton}</Button>
           </Link>
           {canManage && (
             <Link href={`/dashboard/events/${event.id}/edit`}>
-              <Button variant="secondary">Edit</Button>
+              <Button variant="secondary">{dict.events.editButton}</Button>
             </Link>
           )}
           {canExport && (
             <a href={`/api/events/${event.id}/export`}>
-              <Button variant="secondary">Export CSV</Button>
+              <Button variant="secondary">{dict.events.exportCsvButton}</Button>
             </a>
           )}
         </div>
       </div>
 
       <dl className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Stat label="Registered" value={registered} />
-        <Stat label="Checked in" value={checkedIn} />
-        <Stat label="Not checked in" value={notCheckedIn} />
-        <Stat label="Attendance rate" value={`${attendanceRate}%`} />
+        <Stat label={dict.events.statRegistered} value={registered} />
+        <Stat label={dict.events.statCheckedIn} value={checkedIn} />
+        <Stat label={dict.events.statNotCheckedIn} value={notCheckedIn} />
+        <Stat label={dict.events.statAttendanceRate} value={`${attendanceRate}%`} />
       </dl>
 
       <div className="mt-10">

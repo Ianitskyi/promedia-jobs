@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { FormField } from "@/components/FormField";
-import { CONSENT_TEXT } from "@/lib/consent";
+import { useI18n } from "@/lib/i18n/client";
 import type { RegisterFormState } from "@/app/e/[slug]/actions";
 
 interface RegistrationFormProps {
@@ -12,28 +12,29 @@ interface RegistrationFormProps {
 }
 
 export function RegistrationForm({ action }: RegistrationFormProps) {
+  const { dict } = useI18n();
   const [state, formAction, pending] = useActionState(action, { error: null });
 
   return (
     <form action={formAction} className="flex flex-col gap-5" noValidate>
       <div className="grid grid-cols-2 gap-4">
-        <FormField label="First name" htmlFor="first_name" required>
+        <FormField label={dict.registration.firstName} htmlFor="first_name" required>
           <Input id="first_name" name="first_name" autoComplete="given-name" required />
         </FormField>
-        <FormField label="Last name" htmlFor="last_name" required>
+        <FormField label={dict.registration.lastName} htmlFor="last_name" required>
           <Input id="last_name" name="last_name" autoComplete="family-name" required />
         </FormField>
       </div>
 
-      <FormField label="Email" htmlFor="email" required>
+      <FormField label={dict.registration.email} htmlFor="email" required>
         <Input id="email" name="email" type="email" autoComplete="email" required />
       </FormField>
 
-      <FormField label="Organization" htmlFor="company">
+      <FormField label={dict.registration.organization} htmlFor="company">
         <Input id="company" name="company" autoComplete="organization" />
       </FormField>
 
-      <FormField label="Position" htmlFor="position">
+      <FormField label={dict.registration.position} htmlFor="position">
         <Input id="position" name="position" autoComplete="organization-title" />
       </FormField>
 
@@ -53,7 +54,7 @@ export function RegistrationForm({ action }: RegistrationFormProps) {
           required
           className="mt-0.5 h-4 w-4 shrink-0"
         />
-        <span className="text-muted">{CONSENT_TEXT}</span>
+        <span className="text-muted">{dict.registration.consentText}</span>
       </label>
 
       {state.error && (
@@ -68,7 +69,7 @@ export function RegistrationForm({ action }: RegistrationFormProps) {
       )}
 
       <Button type="submit" disabled={pending}>
-        {pending ? "Registering…" : "Register"}
+        {pending ? dict.registration.registering : dict.registration.register}
       </Button>
     </form>
   );

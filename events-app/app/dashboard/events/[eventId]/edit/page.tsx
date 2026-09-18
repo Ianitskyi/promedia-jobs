@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/authz";
+import { getPlatformLocale } from "@/lib/i18n/server";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import { EventForm } from "@/components/EventForm";
 import { updateEvent } from "./actions";
 
@@ -20,15 +22,16 @@ export default async function EditEventPage({
   if (!event) notFound();
 
   await requirePermission(event.organization_id, "manageEvents");
+  const dict = getDictionary(await getPlatformLocale());
 
   return (
     <div>
-      <h1 className="font-serif text-3xl italic">Edit event</h1>
+      <h1 className="font-serif text-3xl italic">{dict.events.editTitle}</h1>
       <div className="mt-8">
         <EventForm
           action={updateEvent.bind(null, eventId)}
           defaultValues={event}
-          submitLabel="Save changes"
+          submitLabel={dict.events.submitEdit}
         />
       </div>
     </div>

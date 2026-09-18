@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/authz";
 import { createClient } from "@/lib/supabase/server";
 import { zonedTimeToUtc } from "@/lib/timezone";
-import { eventFormSchema } from "@/lib/validation/event";
+import { createEventFormSchema } from "@/lib/validation/event";
+import { getPlatformLocale } from "@/lib/i18n/server";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { EventFormState } from "@/components/EventForm";
 
 export async function updateEvent(
@@ -12,6 +14,7 @@ export async function updateEvent(
   _prev: EventFormState,
   formData: FormData,
 ): Promise<EventFormState> {
+  const dict = getDictionary(await getPlatformLocale());
   const supabase = await createClient();
   const { data: event } = await supabase
     .from("events")
@@ -20,14 +23,14 @@ export async function updateEvent(
     .single();
 
   if (!event) {
-    return { error: "Event not found." };
+    return { error: dict.events.notFoundError };
   }
 
   await requirePermission(event.organization_id, "manageEvents");
 
-  const parsed = eventFormSchema.safeParse(Object.fromEntries(formData));
+  const parsed = createEventFormSchema(dict).safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+    return { error: parsed.error.issues[0]?.message ?? dict.common.genericError };
   }
   const values = parsed.data;
 
@@ -42,14 +45,18 @@ export async function updateEvent(
   const { error } = await supabase
     .from("events")
     .update({
-      name: values.name,
-      description: values.description ?? null,
+      event_language: values.event_language,
+      name_uk: values.name_uk ?? null,
+      name_en: values.name_en ?? null,
+      description_uk: values.description_uk ?? null,
+      description_en: values.description_en ?? null,
       start_date: values.start_date,
       start_time: values.start_time,
       end_date: values.end_date,
       end_time: values.end_time,
       timezone: values.timezone,
-      venue_name: values.venue_name ?? null,
+      venue_name_uk: values.venue_name_uk ?? null,
+      venue_name_en: values.venue_name_en ?? null,
       address: values.address ?? null,
       capacity: values.capacity ?? null,
       registration_deadline: registrationDeadline,
@@ -60,7 +67,7 @@ export async function updateEvent(
     .eq("id", eventId);
 
   if (error) {
-    return { error: "Could not save changes. Please try again." };
+    return { error: dict.events.saveError };
   }
 
   redirect(`/dashboard/events/${eventId}`);

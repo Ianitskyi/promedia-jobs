@@ -5,7 +5,9 @@ import { requirePermission, getFirstMembership } from "@/lib/authz";
 import { createClient } from "@/lib/supabase/server";
 import { slugify, withRandomSuffix } from "@/lib/slug";
 import { zonedTimeToUtc } from "@/lib/timezone";
-import { eventFormSchema } from "@/lib/validation/event";
+import { createEventFormSchema } from "@/lib/validation/event";
+import { getPlatformLocale } from "@/lib/i18n/server";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { EventFormState } from "@/components/EventForm";
 
 export async function createEvent(
@@ -16,14 +18,16 @@ export async function createEvent(
   if (!membership) redirect("/dashboard/onboarding");
   await requirePermission(membership.organizationId, "manageEvents");
 
-  const parsed = eventFormSchema.safeParse(Object.fromEntries(formData));
+  const dict = getDictionary(await getPlatformLocale());
+  const parsed = createEventFormSchema(dict).safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+    return { error: parsed.error.issues[0]?.message ?? dict.common.genericError };
   }
   const values = parsed.data;
 
   const supabase = await createClient();
-  let slug = slugify(values.name) || "event";
+  const slugSource = values.name_uk || values.name_en || "event";
+  let slug = slugify(slugSource) || "event";
 
   const registrationDeadline = values.registration_deadline
     ? zonedTimeToUtc(
@@ -38,15 +42,19 @@ export async function createEvent(
       .from("events")
       .insert({
         organization_id: membership.organizationId,
-        name: values.name,
+        event_language: values.event_language,
+        name_uk: values.name_uk ?? null,
+        name_en: values.name_en ?? null,
         slug,
-        description: values.description ?? null,
+        description_uk: values.description_uk ?? null,
+        description_en: values.description_en ?? null,
         start_date: values.start_date,
         start_time: values.start_time,
         end_date: values.end_date,
         end_time: values.end_time,
         timezone: values.timezone,
-        venue_name: values.venue_name ?? null,
+        venue_name_uk: values.venue_name_uk ?? null,
+        venue_name_en: values.venue_name_en ?? null,
         address: values.address ?? null,
         capacity: values.capacity ?? null,
         registration_deadline: registrationDeadline,
@@ -62,12 +70,12 @@ export async function createEvent(
     }
 
     if (error?.code === "23505") {
-      slug = withRandomSuffix(slugify(values.name) || "event");
+      slug = withRandomSuffix(slugify(slugSource) || "event");
       continue;
     }
 
-    return { error: "Could not create the event. Please try again." };
+    return { error: dict.events.createError };
   }
 
-  return { error: "Could not create the event. Please try again." };
+  return { error: dict.events.createError };
 }

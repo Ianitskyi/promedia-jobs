@@ -2,6 +2,7 @@ import Link from "next/link";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatCalendarDate } from "@/lib/format-event-time";
 import type { EventStatus } from "@/lib/database.types";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 interface EventCardProps {
   id: string;
@@ -10,6 +11,7 @@ interface EventCardProps {
   startDate: string;
   venueName: string | null;
   status: EventStatus;
+  dict: Dictionary;
 }
 
 const statusTone: Record<EventStatus, "neutral" | "success" | "warning" | "danger"> = {
@@ -19,7 +21,14 @@ const statusTone: Record<EventStatus, "neutral" | "success" | "warning" | "dange
   ARCHIVED: "danger",
 };
 
-export function EventCard({ id, name, slug, startDate, venueName, status }: EventCardProps) {
+export function EventCard({ id, name, slug, startDate, venueName, status, dict }: EventCardProps) {
+  const statusLabel: Record<EventStatus, string> = {
+    DRAFT: dict.events.statusDraft,
+    PUBLISHED: dict.events.statusPublished,
+    CLOSED: dict.events.statusClosed,
+    ARCHIVED: dict.events.statusArchived,
+  };
+
   return (
     <Link
       href={`/dashboard/events/${id}`}
@@ -32,7 +41,7 @@ export function EventCard({ id, name, slug, startDate, venueName, status }: Even
           {venueName ? ` · ${venueName}` : ""} · /e/{slug}
         </p>
       </div>
-      <StatusBadge tone={statusTone[status]}>{status}</StatusBadge>
+      <StatusBadge tone={statusTone[status]}>{statusLabel[status]}</StatusBadge>
     </Link>
   );
 }

@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useQrScanner, type ScanControls } from "@/lib/hooks/useQrScanner";
 import { extractTokenFromScan } from "@/lib/scan";
+import { useI18n } from "@/lib/i18n/client";
 import { ScannerResult, type ScannerResultData } from "@/components/ScannerResult";
 import { ManualCheckin } from "@/components/ManualCheckin";
 
@@ -18,6 +19,7 @@ function vibrate(pattern: number | number[]) {
 }
 
 export function Scanner({ eventId }: { eventId: string }) {
+  const { dict } = useI18n();
   const processingRef = useRef(false);
   const [result, setResult] = useState<ScannerResultData | null>(null);
   const [networkError, setNetworkError] = useState(false);
@@ -77,18 +79,18 @@ export function Scanner({ eventId }: { eventId: string }) {
 
         {cameraState === "permission_denied" && (
           <CameraOverlay
-            title="Camera permission denied"
-            body="Allow camera access in your browser settings, then reload this page."
+            title={dict.scanner.cameraPermissionDeniedTitle}
+            body={dict.scanner.cameraPermissionDeniedBody}
           />
         )}
         {cameraState === "unavailable" && (
           <CameraOverlay
-            title="Camera unavailable"
-            body="No camera could be started on this device."
+            title={dict.scanner.cameraUnavailableTitle}
+            body={dict.scanner.cameraUnavailableBody}
           />
         )}
         {networkError && (
-          <CameraOverlay title="Network error" body="Couldn't reach the server. Retrying scan…" />
+          <CameraOverlay title={dict.scanner.networkErrorTitle} body={dict.scanner.networkErrorBody} />
         )}
         {result && (
           <div className="absolute inset-0">

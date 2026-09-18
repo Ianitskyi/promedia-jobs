@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { CONSENT_TEXT, CONSENT_VERSION } from "@/lib/consent";
+import { CONSENT_VERSION, getConsentText } from "@/lib/consent";
+import type { Locale } from "@/lib/i18n/locale";
 
 export type RegisterAttendeeError =
   | "EVENT_NOT_FOUND"
@@ -8,6 +9,7 @@ export type RegisterAttendeeError =
   | "REGISTRATION_CLOSED"
   | "CAPACITY_REACHED"
   | "ALREADY_REGISTERED"
+  | "INVALID_LANGUAGE"
   | "UNKNOWN";
 
 export interface RegisterAttendeeInput {
@@ -17,6 +19,8 @@ export interface RegisterAttendeeInput {
   email: string;
   company?: string;
   position?: string;
+  /** The language the attendee registered in — see the SECURITY/i18n notes below. */
+  language: Locale;
 }
 
 /**
@@ -46,13 +50,19 @@ const KNOWN_ERRORS: RegisterAttendeeError[] = [
   "EVENT_NOT_PUBLISHED",
   "REGISTRATION_CLOSED",
   "CAPACITY_REACHED",
+  "INVALID_LANGUAGE",
 ];
 
 /**
  * The single entry point for public registration. Delegates to the
  * register_attendee Postgres function, which does the atomic
  * lock-check-insert so this call is race-safe under concurrent
- * registrations for the same event.
+ * registrations for the same event. `input.language` is the attendee's
+ * chosen language — validated again inside register_attendee against
+ * the event's own event_language, stored on the attendee row (for
+ * future same-language communication) and on the consent record (as
+ * the language the consent text was actually shown in), and used to
+ * render the confirmation email.
  */
 export async function registerAttendee(
   input: RegisterAttendeeInput,
@@ -66,8 +76,9 @@ export async function registerAttendee(
     p_email: input.email,
     p_company: input.company ?? null,
     p_position: input.position ?? null,
+    p_language: input.language,
     p_consent_version: CONSENT_VERSION,
-    p_consent_text: CONSENT_TEXT,
+    p_consent_text: getConsentText(input.language),
   });
 
   if (error) {

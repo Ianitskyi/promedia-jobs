@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Input } from "@/components/Input";
 import { StatusBadge } from "@/components/StatusBadge";
+import { useI18n } from "@/lib/i18n/client";
 import type { AttendeeRow } from "@/lib/server/attendees";
 
 type Filter = "all" | "checked_in" | "not_checked_in";
@@ -12,6 +13,7 @@ function formatDateTime(iso: string): string {
 }
 
 export function AttendeeTable({ attendees }: { attendees: AttendeeRow[] }) {
+  const { dict } = useI18n();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
 
@@ -30,23 +32,23 @@ export function AttendeeTable({ attendees }: { attendees: AttendeeRow[] }) {
     });
   }, [attendees, query, filter]);
 
+  const filters: [Filter, string][] = [
+    ["all", dict.events.filterAll],
+    ["checked_in", dict.events.filterCheckedIn],
+    ["not_checked_in", dict.events.filterNotCheckedIn],
+  ];
+
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Input
-          placeholder="Search attendees"
+          placeholder={dict.events.searchPlaceholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="sm:max-w-xs"
         />
         <div className="flex gap-1 text-sm">
-          {(
-            [
-              ["all", "All"],
-              ["checked_in", "Checked in"],
-              ["not_checked_in", "Not checked in"],
-            ] as const
-          ).map(([value, label]) => (
+          {filters.map(([value, label]) => (
             <button
               key={value}
               type="button"
@@ -67,12 +69,12 @@ export function AttendeeTable({ attendees }: { attendees: AttendeeRow[] }) {
         <table className="w-full min-w-[640px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-[var(--border)] text-left text-xs uppercase tracking-wide text-muted">
-              <th className="py-2 pr-4 font-medium">Name</th>
-              <th className="py-2 pr-4 font-medium">Email</th>
-              <th className="py-2 pr-4 font-medium">Organization</th>
-              <th className="py-2 pr-4 font-medium">Registered</th>
-              <th className="py-2 pr-4 font-medium">Status</th>
-              <th className="py-2 pr-4 font-medium">Checked in</th>
+              <th className="py-2 pr-4 font-medium">{dict.events.tableName}</th>
+              <th className="py-2 pr-4 font-medium">{dict.events.tableEmail}</th>
+              <th className="py-2 pr-4 font-medium">{dict.events.tableOrganization}</th>
+              <th className="py-2 pr-4 font-medium">{dict.events.tableRegistered}</th>
+              <th className="py-2 pr-4 font-medium">{dict.events.tableStatus}</th>
+              <th className="py-2 pr-4 font-medium">{dict.events.tableCheckedIn}</th>
             </tr>
           </thead>
           <tbody>
@@ -86,9 +88,9 @@ export function AttendeeTable({ attendees }: { attendees: AttendeeRow[] }) {
                 <td className="py-2.5 pr-4 text-muted">{formatDateTime(a.registeredAt)}</td>
                 <td className="py-2.5 pr-4">
                   {a.checkedInAt ? (
-                    <StatusBadge tone="success">Checked in</StatusBadge>
+                    <StatusBadge tone="success">{dict.events.badgeCheckedIn}</StatusBadge>
                   ) : (
-                    <StatusBadge tone="neutral">Not checked in</StatusBadge>
+                    <StatusBadge tone="neutral">{dict.events.badgeNotCheckedIn}</StatusBadge>
                   )}
                 </td>
                 <td className="py-2.5 pr-4 text-muted">
@@ -99,7 +101,7 @@ export function AttendeeTable({ attendees }: { attendees: AttendeeRow[] }) {
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={6} className="py-6 text-center text-muted">
-                  No attendees match.
+                  {dict.events.noAttendeesMatch}
                 </td>
               </tr>
             )}

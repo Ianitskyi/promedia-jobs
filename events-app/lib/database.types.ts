@@ -3,9 +3,15 @@
 //   supabase gen types typescript --linked > lib/database.types.ts
 // once a real Supabase project is linked.
 
+import type { Locale, EventLanguage } from "@/lib/i18n/locale";
+
 export type OrgRole = "OWNER" | "ADMIN" | "CHECKIN_STAFF";
 export type EventStatus = "DRAFT" | "PUBLISHED" | "CLOSED" | "ARCHIVED";
 export type CheckinMethod = "QR" | "MANUAL" | "KIOSK";
+/** Matches the `ui_language` Postgres enum exactly — see lib/i18n/locale.ts's `Locale`. */
+export type UiLanguage = Locale;
+/** Matches the `event_language` Postgres enum exactly. */
+export type EventLanguageOption = EventLanguage;
 
 export type Organization = {
   id: string;
@@ -28,15 +34,19 @@ export type OrganizationUser = {
 export type Event = {
   id: string;
   organization_id: string;
-  name: string;
   slug: string;
-  description: string | null;
+  event_language: EventLanguageOption;
+  name_uk: string | null;
+  name_en: string | null;
+  description_uk: string | null;
+  description_en: string | null;
   start_date: string;
   start_time: string;
   end_date: string;
   end_time: string;
   timezone: string;
-  venue_name: string | null;
+  venue_name_uk: string | null;
+  venue_name_en: string | null;
   address: string | null;
   capacity: number | null;
   registration_deadline: string | null;
@@ -50,6 +60,7 @@ export type Event = {
 export type RegistrationConsent = {
   id: string;
   version: string;
+  language: UiLanguage;
   text_snapshot: string;
   consented_at: string;
 };
@@ -63,6 +74,7 @@ export type Attendee = {
   normalized_email: string;
   company: string | null;
   position: string | null;
+  preferred_language: UiLanguage;
   consent_id: string;
   registered_at: string;
 };
@@ -120,7 +132,6 @@ export type Database = {
         Row: Event;
         Insert: Partial<Event> & {
           organization_id: string;
-          name: string;
           slug: string;
           start_date: string;
           start_time: string;
@@ -135,6 +146,7 @@ export type Database = {
         Row: RegistrationConsent;
         Insert: Partial<RegistrationConsent> & {
           version: string;
+          language: UiLanguage;
           text_snapshot: string;
         };
         Update: Partial<RegistrationConsent>;
@@ -147,6 +159,7 @@ export type Database = {
           first_name: string;
           last_name: string;
           email: string;
+          preferred_language: UiLanguage;
           consent_id: string;
         };
         Update: Partial<Attendee>;
@@ -183,6 +196,7 @@ export type Database = {
           p_email: string;
           p_company: string | null;
           p_position: string | null;
+          p_language: UiLanguage;
           p_consent_version: string;
           p_consent_text: string;
         };

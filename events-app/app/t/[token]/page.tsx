@@ -2,6 +2,12 @@ import { getTicketByToken } from "@/lib/server/tickets";
 import { renderQrSvg } from "@/lib/qr";
 import { ticketUrl } from "@/lib/url";
 import { formatEventDateTime } from "@/lib/format-event-time";
+import { resolveTicketLocale, resolvePublicLocale } from "@/lib/i18n/server";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { eventName, eventVenueName } from "@/lib/i18n/event-content";
+import { I18nProvider } from "@/lib/i18n/client";
+import { setPublicLocale } from "@/lib/i18n/actions";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Ticket } from "@/components/Ticket";
 
 export default async function TicketPage({
@@ -13,43 +19,44 @@ export default async function TicketPage({
   const details = await getTicketByToken(token);
 
   if (!details) {
-    return (
-      <StateMessage
-        title="Ticket not found"
-        body="This ticket link is invalid. Double-check the URL, or contact the event organizer."
-      />
-    );
-  }
-
-  if (details.ticket.revoked_at) {
-    return (
-      <StateMessage
-        title="Ticket revoked"
-        body="This ticket is no longer valid. Contact the event organizer if you believe this is a mistake."
-      />
-    );
+    const locale = await resolvePublicLocale("bilingual");
+    const dict = getDictionary(locale);
+    return <StateMessage title={dict.ticket.notFoundTitle} body={dict.ticket.notFoundBody} />;
   }
 
   const { attendee, event, organization, ticket } = details;
-  const qrSvg = await renderQrSvg(ticketUrl(ticket.public_token));
+  const locale = await resolveTicketLocale(event.event_language, attendee.preferred_language);
+  const dict = getDictionary(locale);
 
+  if (ticket.revoked_at) {
+    return <StateMessage title={dict.ticket.revokedTitle} body={dict.ticket.revokedBody} />;
+  }
+
+  const qrSvg = await renderQrSvg(ticketUrl(ticket.public_token));
   const dateLabel = formatEventDateTime(event.start_date, event.start_time, event.timezone);
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-4 py-12">
-      <Ticket
-        organizationName={organization.name}
-        organizationLogoUrl={organization.logo_url}
-        eventLogoUrl={event.logo_url}
-        eventName={event.name}
-        attendeeName={`${attendee.first_name} ${attendee.last_name}`}
-        attendeeCompany={attendee.company}
-        dateLabel={`${dateLabel} (${event.timezone})`}
-        venueName={event.venue_name}
-        address={event.address}
-        qrSvg={qrSvg}
-      />
-    </main>
+    <I18nProvider locale={locale} dict={dict}>
+      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-4 py-12">
+        {event.event_language === "bilingual" && (
+          <div className="mx-auto mb-6">
+            <LanguageSwitcher locale={locale} setLocale={setPublicLocale} />
+          </div>
+        )}
+        <Ticket
+          organizationName={organization.name}
+          organizationLogoUrl={organization.logo_url}
+          eventLogoUrl={event.logo_url}
+          eventName={eventName(event, locale)}
+          attendeeName={`${attendee.first_name} ${attendee.last_name}`}
+          attendeeCompany={attendee.company}
+          dateLabel={`${dateLabel} (${event.timezone})`}
+          venueName={eventVenueName(event, locale)}
+          address={event.address}
+          qrSvg={qrSvg}
+        />
+      </main>
+    </I18nProvider>
   );
 }
 

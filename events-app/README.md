@@ -176,6 +176,45 @@ same route and function, just with a different `method` tag
 (`QR` / `MANUAL` / `KIOSK`) and, for manual check-in, a ticket ID instead
 of a scanned token.
 
+## Internationalization (Ukrainian / English)
+
+The organizer dashboard and every public attendee-facing page support
+Ukrainian (default) and English. Full design in
+[`ARCHITECTURE.md`](./ARCHITECTURE.md) §12; summary:
+
+- **Platform locale** (dashboard/auth): cookie `pm_locale`, switched
+  with the UA | EN toggle visible everywhere, defaults from the
+  browser's `Accept-Language` on a visitor's first request only.
+- **Public/event locale**: driven by the event's own `event_language`
+  (`uk` / `en` / `bilingual`), independent of the organizer's platform
+  locale. A bilingual event shows its own switcher and remembers the
+  attendee's choice (cookie `pm_public_locale`); the ticket page
+  defaults a bilingual event to the attendee's own registered language.
+- **Kiosk locale**: its own cookie (`pm_kiosk_locale`) — a kiosk is a
+  physical station, not tied to whoever's logged in.
+- No URL locale prefix (`/uk/...`, `/en/...`) — event and ticket URLs,
+  including QR codes, must stay stable regardless of language, so
+  locale is cookie-only everywhere.
+- Translations live in `lib/i18n/dictionaries/{en,uk}.ts`, organized by
+  domain (`common`, `auth`, `dashboard`, `events`, `registration`,
+  `ticket`, `scanner`, `kiosk`, `errors`); `en` is canonical and `uk`
+  is checked against its exact keys at compile time.
+
+**Known untranslated/imperfect spots**, called out rather than hidden:
+- The exported CSV's column headers (`app/api/events/[eventId]/export/route.ts`)
+  are English-only — treated as a data-interchange format, not UI.
+- `app/layout.tsx`'s `<meta name="description">` (static Next.js
+  `Metadata`) and the honeypot field's `<label>Website</label>`
+  (`components/RegistrationForm.tsx`, `aria-hidden` and never seen by a
+  real visitor) are English-only.
+- Errors Supabase Auth itself generates (e.g. "User already
+  registered" on sign-up) are shown as-is, in whatever language
+  Supabase's own client returns them — not mapped through the
+  dictionaries.
+- The root `<html lang>` attribute follows the platform locale, which
+  can differ from a public event page's actual content language for a
+  non-default-language event — a per-page override isn't wired up.
+
 ## Security considerations
 
 - **Tenant isolation**: every tenant-owned table carries (directly or
@@ -253,7 +292,7 @@ of a scanned token.
   is converted to a UTC instant for comparison — both via a small
   Intl-based helper (`lib/timezone.ts`) rather than a timezone library.
   See `ARCHITECTURE.md` §9a.
-- Everything listed in `ARCHITECTURE.md` §11 as out of scope (payments,
+- Everything listed in `ARCHITECTURE.md` §13 as out of scope (payments,
   custom fields, wallet passes, bulk import, analytics, webhooks/API,
   etc.) — deliberately not built.
 
@@ -276,6 +315,18 @@ capacity reached, duplicate registration reporting `ALREADY_REGISTERED`
 without ever exposing the existing ticket token — including a test
 that defends this even if a future/buggy RPC response carried one).
 
+Also covered: the i18n layer (`lib/i18n/**/*.test.ts`) — Ukrainian
+default, English platform selection via `Accept-Language`, language
+persistence across requests, resolving `uk`/`en`/bilingual event
+locales (including the ticket page's attendee-language default),
+localized registration/event-form validation messages in both
+languages, bilingual event content validation (a single-language event
+needs only its own name, bilingual needs both), the confirmation
+email's per-language rendering (and that it's never a combined
+Ukrainian+English send), the QR ticket URL's independence from
+language, timezone formatting correctness in both locales, and the
+dictionary fallback chain when a translation key is missing.
+
 What these tests do **not** cover: the actual Postgres-level guarantees
 (the `checkins.ticket_id` unique constraint and its enforcing trigger,
 RLS policies, the `register_attendee` row lock, the capacity race, a
@@ -288,7 +339,7 @@ and **Known MVP limitations** below.
 
 ## Roadmap
 
-See `ARCHITECTURE.md` §11 and the brief's "future features" list:
+See `ARCHITECTURE.md` §13 and the brief's "future features" list:
 custom registration fields, paid tickets (Stripe), multiple ticket
 types, Apple/Google Wallet, custom domains, white-label portals,
 self-check-in kiosks at scale, badge printing, invitations, bulk

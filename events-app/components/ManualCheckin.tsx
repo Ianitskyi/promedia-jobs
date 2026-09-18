@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Input } from "@/components/Input";
 import { Button } from "@/components/Button";
 import { StatusBadge } from "@/components/StatusBadge";
+import { useI18n } from "@/lib/i18n/client";
 
 interface SearchResult {
   attendeeId: string;
@@ -19,6 +20,7 @@ function formatTime(iso: string): string {
 }
 
 export function ManualCheckin({ eventId }: { eventId: string }) {
+  const { dict, t } = useI18n();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -72,13 +74,13 @@ export function ManualCheckin({ eventId }: { eventId: string }) {
         onClick={() => setOpen((v) => !v)}
         className="text-sm underline underline-offset-2"
       >
-        Can&apos;t scan the QR?
+        {dict.scanner.cantScan}
       </button>
 
       {open && (
         <div className="mt-4 flex flex-col gap-3">
           <Input
-            placeholder="Search by name or email"
+            placeholder={dict.scanner.searchPlaceholder}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
@@ -93,20 +95,22 @@ export function ManualCheckin({ eventId }: { eventId: string }) {
                   {r.company && <p className="text-xs text-muted">{r.company}</p>}
                 </div>
                 {r.checkedInAt ? (
-                  <StatusBadge tone="success">Checked in — {formatTime(r.checkedInAt)}</StatusBadge>
+                  <StatusBadge tone="success">
+                    {t("scanner.checkedInAtBadge", { time: formatTime(r.checkedInAt) })}
+                  </StatusBadge>
                 ) : (
                   <Button
                     variant="secondary"
                     onClick={() => checkIn(r)}
                     disabled={pendingId === r.attendeeId}
                   >
-                    {pendingId === r.attendeeId ? "…" : "Check in"}
+                    {pendingId === r.attendeeId ? dict.scanner.checkInPending : dict.scanner.checkInButton}
                   </Button>
                 )}
               </li>
             ))}
             {searchActive && visibleResults.length === 0 && (
-              <li className="py-3 text-sm text-muted">No matching attendees.</li>
+              <li className="py-3 text-sm text-muted">{dict.scanner.noMatchingAttendees}</li>
             )}
           </ul>
         </div>

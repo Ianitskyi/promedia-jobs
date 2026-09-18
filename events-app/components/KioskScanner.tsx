@@ -3,7 +3,10 @@
 import { useRef, useState } from "react";
 import { useQrScanner, type ScanControls } from "@/lib/hooks/useQrScanner";
 import { extractTokenFromScan } from "@/lib/scan";
+import { useI18n } from "@/lib/i18n/client";
+import { setKioskLocale } from "@/lib/i18n/actions";
 import { Logo } from "@/components/Logo";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { CameraOverlay } from "@/components/Scanner";
 import type { ScannerResultData } from "@/components/ScannerResult";
 
@@ -25,6 +28,7 @@ interface KioskScannerProps {
 }
 
 export function KioskScanner({ eventId, organizationName, logoUrl }: KioskScannerProps) {
+  const { dict, locale, t } = useI18n();
   const processingRef = useRef(false);
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
   const [notRecognized, setNotRecognized] = useState(false);
@@ -64,7 +68,7 @@ export function KioskScanner({ eventId, organizationName, logoUrl }: KioskScanne
         "state" in body &&
         (body.state === "CHECKED_IN" || body.state === "ALREADY_CHECKED_IN")
       ) {
-        setWelcomeName(body.attendee?.firstName ?? "there");
+        setWelcomeName(body.attendee?.firstName ?? dict.kiosk.guestFallbackName);
         vibrate(100);
       } else {
         setNotRecognized(true);
@@ -80,6 +84,10 @@ export function KioskScanner({ eventId, organizationName, logoUrl }: KioskScanne
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">
+      <div className="absolute right-4 top-4">
+        <LanguageSwitcher locale={locale} setLocale={setKioskLocale} />
+      </div>
+
       <div className="flex items-center gap-3">
         <Logo name={organizationName} logoUrl={logoUrl} size={40} />
         <span className="font-serif text-xl italic">{organizationName}</span>
@@ -89,27 +97,27 @@ export function KioskScanner({ eventId, organizationName, logoUrl }: KioskScanne
         <div id={SCANNER_ELEMENT_ID} className="h-full w-full" />
         {cameraState === "permission_denied" && (
           <CameraOverlay
-            title="Camera permission denied"
-            body="Allow camera access in this browser's settings."
+            title={dict.kiosk.cameraPermissionDeniedTitle}
+            body={dict.kiosk.cameraPermissionDeniedBody}
           />
         )}
         {cameraState === "unavailable" && (
-          <CameraOverlay title="Camera unavailable" body="No camera could be started." />
+          <CameraOverlay title={dict.kiosk.cameraUnavailableTitle} body={dict.kiosk.cameraUnavailableBody} />
         )}
         {welcomeName && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-emerald-600 text-white">
-            <p className="text-3xl font-semibold">✓ Welcome, {welcomeName}!</p>
+            <p className="text-3xl font-semibold">{t("kiosk.welcome", { name: welcomeName })}</p>
           </div>
         )}
         {notRecognized && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-red-700 text-white">
-            <p className="text-2xl font-semibold uppercase tracking-wide">Ticket not recognized</p>
-            <p className="text-sm text-white/80">Please see event staff.</p>
+            <p className="text-2xl font-semibold uppercase tracking-wide">{dict.kiosk.notRecognizedTitle}</p>
+            <p className="text-sm text-white/80">{dict.kiosk.notRecognizedBody}</p>
           </div>
         )}
       </div>
 
-      <p className="mt-8 text-lg text-muted">Show your ticket QR code</p>
+      <p className="mt-8 text-lg text-muted">{dict.kiosk.instruction}</p>
     </div>
   );
 }

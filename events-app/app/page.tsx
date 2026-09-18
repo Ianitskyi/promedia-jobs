@@ -1,17 +1,24 @@
 import Link from "next/link";
+import { getPlatformLocale } from "@/lib/i18n/server";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { setPlatformLocale } from "@/lib/i18n/actions";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/Button";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const locale = await getPlatformLocale();
+  const dict = getDictionary(locale);
+
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-6 py-24">
-      <h1 className="font-serif text-4xl italic">ProMedia Events</h1>
-      <p className="mt-4 max-w-md text-muted">
-        Create events, accept registrations, issue QR tickets, and check
-        attendees in at the door.
-      </p>
+      <div className="flex items-start justify-between">
+        <h1 className="font-serif text-4xl italic">{dict.common.appName}</h1>
+        <LanguageSwitcher locale={locale} setLocale={setPlatformLocale} />
+      </div>
+      <p className="mt-4 max-w-md text-muted">{dict.common.tagline}</p>
       <div className="mt-8 flex gap-3">
         <Link href="/login">
-          <Button>Organizer sign in</Button>
+          <Button>{dict.common.organizerSignIn}</Button>
         </Link>
       </div>
     </main>

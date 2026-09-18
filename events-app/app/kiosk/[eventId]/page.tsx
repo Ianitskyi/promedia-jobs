@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/authz";
+import { getKioskLocale } from "@/lib/i18n/server";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { I18nProvider } from "@/lib/i18n/client";
 import { KioskScanner } from "@/components/KioskScanner";
 
 export default async function KioskPage({
@@ -28,11 +31,16 @@ export default async function KioskPage({
 
   if (!organization) notFound();
 
+  const locale = await getKioskLocale();
+  const dict = getDictionary(locale);
+
   return (
-    <KioskScanner
-      eventId={event.id}
-      organizationName={organization.name}
-      logoUrl={event.logo_url ?? organization.logo_url}
-    />
+    <I18nProvider locale={locale} dict={dict}>
+      <KioskScanner
+        eventId={event.id}
+        organizationName={organization.name}
+        logoUrl={event.logo_url ?? organization.logo_url}
+      />
+    </I18nProvider>
   );
 }

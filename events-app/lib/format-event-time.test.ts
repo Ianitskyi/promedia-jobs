@@ -69,3 +69,36 @@ describe("formatCalendarDate", () => {
     expect(formatCalendarDate("2026-12-31", "en-US")).toBe("December 31, 2026");
   });
 });
+
+describe("timezone formatting is correct in both interface locales", () => {
+  // The `locale` parameter to formatEventDateTime/formatCalendarDate is
+  // purely a *display* concern (month/weekday names, AM/PM vs 24h) —
+  // independent of the `timeZone` correctness already covered above.
+  // These lock in that both interface languages the app ships produce
+  // sane, non-empty, correctly-dated output — not just whichever one
+  // the earlier tests happened to use.
+
+  it("renders Ukrainian month/day names for a uk locale, same underlying instant as English", () => {
+    const uk = formatEventDateTime("2026-07-01", "14:00", "Europe/Kyiv", "uk");
+    const en = formatEventDateTime("2026-07-01", "14:00", "Europe/Kyiv", "en-US");
+    expect(uk).toContain("липня");
+    expect(uk).toContain("2026");
+    expect(uk).toContain("14:00");
+    expect(en).toContain("July 1, 2026");
+    expect(en).toContain("2:00 PM");
+    // Same wall-clock time, just formatted differently — not different times.
+    expect(uk).not.toBe(en);
+  });
+
+  it("renders a Ukrainian calendar date correctly, matching the same UTC-anchored day as English", () => {
+    expect(formatCalendarDate("2026-01-01", "uk")).toContain("січня");
+    expect(formatCalendarDate("2026-01-01", "uk")).toContain("2026");
+    expect(formatCalendarDate("2026-01-01", "en-US")).toBe("January 1, 2026");
+  });
+
+  it("keeps DST-boundary correctness in the Ukrainian locale too", () => {
+    const result = formatEventDateTime("2026-03-08", "10:00", "America/New_York", "uk");
+    expect(result).toContain("2026");
+    expect(result).toContain("10:00");
+  });
+});
