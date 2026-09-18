@@ -26,4 +26,30 @@ describe("toCsv", () => {
     const csv = toCsv(["email"], [["jane@example.com"]]);
     expect(csv).toBe("email\r\njane@example.com");
   });
+
+  describe("CSV/formula injection", () => {
+    // Attendee-supplied fields (name, company, position) reach this
+    // serializer from the public, unauthenticated registration form —
+    // a leading =/+/-/@ must never reach a spreadsheet as a live formula.
+    it.each([
+      ["=1+1", "'=1+1"],
+      ["+1234", "'+1234"],
+      ["-1234", "'-1234"],
+      ["@SUM(A1:A2)", "'@SUM(A1:A2)"],
+      ["\tevil", "'\tevil"],
+    ])("prefixes a leading formula trigger with a quote: %s", (input, expected) => {
+      const csv = toCsv(["name"], [[input]]);
+      expect(csv).toBe(`name\r\n${expected}`);
+    });
+
+    it("still quotes the cell if the formula-prefixed value also contains a comma", () => {
+      const csv = toCsv(["name"], [['=HYPERLINK("http://evil.example","x")']]);
+      expect(csv).toBe('name\r\n"\'=HYPERLINK(""http://evil.example"",""x"")"');
+    });
+
+    it("does not touch a value with a formula character in the middle", () => {
+      const csv = toCsv(["name"], [["Jean-Luc"]]);
+      expect(csv).toBe("name\r\nJean-Luc");
+    });
+  });
 });

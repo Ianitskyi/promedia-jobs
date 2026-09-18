@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requirePermission } from "@/lib/authz";
 import { EventForm } from "@/components/EventForm";
 import { updateEvent } from "./actions";
 
@@ -17,6 +18,8 @@ export default async function EditEventPage({
     .single();
 
   if (!event) notFound();
+
+  await requirePermission(event.organization_id, "manageEvents");
 
   return (
     <div>
