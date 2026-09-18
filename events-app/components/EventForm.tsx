@@ -45,7 +45,7 @@ export function EventForm({ action, defaultValues, submitLabel }: EventFormProps
         />
       </FormField>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField label="Start date" htmlFor="start_date" required>
           <Input
             id="start_date"
@@ -103,7 +103,7 @@ export function EventForm({ action, defaultValues, submitLabel }: EventFormProps
         </select>
       </FormField>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField label="Venue name" htmlFor="venue_name">
           <Input id="venue_name" name="venue_name" defaultValue={defaultValues?.venue_name ?? ""} />
         </FormField>
@@ -112,7 +112,7 @@ export function EventForm({ action, defaultValues, submitLabel }: EventFormProps
         </FormField>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField
           label="Registration capacity"
           htmlFor="capacity"
@@ -140,7 +140,7 @@ export function EventForm({ action, defaultValues, submitLabel }: EventFormProps
         </FormField>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField
           label="Event logo URL"
           htmlFor="logo_url"

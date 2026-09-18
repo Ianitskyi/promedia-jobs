@@ -58,6 +58,9 @@ export default async function EventDetailPage({
           <Link href={`/dashboard/events/${event.id}/scanner`}>
             <Button variant="secondary">Scanner</Button>
           </Link>
+          <Link href={`/kiosk/${event.id}`} target="_blank">
+            <Button variant="secondary">Kiosk</Button>
+          </Link>
           {canManage && (
             <Link href={`/dashboard/events/${event.id}/edit`}>
               <Button variant="secondary">Edit</Button>
