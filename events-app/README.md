@@ -399,19 +399,27 @@ Ukrainian (default) and English. Full design in
   `InMemoryRateLimiter` does not share state across serverless
   instances or survive a restart. A durable store (e.g. Upstash Redis)
   behind the same interface is the pre-launch upgrade.
-- **The database security/integrity model is designed and unit-tested
-  against a mock, not verified against a real database.** This
-  environment had no live Supabase project and no network access to
-  provision one, so `lib/database.types.ts` is hand-written to match
-  the SQL migrations rather than generated from a live project, and
-  nothing here has exercised the actual RLS policies (including the
-  new CRM-core tables' cross-workspace isolation — see
-  `docs/ARCHITECTURE_V2.md` §9), the `checkins.ticket_id` unique
-  constraint, the `checkins_event_matches_ticket` trigger, the
-  `people` dedup unique constraint, or the `register_for_event` row
-  lock against a running Postgres instance. Do not treat these as
-  verified. Run [`supabase/INTEGRATION_TESTS.md`](./supabase/INTEGRATION_TESTS.md)
-  against a real project before relying on this in production.
+- **The database security/integrity model has not been verified against
+  the real Supabase project** — this environment has no authenticated
+  access to it. It has, however, been verified against a disposable
+  **local PostgreSQL 16 instance** created and destroyed inside this
+  sandbox during review: `0001_init.sql` then
+  `0002_platform_refactor.sql` both applied cleanly as one transaction;
+  every cross-workspace composite foreign key (§9 of
+  `docs/ARCHITECTURE_V2.md`) was confirmed to reject a real
+  cross-workspace insert and accept a consistent one; the
+  `checkins_event_matches_ticket` trigger was reconfirmed working; the
+  `people` dedup unique constraint and the new `register_for_event`
+  concurrency fix were stress-tested under real concurrent connections
+  (see `supabase/INTEGRATION_TESTS.md` §3 and §12 for the exact
+  results). `lib/database.types.ts` is still hand-written to match the
+  SQL migrations rather than generated from a live project — that part
+  is unchanged. Local-Postgres verification is real evidence that the
+  SQL itself is correct, but it is **not** a substitute for running
+  [`supabase/INTEGRATION_TESTS.md`](./supabase/INTEGRATION_TESTS.md)
+  against your actual Supabase project (real RLS/auth wiring, your
+  actual current data) before relying on this in production — most of
+  that checklist is still genuinely unexecuted.
 - **Timezone handling** is deliberately simple: event start/end are
   stored as the organizer's chosen local date/time/zone triple.
   Display always renders those values in the event's own configured
