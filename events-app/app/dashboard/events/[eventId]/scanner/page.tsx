@@ -17,17 +17,17 @@ export default async function ScannerPage({
   const supabase = await createClient();
   const { data: event } = await supabase
     .from("events")
-    .select("id, name_uk, name_en, organization_id")
+    .select("id, name_uk, name_en, workspace_id")
     .eq("id", eventId)
     .single();
 
   if (!event) notFound();
 
-  await requirePermission(event.organization_id, "checkIn");
+  await requirePermission(event.workspace_id, "checkIn");
 
   return (
     <div>
-      <h1 className="font-serif text-2xl italic">
+      <h1 className="heading-display text-2xl">
         {eventName(event, locale)} — {dict.scanner.titleSuffix}
       </h1>
       <p className="mt-1 text-sm text-muted">{dict.scanner.instructions}</p>

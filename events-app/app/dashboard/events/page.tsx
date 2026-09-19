@@ -19,13 +19,13 @@ export default async function EventsPage() {
   const { data: events } = await supabase
     .from("events")
     .select("id, name_uk, name_en, slug, start_date, venue_name_uk, venue_name_en, status")
-    .eq("organization_id", membership.organizationId)
+    .eq("workspace_id", membership.workspaceId)
     .order("start_date", { ascending: false });
 
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="font-serif text-3xl italic">{dict.events.title}</h1>
+        <h1 className="heading-display text-3xl">{dict.events.title}</h1>
         <Link href="/dashboard/events/new">
           <Button>{dict.events.createButton}</Button>
         </Link>

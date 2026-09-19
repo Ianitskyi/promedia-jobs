@@ -16,7 +16,7 @@ export async function createEvent(
 ): Promise<EventFormState> {
   const membership = await getFirstMembership();
   if (!membership) redirect("/dashboard/onboarding");
-  await requirePermission(membership.organizationId, "manageEvents");
+  await requirePermission(membership.workspaceId, "manageEvents");
 
   const dict = getDictionary(await getPlatformLocale());
   const parsed = createEventFormSchema(dict).safeParse(Object.fromEntries(formData));
@@ -41,7 +41,7 @@ export async function createEvent(
     const { data, error } = await supabase
       .from("events")
       .insert({
-        organization_id: membership.organizationId,
+        workspace_id: membership.workspaceId,
         event_language: values.event_language,
         name_uk: values.name_uk ?? null,
         name_en: values.name_en ?? null,

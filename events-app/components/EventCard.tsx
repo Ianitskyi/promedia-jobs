@@ -35,7 +35,7 @@ export function EventCard({ id, name, slug, startDate, venueName, status, dict }
       className="flex items-center justify-between gap-4 border-b border-[var(--border)] py-5 transition-colors hover:bg-[var(--surface)]"
     >
       <div>
-        <p className="font-serif text-xl italic">{name}</p>
+        <p className="heading-display text-xl">{name}</p>
         <p className="mt-1 text-sm text-muted">
           {formatCalendarDate(startDate)}
           {venueName ? ` · ${venueName}` : ""} · /e/{slug}

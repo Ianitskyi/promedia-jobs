@@ -21,12 +21,12 @@ export default async function EditEventPage({
 
   if (!event) notFound();
 
-  await requirePermission(event.organization_id, "manageEvents");
+  await requirePermission(event.workspace_id, "manageEvents");
   const dict = getDictionary(await getPlatformLocale());
 
   return (
     <div>
-      <h1 className="font-serif text-3xl italic">{dict.events.editTitle}</h1>
+      <h1 className="heading-display text-3xl">{dict.events.editTitle}</h1>
       <div className="mt-8">
         <EventForm
           action={updateEvent.bind(null, eventId)}

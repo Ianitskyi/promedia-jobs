@@ -31,8 +31,8 @@ export interface RegisterAttendeeInput {
  * carrying the existing token. The token is a bearer credential; if
  * knowing someone's email were enough to get their ticket token back,
  * anyone who knew a registered attendee's email could obtain (and use)
- * their ticket. See the SECURITY note on register_attendee in
- * supabase/migrations/0001_init.sql.
+ * their ticket. See the SECURITY note on register_for_event in
+ * supabase/migrations/0002_platform_refactor.sql.
  *
  * A future "resend my ticket" flow belongs here as a separate,
  * explicitly-invoked function (e.g. requestTicketResend(eventId, email)
@@ -55,11 +55,13 @@ const KNOWN_ERRORS: RegisterAttendeeError[] = [
 
 /**
  * The single entry point for public registration. Delegates to the
- * register_attendee Postgres function, which does the atomic
+ * register_for_event Postgres function, which does the atomic
  * lock-check-insert so this call is race-safe under concurrent
- * registrations for the same event. `input.language` is the attendee's
- * chosen language — validated again inside register_attendee against
- * the event's own event_language, stored on the attendee row (for
+ * registrations for the same event, and finds-or-creates the
+ * workspace-scoped Person rather than creating a fresh contact every
+ * time (see ARCHITECTURE_V2.md §2). `input.language` is the attendee's
+ * chosen language — validated again inside register_for_event against
+ * the event's own event_language, stored on the person's row (for
  * future same-language communication) and on the consent record (as
  * the language the consent text was actually shown in), and used to
  * render the confirmation email.
@@ -69,7 +71,7 @@ export async function registerAttendee(
 ): Promise<RegisterAttendeeResult> {
   const supabase = createAdminClient();
 
-  const { data, error } = await supabase.rpc("register_attendee", {
+  const { data, error } = await supabase.rpc("register_for_event", {
     p_event_id: input.eventId,
     p_first_name: input.firstName,
     p_last_name: input.lastName,

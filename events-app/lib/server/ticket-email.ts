@@ -10,8 +10,8 @@ import { eventName, eventVenueName } from "@/lib/i18n/event-content";
 
 /**
  * Sends the ticket confirmation email for a freshly created ticket, in
- * the attendee's own registered language (`attendees.preferred_language`)
- * — never a combined Ukrainian+English email. Best-effort: the caller
+ * the registered person's own language (`people.preferred_language`) —
+ * never a combined Ukrainian+English email. Best-effort: the caller
  * treats a failure here as non-fatal to registration (the ticket URL
  * always works even if the email never arrives), matching the brief's
  * requirement that the ticket page, not the email, is the source of
@@ -22,33 +22,40 @@ export async function sendTicketEmail(token: string): Promise<void> {
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("event_id, attendee_id, public_token")
+    .select("event_id, registration_id, public_token")
     .eq("public_token", token)
     .single();
   if (!ticket) return;
 
-  const { data: attendee } = await supabase
-    .from("attendees")
-    .select("first_name, last_name, email, preferred_language")
-    .eq("id", ticket.attendee_id)
+  const { data: registration } = await supabase
+    .from("registrations")
+    .select("person_id")
+    .eq("id", ticket.registration_id)
     .single();
-  if (!attendee) return;
+  if (!registration) return;
+
+  const { data: person } = await supabase
+    .from("people")
+    .select("first_name, last_name, email, preferred_language")
+    .eq("id", registration.person_id)
+    .single();
+  if (!person || !person.preferred_language) return;
 
   const { data: event } = await supabase
     .from("events")
-    .select("name_uk, name_en, start_date, start_time, timezone, venue_name_uk, venue_name_en, organization_id")
+    .select("name_uk, name_en, start_date, start_time, timezone, venue_name_uk, venue_name_en, workspace_id")
     .eq("id", ticket.event_id)
     .single();
   if (!event) return;
 
-  const { data: organization } = await supabase
-    .from("organizations")
+  const { data: workspace } = await supabase
+    .from("workspaces")
     .select("name")
-    .eq("id", event.organization_id)
+    .eq("id", event.workspace_id)
     .single();
-  if (!organization) return;
+  if (!workspace) return;
 
-  const locale = attendee.preferred_language;
+  const locale = person.preferred_language;
   const dict = getDictionary(locale);
   const dateLabel = `${formatEventDateTime(event.start_date, event.start_time, event.timezone)} (${event.timezone})`;
 
@@ -56,15 +63,15 @@ export async function sendTicketEmail(token: string): Promise<void> {
   const qrDataUrl = await renderQrDataUrl(url);
 
   const { subject, html, text } = buildTicketEmail(dict, {
-    organizationName: organization.name,
+    organizationName: workspace.name,
     eventName: eventName(event, locale),
-    attendeeFirstName: attendee.first_name,
-    attendeeLastName: attendee.last_name,
+    attendeeFirstName: person.first_name,
+    attendeeLastName: person.last_name,
     dateLabel,
     venueName: eventVenueName(event, locale),
     ticketUrl: url,
     qrDataUrl,
   });
 
-  await getEmailProvider().send({ to: attendee.email, subject, html, text });
+  await getEmailProvider().send({ to: person.email, subject, html, text });
 }

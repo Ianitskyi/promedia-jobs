@@ -24,7 +24,7 @@ export default async function TicketPage({
     return <StateMessage title={dict.ticket.notFoundTitle} body={dict.ticket.notFoundBody} />;
   }
 
-  const { attendee, event, organization, ticket } = details;
+  const { attendee, event, workspace, ticket } = details;
   const locale = await resolveTicketLocale(event.event_language, attendee.preferred_language);
   const dict = getDictionary(locale);
 
@@ -44,8 +44,8 @@ export default async function TicketPage({
           </div>
         )}
         <Ticket
-          organizationName={organization.name}
-          organizationLogoUrl={organization.logo_url}
+          organizationName={workspace.name}
+          organizationLogoUrl={workspace.logo_url}
           eventLogoUrl={event.logo_url}
           eventName={eventName(event, locale)}
           attendeeName={`${attendee.first_name} ${attendee.last_name}`}
@@ -63,7 +63,7 @@ export default async function TicketPage({
 function StateMessage({ title, body }: { title: string; body: string }) {
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-6 py-16 text-center">
-      <h1 className="font-serif text-2xl italic">{title}</h1>
+      <h1 className="heading-display text-2xl">{title}</h1>
       <p className="mt-3 text-sm text-muted">{body}</p>
     </main>
   );

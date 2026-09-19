@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   const { data: event } = await admin
     .from("events")
-    .select("id, organization_id")
+    .select("id, workspace_id")
     .eq("id", parsed.data.eventId)
     .single();
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "EVENT_NOT_FOUND" }, { status: 404 });
   }
 
-  const membership = await getMembership(event.organization_id);
+  const membership = await getMembership(event.workspace_id);
   if (!membership || !can(membership.role, "checkIn")) {
     return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }

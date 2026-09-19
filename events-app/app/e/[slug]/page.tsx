@@ -46,7 +46,7 @@ export default async function PublicEventPage({
           )}
         </div>
 
-        <h1 className="mt-6 font-serif text-3xl italic">{name}</h1>
+        <h1 className="mt-6 heading-display text-3xl">{name}</h1>
         {description && <p className="mt-3 text-sm text-muted">{description}</p>}
         <p className="mt-4 text-sm">
           {dateLabel} ({event.timezone})
@@ -82,7 +82,7 @@ export default async function PublicEventPage({
 
 function StateNotice({ title, body }: { title: string; body: string }) {
   return (
-    <div className="border border-[var(--border)] bg-[var(--surface)] px-5 py-4">
+    <div className="card px-5 py-4">
       <p className="font-medium">{title}</p>
       <p className="mt-1 text-sm text-muted">{body}</p>
     </div>

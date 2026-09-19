@@ -1,12 +1,43 @@
 @import "tailwindcss";
 
+/*
+ * ProMedia visual system. Palette and type choices are sourced from the
+ * authoritative design reference (ianitskyi/promedia-communities,
+ * css/style.css) — do not invent new brand colors here.
+ *
+ * `--ink`/`--ink-soft`/`--paper`/`--card`/`--accent-dark`/`--accent-tint`/
+ * `--text` are the literal ProMedia tokens, defined under their reference
+ * names for direct use. This app's own pre-existing semantic tokens
+ * (`--background`, `--foreground`, `--muted`, `--border`, `--surface`,
+ * `--accent`, `--accent-foreground`) are kept — dozens of components
+ * already reference them — but now point at the ProMedia palette instead
+ * of the old near-monochrome one:
+ *
+ *   - `--accent` stays the single "current primary action color" this
+ *     app already threads through Button/EventForm/public event pages so
+ *     an organizer can override it per event (brief §16, unchanged
+ *     mechanism) — it now *defaults* to ProMedia ink navy rather than
+ *     near-black, satisfying "navy primary actions". `--brand-orange`
+ *     (the reference repo's own `--accent: #ffac33`) is kept separate
+ *     and used only for small highlights/badges ("orange accents"),
+ *     never as the default button color — see StatusBadge.tsx.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #14140f;
-  --muted: #6b6b63;
-  --border: #e4e2da;
-  --surface: #faf9f5;
-  --accent: #14140f;
+  --ink: #0d0c5c;
+  --ink-soft: #201e78;
+  --paper: #f7f7fb;
+  --card: #ffffff;
+  --brand-orange: #ffac33;
+  --accent-dark: #d98a17;
+  --accent-tint: #fff2dd;
+  --text: #15142f;
+
+  --background: var(--paper);
+  --foreground: var(--text);
+  --muted: #7c7c93;
+  --border: #e7e7ef;
+  --surface: var(--card);
+  --accent: var(--ink);
   --accent-foreground: #ffffff;
 }
 
@@ -18,6 +49,7 @@
   --color-surface: var(--surface);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-ink: var(--ink);
   --font-sans: var(--font-body);
   --font-serif: var(--font-display);
 }
@@ -35,4 +67,30 @@ body {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/*
+ * Primary heading treatment (brief §14): bold/heavy Montserrat, never a
+ * generic regular sans-serif or an italic serif. Applied via this class
+ * rather than relying on Tailwind's `font-serif`/`italic` utilities,
+ * which this app used for its previous editorial-italic look — every
+ * primary page title has been switched to this class instead (see
+ * app/**\/page.tsx). Playfair Display (`font-serif`, unchanged mapping)
+ * remains available for selective editorial use but is intentionally
+ * not used for primary application headings anymore.
+ */
+.heading-display {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-style: normal;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+/* Restrained "white card on light paper" surface (brief §14). */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 6px 18px -10px rgba(13, 12, 92, 0.14);
 }
