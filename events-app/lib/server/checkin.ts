@@ -36,12 +36,21 @@ async function finalizeCheckin(
     return { state: "TICKET_REVOKED" };
   }
 
-  const { data: attendee } = await supabase
-    .from("attendees")
-    .select("first_name, last_name, company")
-    .eq("id", ticket.attendee_id)
+  const { data: registration } = await supabase
+    .from("registrations")
+    .select("company_at_registration, person_id")
+    .eq("id", ticket.registration_id)
     .single();
-  if (!attendee) {
+  if (!registration) {
+    return { state: "INVALID_TICKET" };
+  }
+
+  const { data: person } = await supabase
+    .from("people")
+    .select("first_name, last_name")
+    .eq("id", registration.person_id)
+    .single();
+  if (!person) {
     return { state: "INVALID_TICKET" };
   }
 
@@ -60,9 +69,9 @@ async function finalizeCheckin(
   return {
     state: row.was_created ? "CHECKED_IN" : "ALREADY_CHECKED_IN",
     attendee: {
-      firstName: attendee.first_name,
-      lastName: attendee.last_name,
-      company: attendee.company,
+      firstName: person.first_name,
+      lastName: person.last_name,
+      company: registration.company_at_registration,
     },
     checkedInAt: row.checked_in_at,
   };

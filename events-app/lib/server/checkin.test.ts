@@ -1,19 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { Attendee, Ticket } from "@/lib/database.types";
+import type { Person, Registration, Ticket } from "@/lib/database.types";
 
 // checkin.ts talks to Postgres only through createAdminClient(); mocking
 // that one seam lets these tests exercise the real state-machine logic
 // in lib/server/checkin.ts (tenant/revocation checks, interpreting the
 // perform_checkin RPC's was_created flag) without a live database.
 let mockTickets: Record<string, Partial<Ticket>>;
-let mockAttendees: Record<string, Partial<Attendee>>;
+let mockRegistrations: Record<string, Partial<Registration>>;
+let mockPeople: Record<string, Partial<Person>>;
 let mockRpc: ReturnType<typeof vi.fn<(...args: unknown[]) => unknown>>;
+
+const TABLES: Record<string, () => Record<string, unknown>> = {
+  tickets: () => mockTickets,
+  registrations: () => mockRegistrations,
+  people: () => mockPeople,
+};
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
     from(table: string) {
       let filterValue: string | undefined;
-      const source = table === "tickets" ? mockTickets : mockAttendees;
+      const source = TABLES[table]();
       return {
         select() {
           return this;
@@ -40,21 +47,26 @@ const VALID_TOKEN = "A".repeat(43);
 const BASE_TICKET: Ticket = {
   id: "ticket-1",
   event_id: "event-1",
-  attendee_id: "attendee-1",
+  registration_id: "registration-1",
   public_token: VALID_TOKEN,
   created_at: "2026-01-01T00:00:00.000Z",
   revoked_at: null,
 };
 
-const BASE_ATTENDEE: Partial<Attendee> = {
+const BASE_REGISTRATION: Partial<Registration> = {
+  person_id: "person-1",
+  company_at_registration: "ProMedia",
+};
+
+const BASE_PERSON: Partial<Person> = {
   first_name: "Andrii",
   last_name: "Ianitskyi",
-  company: "ProMedia",
 };
 
 beforeEach(() => {
   mockTickets = { [VALID_TOKEN]: BASE_TICKET, "ticket-1": BASE_TICKET };
-  mockAttendees = { "attendee-1": BASE_ATTENDEE };
+  mockRegistrations = { "registration-1": BASE_REGISTRATION };
+  mockPeople = { "person-1": BASE_PERSON };
   mockRpc = vi.fn();
 });
 

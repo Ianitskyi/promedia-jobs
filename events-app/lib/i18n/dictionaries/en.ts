@@ -28,7 +28,7 @@ const en = {
     signIn: "Sign in",
     signUp: "Create account",
     pleaseWait: "Please wait…",
-    toggleToSignUp: "New organization? Create an account",
+    toggleToSignUp: "New workspace? Create an account",
     toggleToSignIn: "Already have an account? Sign in",
     invalidCredentials: "Invalid email or password.",
     invalidSignupInput: "Enter a valid email and a password of at least 8 characters.",
@@ -36,7 +36,7 @@ const en = {
   },
   dashboard: {
     navEvents: "Events",
-    onboardingInviteOnlyTitle: "Organization creation is currently invite-only.",
+    onboardingInviteOnlyTitle: "Workspace creation is currently invite-only.",
     onboardingInviteOnlyMessage: "Contact your platform administrator to get set up.",
   },
   events: {

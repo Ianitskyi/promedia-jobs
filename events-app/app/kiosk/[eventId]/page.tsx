@@ -15,21 +15,21 @@ export default async function KioskPage({
   const supabase = await createClient();
   const { data: event } = await supabase
     .from("events")
-    .select("id, organization_id, logo_url")
+    .select("id, workspace_id, logo_url")
     .eq("id", eventId)
     .single();
 
   if (!event) notFound();
 
-  await requirePermission(event.organization_id, "checkIn");
+  await requirePermission(event.workspace_id, "checkIn");
 
-  const { data: organization } = await supabase
-    .from("organizations")
+  const { data: workspace } = await supabase
+    .from("workspaces")
     .select("name, logo_url")
-    .eq("id", event.organization_id)
+    .eq("id", event.workspace_id)
     .single();
 
-  if (!organization) notFound();
+  if (!workspace) notFound();
 
   const locale = await getKioskLocale();
   const dict = getDictionary(locale);
@@ -38,8 +38,8 @@ export default async function KioskPage({
     <I18nProvider locale={locale} dict={dict}>
       <KioskScanner
         eventId={event.id}
-        organizationName={organization.name}
-        logoUrl={event.logo_url ?? organization.logo_url}
+        organizationName={workspace.name}
+        logoUrl={event.logo_url ?? workspace.logo_url}
       />
     </I18nProvider>
   );

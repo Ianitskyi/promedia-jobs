@@ -1,6 +1,6 @@
 /**
  * Ticket public_token shape: base64url of 32 random bytes, no padding.
- * Generated server-side in Postgres (register_attendee); this module
+ * Generated server-side in Postgres (register_for_event); this module
  * only validates shape before it's ever used in a query, so a
  * malformed /t/[token] URL (wrong length, bad characters) is rejected
  * without touching the database.

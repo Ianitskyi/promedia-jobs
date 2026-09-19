@@ -26,14 +26,14 @@ export function Ticket({
   qrSvg,
 }: TicketProps) {
   return (
-    <div className="mx-auto w-full max-w-sm border border-[var(--border)] bg-background">
+    <div className="card mx-auto w-full max-w-sm overflow-hidden">
       <div className="flex items-center gap-3 border-b border-[var(--border)] px-6 py-4">
         <Logo name={organizationName} logoUrl={eventLogoUrl ?? organizationLogoUrl} />
         <span className="text-sm font-medium">{organizationName}</span>
       </div>
 
       <div className="px-6 py-6 text-center">
-        <h1 className="font-serif text-2xl italic">{eventName}</h1>
+        <h1 className="heading-display text-2xl">{eventName}</h1>
         <p className="mt-1 text-sm text-muted">{dateLabel}</p>
         {venueName && <p className="text-sm text-muted">{venueName}</p>}
         {address && <p className="text-xs text-muted">{address}</p>}

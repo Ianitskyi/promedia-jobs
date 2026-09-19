@@ -34,7 +34,7 @@ export default async function EventDetailPage({
 
   if (!event) notFound();
 
-  const membership = await getMembership(event.organization_id);
+  const membership = await getMembership(event.workspace_id);
   const canManage = membership ? can(membership.role, "manageEvents") : false;
   const canExport = membership ? can(membership.role, "exportAttendees") : false;
 
@@ -56,7 +56,7 @@ export default async function EventDetailPage({
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="font-serif text-3xl italic">{eventName(event, locale)}</h1>
+            <h1 className="heading-display text-3xl">{eventName(event, locale)}</h1>
             <StatusBadge tone={statusTone[event.status]}>{statusLabel[event.status]}</StatusBadge>
           </div>
           <p className="mt-2 text-sm text-muted">
@@ -102,9 +102,9 @@ export default async function EventDetailPage({
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="border border-[var(--border)] px-4 py-3">
+    <div className="card px-4 py-3">
       <dt className="text-xs uppercase tracking-wide text-muted">{label}</dt>
-      <dd className="mt-1 font-serif text-2xl italic">{value}</dd>
+      <dd className="mt-1 heading-display text-2xl">{value}</dd>
     </div>
   );
 }

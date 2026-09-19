@@ -1,6 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Event, Organization } from "@/lib/database.types";
+import type { Event, Workspace } from "@/lib/database.types";
 
 export type PublicEventState =
   | "not_found"
@@ -11,7 +11,7 @@ export type PublicEventState =
 
 export interface PublicEvent {
   event: Event;
-  organization: Pick<Organization, "name" | "logo_url" | "primary_color">;
+  organization: Pick<Workspace, "name" | "logo_url" | "primary_color">;
   state: PublicEventState;
 }
 
@@ -26,7 +26,7 @@ export async function getPublicEventBySlug(slug: string): Promise<PublicEvent | 
 
   const { data: event } = await supabase
     .from("events")
-    .select("*, organizations(name, logo_url, primary_color)")
+    .select("*, workspaces(name, logo_url, primary_color)")
     .eq("slug", slug)
     .single();
 
@@ -34,7 +34,7 @@ export async function getPublicEventBySlug(slug: string): Promise<PublicEvent | 
     return null;
   }
 
-  const organization = (event as unknown as { organizations: Pick<Organization, "name" | "logo_url" | "primary_color"> }).organizations;
+  const organization = (event as unknown as { workspaces: Pick<Workspace, "name" | "logo_url" | "primary_color"> }).workspaces;
 
   let state: PublicEventState = "open";
   if (event.status !== "PUBLISHED") {
@@ -46,7 +46,7 @@ export async function getPublicEventBySlug(slug: string): Promise<PublicEvent | 
     state = "deadline_passed";
   } else if (event.capacity !== null) {
     const { count } = await supabase
-      .from("attendees")
+      .from("registrations")
       .select("id", { count: "exact", head: true })
       .eq("event_id", event.id);
     if ((count ?? 0) >= event.capacity) {

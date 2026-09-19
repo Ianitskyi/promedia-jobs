@@ -18,9 +18,9 @@ export default async function DashboardLayout({
   const dict = getDictionary(locale);
   const membership = await getFirstMembership();
 
-  // No org yet (e.g. a brand-new user on /dashboard/onboarding): render
-  // a minimal, unbranded chrome instead of redirecting. Pages that
-  // require an organization (the events area) already redirect to
+  // No workspace yet (e.g. a brand-new user on /dashboard/onboarding):
+  // render a minimal, unbranded chrome instead of redirecting. Pages
+  // that require a workspace (the events area) already redirect to
   // /dashboard/onboarding themselves — redirecting here too, for a
   // request that might *be* /dashboard/onboarding, would loop forever.
   if (!membership) {
@@ -29,7 +29,7 @@ export default async function DashboardLayout({
         <div className="flex min-h-screen flex-col">
           <header className="border-b border-[var(--border)]">
             <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-              <span className="font-serif text-lg italic">{dict.common.appName}</span>
+              <span className="heading-display text-lg">{dict.common.appName}</span>
               <LanguageSwitcher locale={locale} setLocale={setPlatformLocale} />
             </div>
           </header>
@@ -40,19 +40,19 @@ export default async function DashboardLayout({
   }
 
   const supabase = await createClient();
-  const { data: organization } = await supabase
-    .from("organizations")
+  const { data: workspace } = await supabase
+    .from("workspaces")
     .select("id, name, slug, logo_url, primary_color")
-    .eq("id", membership.organizationId)
+    .eq("id", membership.workspaceId)
     .single();
 
-  if (!organization) {
+  if (!workspace) {
     return (
       <I18nProvider locale={locale} dict={dict}>
         <div className="flex min-h-screen flex-col">
           <header className="border-b border-[var(--border)]">
             <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-              <span className="font-serif text-lg italic">{dict.common.appName}</span>
+              <span className="heading-display text-lg">{dict.common.appName}</span>
               <LanguageSwitcher locale={locale} setLocale={setPlatformLocale} />
             </div>
           </header>
@@ -62,8 +62,8 @@ export default async function DashboardLayout({
     );
   }
 
-  const accentStyle = organization.primary_color
-    ? ({ "--accent": organization.primary_color } as React.CSSProperties)
+  const accentStyle = workspace.primary_color
+    ? ({ "--accent": workspace.primary_color } as React.CSSProperties)
     : undefined;
 
   return (
@@ -72,8 +72,8 @@ export default async function DashboardLayout({
         <header className="border-b border-[var(--border)]">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
             <Link href="/dashboard/events" className="flex items-center gap-3">
-              <Logo name={organization.name} logoUrl={organization.logo_url} />
-              <span className="font-serif text-lg italic">{organization.name}</span>
+              <Logo name={workspace.name} logoUrl={workspace.logo_url} />
+              <span className="heading-display text-lg">{workspace.name}</span>
             </Link>
             <nav className="flex items-center gap-4 text-sm">
               <Link href="/dashboard/events" className="hover:underline">

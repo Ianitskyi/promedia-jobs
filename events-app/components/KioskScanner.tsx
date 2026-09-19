@@ -90,7 +90,7 @@ export function KioskScanner({ eventId, organizationName, logoUrl }: KioskScanne
 
       <div className="flex items-center gap-3">
         <Logo name={organizationName} logoUrl={logoUrl} size={40} />
-        <span className="font-serif text-xl italic">{organizationName}</span>
+        <span className="heading-display text-xl">{organizationName}</span>
       </div>
 
       <div className="relative mt-10 aspect-square w-full max-w-md overflow-hidden bg-black">

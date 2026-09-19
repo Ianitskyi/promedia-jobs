@@ -8,7 +8,7 @@ export default async function NewEventPage() {
 
   return (
     <div>
-      <h1 className="font-serif text-3xl italic">{dict.events.createTitle}</h1>
+      <h1 className="heading-display text-3xl">{dict.events.createTitle}</h1>
       <div className="mt-8">
         <EventForm action={createEvent} submitLabel={dict.events.submitCreate} />
       </div>

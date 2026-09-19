@@ -13,7 +13,7 @@ export default async function LoginPage() {
     <I18nProvider locale={locale} dict={dict}>
       <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-6 py-16">
         <div className="flex items-center justify-between">
-          <h1 className="font-serif text-3xl italic">{dict.auth.signInTitle}</h1>
+          <h1 className="heading-display text-3xl">{dict.auth.signInTitle}</h1>
           <LanguageSwitcher locale={locale} setLocale={setPlatformLocale} />
         </div>
         <LoginForm />

@@ -1,14 +1,22 @@
 import type { Metadata } from "next";
-import { Newsreader, Inter } from "next/font/google";
+import { Montserrat, Playfair_Display } from "next/font/google";
 import { getPlatformLocale } from "@/lib/i18n/server";
 import "./globals.css";
 
-const bodyFont = Inter({
+// Montserrat is the ProMedia platform's primary UI font — body text and,
+// via the `.heading-display` class in globals.css, every primary
+// heading (weight 800). See docs/ARCHITECTURE_V2.md and the design
+// reference (ianitskyi/promedia-communities).
+const bodyFont = Montserrat({
   variable: "--font-body",
-  subsets: ["latin"],
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
-const displayFont = Newsreader({
+// Playfair Display is kept for selective editorial use only (matching
+// the reference site's own use of it) — never for primary application
+// headings, which use Montserrat instead.
+const displayFont = Playfair_Display({
   variable: "--font-display",
   subsets: ["latin"],
   style: ["normal", "italic"],

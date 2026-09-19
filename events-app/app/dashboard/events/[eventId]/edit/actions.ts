@@ -18,7 +18,7 @@ export async function updateEvent(
   const supabase = await createClient();
   const { data: event } = await supabase
     .from("events")
-    .select("organization_id")
+    .select("workspace_id")
     .eq("id", eventId)
     .single();
 
@@ -26,7 +26,7 @@ export async function updateEvent(
     return { error: dict.events.notFoundError };
   }
 
-  await requirePermission(event.organization_id, "manageEvents");
+  await requirePermission(event.workspace_id, "manageEvents");
 
   const parsed = createEventFormSchema(dict).safeParse(Object.fromEntries(formData));
   if (!parsed.success) {

@@ -25,7 +25,7 @@ const uk: Dictionary = {
     signIn: "Увійти",
     signUp: "Створити акаунт",
     pleaseWait: "Зачекайте…",
-    toggleToSignUp: "Нова організація? Створити акаунт",
+    toggleToSignUp: "Новий робочий простір? Створити акаунт",
     toggleToSignIn: "Вже є акаунт? Увійти",
     invalidCredentials: "Неправильний email або пароль.",
     invalidSignupInput: "Введіть коректний email і пароль щонайменше з 8 символів.",
@@ -33,7 +33,7 @@ const uk: Dictionary = {
   },
   dashboard: {
     navEvents: "Події",
-    onboardingInviteOnlyTitle: "Наразі створення організацій доступне лише за запрошенням.",
+    onboardingInviteOnlyTitle: "Наразі створення робочих просторів доступне лише за запрошенням.",
     onboardingInviteOnlyMessage: "Зверніться до адміністратора платформи, щоб отримати доступ.",
   },
   events: {

@@ -1,17 +1,23 @@
 # ProMedia Events
 
-A multi-tenant event registration and check-in platform: organizations
-create events, attendees register on a public page, each registration
-gets a unique QR ticket, and staff check attendees in at the door with
-an ordinary smartphone camera.
+A multi-tenant event registration and check-in platform, built as the
+first module on the reusable ProMedia Platform core: workspaces
+(tenants) create events, people register on a public page, each
+registration gets a unique QR ticket, and staff check people in at the
+door with an ordinary smartphone camera.
 
 This app lives at `events-app/` inside the `promedia-jobs` repository,
 as a separate product from the static job-board site at the repo root.
 It deploys as its own Vercel project.
 
-See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the design and security
-rationale, and [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) for
-how it was built in phases.
+See [`docs/ARCHITECTURE_V2.md`](./docs/ARCHITECTURE_V2.md) for the
+current data model, authorization model, and multi-tenant/CRM-core
+architecture (Platform → Workspace → CRM Core + Modules) — this is the
+document to read to understand how the database is organized today.
+[`ARCHITECTURE.md`](./ARCHITECTURE.md) and
+[`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) describe the
+original, pre-refactor event-centric design and how it was built in
+phases — kept for history, not current.
 
 ## Stack
 
@@ -20,6 +26,29 @@ Supabase (Postgres + Auth) · `qrcode` · `html5-qrcode` · `zod` · Vitest.
 
 No Docker, queues, Redis, or other infrastructure — it's a normal
 Next.js app.
+
+## Design system
+
+The organizer/admin interface (dashboard, login, onboarding) uses the
+ProMedia visual system — light `#f7f7fb` backgrounds, white cards, navy
+(`--ink`) primary actions, ProMedia orange used only for small
+accents/badges, and Montserrat (weight 700/800 for headings, via the
+`.heading-display` class in `app/globals.css`) as the primary UI font.
+Tokens and typography are sourced from the authoritative design
+reference, [`ianitskyi/promedia-communities`](https://github.com/Ianitskyi/promedia-communities)
+(`css/style.css`) — see the comment block at the top of
+`app/globals.css` for the exact token mapping. This is a **logo-light**
+interface: the one ProMedia wordmark used (`public/brand/promedia-wordmark.svg`,
+on the home page only) is copied byte-for-byte from that same reference
+repository's `img/promedia-wordmark.svg`, never redrawn or
+approximated — every other screen uses the plain text "ProMedia Events".
+
+Public event registration pages are intentionally **not** restyled to
+this system — they keep the lighter, per-event-brandable look (an
+event's own logo/`primary_color` can override the accent color there;
+see `docs/ARCHITECTURE_V2.md`'s Events section and **Known MVP
+limitations** below), so an attendee always sees the event's own
+branding, not ProMedia's.
 
 ## Local setup
 
@@ -61,12 +90,39 @@ excludes `.env*` except the checked-in `.env.example` template.
 
 ## Database migrations
 
-The schema lives in [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql)
-as a single, hand-written migration: tables, constraints, indexes, Row
-Level Security policies, and three Postgres functions
-(`register_attendee`, `perform_checkin`, `create_organization_with_owner`).
+The schema lives in two hand-written, sequential migrations — apply
+both, in order, on a fresh project:
 
-Apply it with the [Supabase CLI](https://supabase.com/docs/guides/cli):
+1. [`0001_init.sql`](./supabase/migrations/0001_init.sql) — the
+   original event-centric schema (organizations/attendees).
+2. [`0002_platform_refactor.sql`](./supabase/migrations/0002_platform_refactor.sql) —
+   the platform refactor described in
+   [`docs/ARCHITECTURE_V2.md`](./docs/ARCHITECTURE_V2.md): renames the
+   tenant concept from `organizations` to `workspaces`, and replaces
+   the old per-event `attendees` table with a persistent, workspace-scoped
+   `people` (CRM contact) table plus event-specific `registrations`,
+   alongside new `crm_organizations`, `person_organization_relationships`,
+   and `activities` tables. **This is a rename-and-extend migration**,
+   not a drop-and-recreate — it preserves every existing
+   workspace/owner relationship and migrates any pre-existing
+   `attendees` rows into deduplicated `people` + `registrations` rows
+   (see the migration file's own comments for exactly how). Function
+   names changed too: `register_attendee` → `register_for_event`,
+   `create_organization_with_owner` → `create_workspace_with_owner`.
+   Cross-workspace referential integrity for every new CRM-core
+   relationship is enforced with composite foreign keys, not just RLS
+   (see `docs/ARCHITECTURE_V2.md` §9), and the person find-or-create in
+   `register_for_event` is now concurrency-safe under `INSERT ... ON
+   CONFLICT` (see the CONCURRENCY comment in the migration and
+   `supabase/INTEGRATION_TESTS.md` §3).
+
+**`0002_platform_refactor.sql` runs as a single transaction** (it wraps
+itself in `begin; ... commit;`) — if any statement in it fails partway
+through, Postgres rolls back everything that ran before the failure, so
+you never end up with a half-applied schema that merely *looks* like it
+succeeded. This was verified in review by deliberately breaking a copy
+of the file and confirming a full rollback (see
+`supabase/INTEGRATION_TESTS.md` §12). Apply it with one of:
 
 ```bash
 supabase login
@@ -74,12 +130,48 @@ supabase link --project-ref <your-project-ref>
 supabase db push
 ```
 
-Or paste the file's contents into the Supabase dashboard's SQL editor
-and run it once.
+Or, applying by hand against an existing project:
 
-`lib/database.types.ts` is hand-written to match this migration (there's
-no live project to generate it from in this environment). Once you have
-a linked project, regenerate and diff it:
+```bash
+psql "<your-connection-string>" -v ON_ERROR_STOP=1 -f supabase/migrations/0001_init.sql
+psql "<your-connection-string>" -v ON_ERROR_STOP=1 -f supabase/migrations/0002_platform_refactor.sql
+```
+
+`-v ON_ERROR_STOP=1` makes `psql` stop and report the error immediately
+instead of printing a wall of "current transaction is aborted" noise
+for every remaining line — but note the transaction wrapping inside
+`0002_platform_refactor.sql` itself is what actually guarantees
+atomicity; even without that flag, a mid-file error still leaves the
+whole migration rolled back, it's just noisier to read. If you instead
+paste the file into the Supabase dashboard's SQL editor, paste it as
+one script (don't split it into separate runs) so the `begin`/`commit`
+at its start/end stay together.
+
+**If you already have a project running only `0001_init.sql`** (e.g. a
+prior deployment of this app before the platform refactor): running
+`0002_platform_refactor.sql` against it is exactly the safe path —
+it's designed to run on top of that exact state. Back up first anyway
+(`pg_dump`, or a Supabase project snapshot) since this does drop the
+old `attendees` table once its data has been migrated. There is no real
+production attendee data to worry about losing as of this refactor —
+see the migration file's own header comment for the full reasoning —
+but if this is ever run against a project that does hold real
+registrants, verify the row counts in `people`/`registrations` match
+the old `attendees` count before relying on it (the migration's own
+transaction wrapping means you don't additionally need to wrap it
+yourself, and a failure partway through cannot leave the old
+`attendees` table dropped while the new tables are missing — it's
+all-or-nothing).
+
+After applying both migrations, run through
+[`supabase/INTEGRATION_TESTS.md`](./supabase/INTEGRATION_TESTS.md)
+against the live project — it is the authoritative list of what
+actually needs verifying (RLS, constraints, triggers, concurrency) that
+no amount of mocked unit testing can substitute for.
+
+`lib/database.types.ts` is hand-written to match these migrations
+(there's no live project to generate it from in this environment). Once
+you have a linked project, regenerate and diff it:
 
 ```bash
 supabase gen types typescript --linked > lib/database.types.ts
@@ -97,42 +189,42 @@ Both go through the anon key and are subject to Row Level Security.
 A separate service-role client (`lib/supabase/admin.ts`) is used only in
 `lib/server/*`, for the handful of flows that are intentionally
 unauthenticated (public registration, ticket lookup by token, check-in
-by token) — see `ARCHITECTURE.md` §3 for why.
+by token) — see `docs/ARCHITECTURE_V2.md` §9 for why.
 
-## How to create the first organization/admin
+## How to create the first workspace/admin
 
-Organization creation is **not** self-service — there is no form, and
-the database enforces this (`organizations` has no insert policy for
-any client role; the provisioning function is `service_role`-only) —
-see `ARCHITECTURE.md` §7a. There is no Platform Admin flow yet either,
-so until one is built, creating an organization is a manual,
-one-time-per-organization step run directly against the database:
+Workspace creation is **not** self-service — there is no form, and the
+database enforces this (`workspaces` has no insert policy for any
+client role; the provisioning function is `service_role`-only) — see
+`docs/ARCHITECTURE_V2.md` §9. There is no Platform Admin flow yet
+either, so until one is built, creating a workspace is a manual,
+one-time-per-workspace step run directly against the database:
 
 1. Go to `/login`, switch to "Create an account", and sign up with the
-   email of whoever should own the organization. If your Supabase
-   project requires email confirmation, confirm it, then sign in — at
-   this point they'll land on `/dashboard/onboarding`, which just shows
-   an invite-only message. That's expected.
+   email of whoever should own the workspace. If your Supabase project
+   requires email confirmation, confirm it, then sign in — at this
+   point they'll land on `/dashboard/onboarding`, which just shows an
+   invite-only message. That's expected.
 2. In the Supabase dashboard's **SQL Editor** (a privileged connection,
    not the anon/authenticated API — this is what makes step 3 work),
    find that user's id:
    ```sql
    select id, email from auth.users where email = 'owner@example.com';
    ```
-3. Provision the organization with that id as the owner:
+3. Provision the workspace with that id as the owner:
    ```sql
-   select create_organization_with_owner(
-     'ProMedia',      -- organization name
+   select create_workspace_with_owner(
+     'ProMedia',      -- workspace name
      'promedia',      -- slug
      '<the user id from step 2>'
    );
    ```
 4. The user can now sign in and use `/dashboard` normally, as that
-   organization's `OWNER`. From there, create an event, and add
-   teammates by inserting rows into `organization_users` directly
-   (there's no invite UI yet — see **Known MVP limitations**).
+   workspace's `OWNER`. From there, create an event, and add teammates
+   by inserting rows into `workspace_members` directly (there's no
+   invite UI yet — see **Known MVP limitations**).
 
-Repeat steps 1–3 for each additional organization.
+Repeat steps 1–3 for each additional workspace.
 
 ## Running the dev server / tests / checks
 
@@ -158,11 +250,13 @@ npm run build         # production build
 
 ## How QR tickets work
 
-Registration creates an `attendees` row and a `tickets` row in one
-atomic Postgres function call (`register_attendee`). The ticket's
-`public_token` is 256 random bits (`pgcrypto`'s `gen_random_bytes(32)`,
-base64url-encoded) — it is the **only** thing encoded in the QR code, as
-`https://<app-url>/t/<token>`. It contains no attendee data, database
+Registration finds-or-creates a `people` row, then creates a
+`registrations` row and a `tickets` row, all in one atomic Postgres
+function call (`register_for_event`) — see
+`docs/ARCHITECTURE_V2.md` §2/§5. The ticket's `public_token` is 256
+random bits (`pgcrypto`'s `gen_random_bytes(32)`, base64url-encoded) —
+it is the **only** thing encoded in the QR code, as
+`https://<app-url>/t/<token>`. It contains no personal data, database
 ID, or sequence number, so scanning or guessing it reveals nothing and
 can't be enumerated. The ticket page (`/t/<token>`) and the confirmation
 email both render the QR from this same URL.
@@ -231,30 +325,39 @@ Ukrainian (default) and English. Full design in
 ## Security considerations
 
 - **Tenant isolation**: every tenant-owned table carries (directly or
-  via its parent event) an `organization_id`, enforced by Row Level
+  via its parent event) a `workspace_id`, enforced by Row Level
   Security as a baseline, plus explicit role checks in server code for
   actions RLS can't cleanly express (e.g. only OWNER/ADMIN may export).
+  This now extends to the CRM core (`people`, `crm_organizations`,
+  `person_organization_relationships`, `activities`, `consents`), not
+  just the Events tables — see `docs/ARCHITECTURE_V2.md` §9.
 - **Service role key**: read only in `lib/server/*` and Route Handlers;
   never imported by client-bundled code. The `server-only` package
   enforces this at build time for every file that touches it.
 - **Ticket tokens**: 256-bit random, unguessable, carry no PII, validated
   by shape before ever reaching the database.
-- **`register_attendee` / `perform_checkin`**: `SECURITY DEFINER`
+- **`register_for_event` / `perform_checkin`**: `SECURITY DEFINER`
   Postgres functions with `EXECUTE` revoked from `anon`/`authenticated`
   and granted only to `service_role` — they cannot be called directly
   through Supabase's public REST API, only from this app's server code.
-  `create_organization_with_owner` does **not** get this treatment (it
+  `create_workspace_with_owner` does **not** get this treatment (it
   needs the caller's own session) and is a known, documented exception
-  — see `ARCHITECTURE.md` §7a.
+  — see `docs/ARCHITECTURE_V2.md` §9.
 - **Duplicate registration never discloses the existing ticket token**
   — an email already registered for an event gets an
   `ALREADY_REGISTERED` result with no token, never the original
-  attendee's ticket. See `ARCHITECTURE.md` §5a.
+  person's ticket. See `docs/ARCHITECTURE_V2.md` §5.
+- **Cross-workspace CRM isolation**: the same email in two different
+  workspaces produces two independent `people` rows — the dedup unique
+  constraint is `(workspace_id, normalized_email)`, never a bare email
+  — so registering for events in two unrelated workspaces never merges
+  or leaks one workspace's contact into another's. See
+  `docs/ARCHITECTURE_V2.md` §2 and `supabase/INTEGRATION_TESTS.md` §1/§3.
 - **Check-in event/ticket consistency is a database-enforced
   invariant**, not just an application check: `perform_checkin` derives
   `event_id` from the ticket itself, and a `before insert or update`
   trigger on `checkins` independently rejects any row whose `event_id`
-  disagrees with its ticket's — see `ARCHITECTURE.md` §6a.
+  disagrees with its ticket's — see `docs/ARCHITECTURE_V2.md` §5.
 - **Rate limiting**: `lib/rate-limit.ts` — development/single-instance
   protection only, explicitly not production-grade. See limitations
   below.
@@ -263,43 +366,60 @@ Ukrainian (default) and English. Full design in
 - **Anti-spam**: the registration form has a hidden honeypot field;
   filling it is treated as a bot submission.
 - **Errors**: attendees and scanner operators only ever see a small,
-  known set of states (see `ARCHITECTURE.md` §10); raw exceptions are
-  logged server-side, never rendered.
+  known set of states; raw exceptions are logged server-side, never
+  rendered.
 - **Privacy**: only the fields needed for registration are collected;
-  consent text and its version are stored per-registration for audit;
-  the schema keeps attendee data cleanly deletable per-row for a future
-  anonymization/erasure flow (not built in this MVP).
+  consent is recorded per-person as a purpose-scoped `consents` row
+  (not a boolean), and the schema keeps a person's data cleanly
+  deletable/cascadable per-row for a future anonymization/erasure flow
+  (not built in this MVP) — see `docs/ARCHITECTURE_V2.md` §7 and §20.
 
 ## Known MVP limitations
 
-- **No member invite UI** — adding a teammate to an organization (and
-  setting their role) is currently a manual `organization_users` insert.
-- **No self-service organization creation, and no Platform Admin UI
-  yet either** — see `ARCHITECTURE.md` §7a. Provisioning is locked
-  down at the database level (no insert policy on `organizations`,
-  `create_organization_with_owner` is `service_role`-only and takes an
+- **No member invite UI** — adding a teammate to a workspace (and
+  setting their role) is currently a manual `workspace_members` insert.
+- **No self-service workspace creation, and no Platform Admin UI yet
+  either** — see `docs/ARCHITECTURE_V2.md` §9. Provisioning is locked
+  down at the database level (no insert policy on `workspaces`,
+  `create_workspace_with_owner` is `service_role`-only and takes an
   explicit, validated owner id), which is the real fix, not a stopgap —
-  but there's no UI in front of it yet, so creating a new organization
+  but there's no UI in front of it yet, so creating a new workspace
   today means running that function by hand (see **How to create the
-  first organization/admin**) until a Platform Admin flow exists to do
-  it through the product.
+  first workspace/admin**) until a Platform Admin flow exists to do it
+  through the product.
+- **No CRM UI yet** — `people`, `crm_organizations`, and
+  `person_organization_relationships` exist with working RLS (an admin
+  can insert/update them directly against the database today) but there
+  is no dashboard screen for browsing/editing contacts or organizations.
+  The Events registration flow is the only thing that writes to `people`
+  today. See `docs/ARCHITECTURE_V2.md` §2-§4.
 - **Rate limiting is development/single-instance protection, not
   production-grade** — `lib/rate-limit.ts` says so explicitly and
   defines a `RateLimiter` interface for the purpose; the shipped
   `InMemoryRateLimiter` does not share state across serverless
   instances or survive a restart. A durable store (e.g. Upstash Redis)
   behind the same interface is the pre-launch upgrade.
-- **The database security/integrity model is designed and unit-tested
-  against a mock, not verified against a real database.** This
-  environment had no live Supabase project and no network access to
-  provision one, so `lib/database.types.ts` is hand-written to match
-  the SQL migration rather than generated from a live project, and
-  nothing here has exercised the actual RLS policies, the
-  `checkins.ticket_id` unique constraint, the
-  `checkins_event_matches_ticket` trigger, or the `register_attendee`
-  row lock against a running Postgres instance. Do not treat these as
-  verified. Run [`supabase/INTEGRATION_TESTS.md`](./supabase/INTEGRATION_TESTS.md)
-  against a real project before relying on this in production.
+- **The database security/integrity model has not been verified against
+  the real Supabase project** — this environment has no authenticated
+  access to it. It has, however, been verified against a disposable
+  **local PostgreSQL 16 instance** created and destroyed inside this
+  sandbox during review: `0001_init.sql` then
+  `0002_platform_refactor.sql` both applied cleanly as one transaction;
+  every cross-workspace composite foreign key (§9 of
+  `docs/ARCHITECTURE_V2.md`) was confirmed to reject a real
+  cross-workspace insert and accept a consistent one; the
+  `checkins_event_matches_ticket` trigger was reconfirmed working; the
+  `people` dedup unique constraint and the new `register_for_event`
+  concurrency fix were stress-tested under real concurrent connections
+  (see `supabase/INTEGRATION_TESTS.md` §3 and §12 for the exact
+  results). `lib/database.types.ts` is still hand-written to match the
+  SQL migrations rather than generated from a live project — that part
+  is unchanged. Local-Postgres verification is real evidence that the
+  SQL itself is correct, but it is **not** a substitute for running
+  [`supabase/INTEGRATION_TESTS.md`](./supabase/INTEGRATION_TESTS.md)
+  against your actual Supabase project (real RLS/auth wiring, your
+  actual current data) before relying on this in production — most of
+  that checklist is still genuinely unexecuted.
 - **Timezone handling** is deliberately simple: event start/end are
   stored as the organizer's chosen local date/time/zone triple.
   Display always renders those values in the event's own configured
@@ -344,13 +464,16 @@ dictionary fallback chain when a translation key is missing.
 
 What these tests do **not** cover: the actual Postgres-level guarantees
 (the `checkins.ticket_id` unique constraint and its enforcing trigger,
-RLS policies, the `register_attendee` row lock, the capacity race, a
-truly simultaneous duplicate scan). Those are integration-level
-properties of the schema in `supabase/migrations/0001_init.sql` that
-only a real database can verify, and **have not been run against
-one** — see [`supabase/INTEGRATION_TESTS.md`](./supabase/INTEGRATION_TESTS.md)
-for the concrete checklist to run before relying on this in production,
-and **Known MVP limitations** below.
+RLS policies including cross-workspace CRM isolation, the `people`
+dedup unique constraint, the `register_for_event` row lock, the
+capacity race, a truly simultaneous duplicate scan). Those are
+integration-level properties of the schema in
+`supabase/migrations/0001_init.sql` and
+`supabase/migrations/0002_platform_refactor.sql` that only a real
+database can verify, and **have not been run against one** — see
+[`supabase/INTEGRATION_TESTS.md`](./supabase/INTEGRATION_TESTS.md) for
+the concrete checklist to run before relying on this in production, and
+**Known MVP limitations** below.
 
 ## Roadmap
 

@@ -35,7 +35,7 @@ describe("registerAttendee", () => {
   });
 
   it("SECURITY: never returns a ticket token for a duplicate registration, even if the RPC sent one", async () => {
-    // The register_attendee RPC (as of the fix) always returns a null
+    // The register_for_event RPC (as of the fix) always returns a null
     // public_token when already_registered is true — but this test
     // defends the app-layer contract independently of that: even if a
     // future/buggy RPC response carried a token alongside
@@ -120,7 +120,7 @@ describe("registerAttendee", () => {
     const { registerAttendee } = await import("./registration");
     await registerAttendee(INPUT);
     expect(mockRpc).toHaveBeenCalledWith(
-      "register_attendee",
+      "register_for_event",
       expect.objectContaining({
         p_event_id: "event-1",
         p_email: "andrii@example.com",
@@ -135,7 +135,7 @@ describe("registerAttendee", () => {
 
   it("stores the consent text in the attendee's chosen language, not always the same one (consent language/version storage)", async () => {
     // Both languages must reach the RPC call with the matching consent
-    // copy — register_attendee persists p_language onto both
+    // copy — register_for_event persists p_language onto both
     // attendees.preferred_language and registration_consents.language
     // (see supabase/migrations/0001_init.sql), so what this app sends
     // here is what gets recorded as "the language this consent was

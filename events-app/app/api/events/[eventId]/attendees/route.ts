@@ -14,7 +14,7 @@ export async function GET(
   const supabase = await createClient();
   const { data: event } = await supabase
     .from("events")
-    .select("organization_id")
+    .select("workspace_id")
     .eq("id", eventId)
     .single();
 
@@ -22,7 +22,7 @@ export async function GET(
     return NextResponse.json({ error: "EVENT_NOT_FOUND" }, { status: 404 });
   }
 
-  const membership = await getMembership(event.organization_id);
+  const membership = await getMembership(event.workspace_id);
   if (!membership || !can(membership.role, "checkIn")) {
     return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }
