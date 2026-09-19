@@ -63,3 +63,27 @@ describe("0002_platform_refactor.sql — migration atomicity", () => {
     expect(trimmed.endsWith("commit;")).toBe(true);
   });
 });
+
+describe("0002_platform_refactor.sql — registration is a historical snapshot", () => {
+  // Registration must record the affiliation the person gave *at
+  // registration time*, independently of their current Person profile,
+  // so that later profile/organization changes never rewrite the
+  // historical meaning of a past registration (see ARCHITECTURE_V2 §5:
+  // "prefill -> review/edit -> confirm -> preserve historical snapshot").
+  // These columns are that snapshot mechanism; removing or renaming them
+  // would silently break historical correctness.
+  it("stores the company as a per-registration snapshot column", () => {
+    expect(source).toContain("company_at_registration text");
+  });
+
+  it("stores the position/title as a per-registration snapshot column", () => {
+    expect(source).toContain("position_at_registration text");
+  });
+
+  it("does NOT model registration affiliation as a foreign key to a mutable profile field", () => {
+    // The snapshot lives on the registration row itself as free text —
+    // not as a reference that would change when the profile changes.
+    expect(source).not.toMatch(/company_at_registration uuid/);
+    expect(source).not.toMatch(/position_at_registration uuid/);
+  });
+});

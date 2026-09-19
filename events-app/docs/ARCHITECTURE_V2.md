@@ -278,6 +278,93 @@ Three layers, kept deliberately separate (brief §8):
   row or bloating `workspace_role` with every role any module will ever
   need. See §6b for the concrete jury/reviewer shape.
 
+## 8a. Reusable profile: Person, affiliations, snapshots, and the Auth ↔ Person link
+
+Four distinct concepts, never collapsed into one another (brief §6):
+
+- **Supabase Auth User** (`auth.users`) = *login identity*. Global, one
+  per set of credentials. Creating one grants the ability to sign in and
+  nothing else.
+- **Person** (`people`) = *the current, reusable profile of a real
+  person inside one Workspace*. Workspace-scoped, deduplicated by
+  `(workspace_id, normalized_email)`. This is the record other modules
+  (Events today; Programs/Grants/Jury/Community tomorrow — §6) reuse so a
+  person never has to re-enter who they are.
+- **CRM Organization** (`crm_organizations`) = a media outlet / NGO /
+  company. Not a tenant, not a login.
+- **Workspace** (`workspaces`) = the tenant/account boundary.
+
+These four are independent by design:
+
+- Creating an Auth User must **not** create a Workspace (workspace
+  provisioning is `service_role`-only — §9) and must **not** create or
+  link a Person on its own.
+- Creating or updating a Person must **not** grant any Workspace access
+  (membership lives only in `workspace_members` — §8).
+- An Organization affiliation must **not** imply Workspace membership.
+
+### Person = *current* profile; Registration = *historical* snapshot
+
+`people` holds what is true about a person **now**. A person's affiliation
+over time is modelled by `person_organization_relationships` as
+**current/dated** relationships (`start_date`, `end_date`, `is_primary`,
+`role_title`) — an affiliation is a relationship with a lifespan, never a
+permanent text property of the Person.
+
+A `Registration`, by contrast, is an **event-specific historical record**.
+It captures the affiliation the person gave *at the moment they
+registered* in its own snapshot columns — `company_at_registration` and
+`position_at_registration` — deliberately **not** as a foreign key to the
+mutable profile. This is the guarantee behind the rule:
+
+> Changing a Person's profile or organization later must never rewrite the
+> historical meaning of a past registration.
+
+Worked example: a person registers for the 2026 event representing
+Organization A → `company_at_registration = "Organization A"`. In 2027
+they move to Organization B and update their profile (and their
+`person_organization_relationships`). The 2026 registration still reads
+"Organization A", because nothing about a profile update touches an
+already-written registration row. This is a *sensible snapshot*, not an
+event-sourcing system — no version history, just the fact as given at the
+time. (Structural regression guards on these columns live in
+`supabase/migrations/0002_platform_refactor.test.ts`.)
+
+### The reuse principle: prefill → review/edit → confirm → preserve snapshot
+
+For a returning, authenticated user registering for an event, the intended
+flow is:
+
+1. **Prefill** the registration form from their current Person profile and
+   their current primary `person_organization_relationships` affiliation —
+   never make them retype what ProMedia already knows.
+2. **Review/edit** — the populated form is shown to the user; they can
+   correct anything. Registration is *never* silent.
+3. **Confirm** — the primary action is an explicit "Confirm registration"
+   / "Підтвердити реєстрацію".
+4. **Preserve the snapshot** — on confirm, the values are written to the
+   registration's snapshot columns as given; corrections to *reusable*
+   profile data may additionally update the current Person / affiliation
+   (find-or-create, never duplicating a Person or Organization), but that
+   update changes only the *current* profile, not any prior registration.
+
+### Auth User ↔ Person link — `PROPOSED / PENDING REVIEW` (not yet implemented)
+
+Today there is **no** link between `auth.users` and `people`: public
+registration is fully unauthenticated (it runs through the `service_role`
+`register_for_event` RPC — §5), and `people` RLS is organizer-only
+(`is_workspace_member` to read, `is_workspace_admin` to write — §9). An
+attendee is therefore not a Workspace member and, by RLS, can neither read
+nor write their own Person row. Delivering attendee-facing prefill/edit
+(brief §2–§4) requires a schema + RLS change that is intentionally **left
+for review before implementation** (see the PR report's proposal): it must
+add an explicit `auth.users ↔ people` association and self-service RLS
+scoped to that link, without weakening any existing tenant isolation,
+without letting an Organization affiliation imply membership, and without
+email alone being treated as a permanent cross-workspace identity key.
+Until that lands, `people` remains an organizer-managed CRM record and
+registration prefill is not wired to Auth.
+
 ## 9. Multi-tenancy and RLS — `IMPLEMENTED NOW`
 
 Every tenant-owned table — `events`, `people`, `crm_organizations`,
