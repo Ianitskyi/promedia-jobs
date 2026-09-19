@@ -212,7 +212,7 @@ export type Database = {
         Returns: PerformCheckinResult[];
       };
       create_organization_with_owner: {
-        Args: { p_name: string; p_slug: string };
+        Args: { p_name: string; p_slug: string; p_owner_user_id: string };
         Returns: Organization;
       };
     };

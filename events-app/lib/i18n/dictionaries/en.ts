@@ -36,18 +36,8 @@ const en = {
   },
   dashboard: {
     navEvents: "Events",
-    onboardingTitle: "Create your organization",
-    onboardingSubtitle:
-      "You'll be its first owner. You can invite more people and add events afterward.",
-    onboardingNameLabel: "Organization name",
-    onboardingSubmit: "Create organization",
-    onboardingCreating: "Creating…",
-    onboardingNameRequired: "Enter your organization's name.",
-    onboardingGenericError: "Could not create the organization. Please try again.",
     onboardingInviteOnlyTitle: "Organization creation is currently invite-only.",
     onboardingInviteOnlyMessage: "Contact your platform administrator to get set up.",
-    onboardingDisabledError:
-      "Organization creation is currently invite-only. Contact your platform administrator.",
   },
   events: {
     title: "Events",

@@ -309,13 +309,14 @@ create function is_org_admin(target_org uuid) returns boolean as $$
   );
 $$ language sql stable security definer set search_path = public;
 
--- organizations: members can read their own org; any authenticated user
--- can create one (org bootstrap); OWNER/ADMIN can update it.
+-- organizations: members can read their own org; OWNER/ADMIN can
+-- update it. Deliberately NO insert policy for anon/authenticated —
+-- organization provisioning is controlled: the only way a new
+-- organizations row (and its first OWNER membership) can be created is
+-- the service-role-only create_organization_with_owner function below,
+-- never a direct client-side insert. See ARCHITECTURE.md §7a.
 create policy organizations_select on organizations
   for select using (is_org_member(id));
-
-create policy organizations_insert on organizations
-  for insert with check (auth.uid() is not null);
 
 create policy organizations_update on organizations
   for update using (is_org_admin(id));
@@ -368,26 +369,50 @@ create policy checkins_select on checkins
 -- export. No client policy is granted (service role bypasses RLS).
 
 -- ---------------------------------------------------------------------
--- create_organization_with_owner: bootstraps the first organization for
--- a newly signed-up user. SECURITY DEFINER because organization_users
--- otherwise has no self-insert policy (it requires is_org_admin, which
--- is a chicken-and-egg problem for the very first membership row).
+-- create_organization_with_owner: trusted, service-role-only
+-- organization provisioning. Creates the organization and its first
+-- OWNER membership atomically.
+--
+-- SECURITY: this does NOT read auth.uid(). A service-role call carries
+-- no end-user session/JWT, so auth.uid() would simply be null — the
+-- previous version of this function relied on it, which only worked
+-- because it was (incorrectly, per the prior review) callable by the
+-- authenticated role directly, with auth.uid() resolving to the
+-- caller's own session. Now that this is service-role-only, the
+-- target owner must be passed explicitly as p_owner_user_id by the
+-- trusted caller (there is no other caller). This function must never
+-- be exposed to anon/authenticated — see the grants below — because it
+-- would otherwise let any signed-in user make themselves OWNER of an
+-- arbitrary new organization by simply passing their own user id.
+--
+-- Until a Platform Admin flow exists to invoke this (out of scope for
+-- now — see ARCHITECTURE.md §7a), there is no application code path
+-- that calls it either; it exists so the shape of trusted provisioning
+-- is already correct when that flow is built, rather than provisioning
+-- being done by hand.
 -- ---------------------------------------------------------------------
 
-create function create_organization_with_owner(p_name text, p_slug text)
-returns organizations as $$
+create function create_organization_with_owner(
+  p_name text,
+  p_slug text,
+  p_owner_user_id uuid
+) returns organizations as $$
 declare
   v_org organizations;
 begin
-  if auth.uid() is null then
-    raise exception 'NOT_AUTHENTICATED';
+  if p_owner_user_id is null then
+    raise exception 'OWNER_USER_ID_REQUIRED';
+  end if;
+
+  if not exists (select 1 from auth.users u where u.id = p_owner_user_id) then
+    raise exception 'OWNER_USER_NOT_FOUND';
   end if;
 
   insert into organizations (name, slug) values (p_name, p_slug)
     returning * into v_org;
 
   insert into organization_users (organization_id, user_id, role)
-    values (v_org.id, auth.uid(), 'OWNER');
+    values (v_org.id, p_owner_user_id, 'OWNER');
 
   return v_org;
 end;
@@ -499,19 +524,30 @@ $$ language plpgsql security definer set search_path = public;
 -- ---------------------------------------------------------------------
 -- Function execution grants.
 --
--- register_attendee and perform_checkin are SECURITY DEFINER and would
--- otherwise be callable directly via PostgREST's /rpc/ endpoint by any
--- holder of the anon/authenticated key, bypassing this app's rate
--- limiting and validation. They are restricted to service_role, which
--- only server-side code (lib/server/*) holds.
+-- register_attendee, perform_checkin, and create_organization_with_owner
+-- are SECURITY DEFINER and would otherwise be callable directly via
+-- PostgREST's /rpc/ endpoint by any holder of the anon/authenticated
+-- key, bypassing this app's authorization, rate limiting, and
+-- validation entirely. All three are restricted to service_role, which
+-- only server-side code (lib/server/*) holds — never the browser, and
+-- never the normal authenticated Supabase client used for the
+-- dashboard's own RLS-scoped queries.
+--
+-- create_organization_with_owner in particular must never reach
+-- anon/authenticated: unlike the other two (which re-validate their
+-- inputs against real state — an event's status, a ticket's real
+-- event_id — regardless of who calls them), it would let any caller
+-- who could invoke it at all name themselves OWNER of a brand-new
+-- organization, since organizations has no insert policy for
+-- anon/authenticated to fall back on as a weaker backstop.
 -- ---------------------------------------------------------------------
 
 revoke execute on function register_attendee from public, anon, authenticated;
 revoke execute on function perform_checkin from public, anon, authenticated;
-revoke execute on function create_organization_with_owner from public, anon;
+revoke execute on function create_organization_with_owner from public, anon, authenticated;
 
 grant execute on function register_attendee to service_role;
 grant execute on function perform_checkin to service_role;
-grant execute on function create_organization_with_owner to authenticated;
+grant execute on function create_organization_with_owner to service_role;
 grant execute on function is_org_member to authenticated;
 grant execute on function is_org_admin to authenticated;

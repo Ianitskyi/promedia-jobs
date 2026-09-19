@@ -33,18 +33,8 @@ const uk: Dictionary = {
   },
   dashboard: {
     navEvents: "Події",
-    onboardingTitle: "Створіть свою організацію",
-    onboardingSubtitle:
-      "Ви станете її першим власником. Пізніше ви зможете запросити інших людей і додати події.",
-    onboardingNameLabel: "Назва організації",
-    onboardingSubmit: "Створити організацію",
-    onboardingCreating: "Створення…",
-    onboardingNameRequired: "Введіть назву організації.",
-    onboardingGenericError: "Не вдалося створити організацію. Спробуйте ще раз.",
     onboardingInviteOnlyTitle: "Наразі створення організацій доступне лише за запрошенням.",
     onboardingInviteOnlyMessage: "Зверніться до адміністратора платформи, щоб отримати доступ.",
-    onboardingDisabledError:
-      "Наразі створення організацій доступне лише за запрошенням. Зверніться до адміністратора платформи.",
   },
   events: {
     title: "Події",

@@ -45,7 +45,6 @@ Summary:
 | `NEXT_PUBLIC_APP_URL` | The app's public URL (used to build ticket URLs embedded in QR codes and emails) |
 | `EMAIL_PROVIDER` | `console` (default, logs emails) or `resend` |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Only needed if `EMAIL_PROVIDER=resend` |
-| `ALLOW_SELF_SERVICE_ORG_CREATION` | `false` by default. See below and `ARCHITECTURE.md` §7a. |
 
 Never commit `.env.local` or any file containing real keys — `.gitignore`
 excludes `.env*` except the checked-in `.env.example` template.
@@ -102,24 +101,38 @@ by token) — see `ARCHITECTURE.md` §3 for why.
 
 ## How to create the first organization/admin
 
-Organization creation is invite-only by default
-(`ALLOW_SELF_SERVICE_ORG_CREATION=false`) — see `ARCHITECTURE.md` §7a
-for why. There is no platform-admin invitation flow yet, so to
-bootstrap the very first organization on a fresh deployment:
+Organization creation is **not** self-service — there is no form, and
+the database enforces this (`organizations` has no insert policy for
+any client role; the provisioning function is `service_role`-only) —
+see `ARCHITECTURE.md` §7a. There is no Platform Admin flow yet either,
+so until one is built, creating an organization is a manual,
+one-time-per-organization step run directly against the database:
 
-1. Set `ALLOW_SELF_SERVICE_ORG_CREATION=true` (locally in `.env.local`,
-   or temporarily in your deployment's environment variables).
-2. Go to `/login`, switch to "Create an account", and sign up.
-3. If your Supabase project requires email confirmation, confirm the
-   email, then sign in.
-4. You'll land on `/dashboard/onboarding` — create an organization. You
-   become its `OWNER`.
-5. **Set the flag back to `false`** (or unset it) once you've created
-   the organizations you need — leaving it on means any new sign-up can
-   create their own organization.
-6. From there, create an event, invite teammates by adding rows to
-   `organization_users` (there's no invite UI yet — see **Known MVP
-   limitations**), and go.
+1. Go to `/login`, switch to "Create an account", and sign up with the
+   email of whoever should own the organization. If your Supabase
+   project requires email confirmation, confirm it, then sign in — at
+   this point they'll land on `/dashboard/onboarding`, which just shows
+   an invite-only message. That's expected.
+2. In the Supabase dashboard's **SQL Editor** (a privileged connection,
+   not the anon/authenticated API — this is what makes step 3 work),
+   find that user's id:
+   ```sql
+   select id, email from auth.users where email = 'owner@example.com';
+   ```
+3. Provision the organization with that id as the owner:
+   ```sql
+   select create_organization_with_owner(
+     'ProMedia',      -- organization name
+     'promedia',      -- slug
+     '<the user id from step 2>'
+   );
+   ```
+4. The user can now sign in and use `/dashboard` normally, as that
+   organization's `OWNER`. From there, create an event, and add
+   teammates by inserting rows into `organization_users` directly
+   (there's no invite UI yet — see **Known MVP limitations**).
+
+Repeat steps 1–3 for each additional organization.
 
 ## Running the dev server / tests / checks
 
@@ -261,13 +274,15 @@ Ukrainian (default) and English. Full design in
 
 - **No member invite UI** — adding a teammate to an organization (and
   setting their role) is currently a manual `organization_users` insert.
-- **Organization creation is a known, documented gap, not a solved
-  problem** — see `ARCHITECTURE.md` §7a. The app-level
-  `ALLOW_SELF_SERVICE_ORG_CREATION` flag (default off) is a stopgap;
-  the underlying `create_organization_with_owner` RPC remains callable
-  by any authenticated user directly against Supabase's REST API. A
-  real fix requires the future platform-admin invitation model, not
-  tighter gating of the current mechanism.
+- **No self-service organization creation, and no Platform Admin UI
+  yet either** — see `ARCHITECTURE.md` §7a. Provisioning is locked
+  down at the database level (no insert policy on `organizations`,
+  `create_organization_with_owner` is `service_role`-only and takes an
+  explicit, validated owner id), which is the real fix, not a stopgap —
+  but there's no UI in front of it yet, so creating a new organization
+  today means running that function by hand (see **How to create the
+  first organization/admin**) until a Platform Admin flow exists to do
+  it through the product.
 - **Rate limiting is development/single-instance protection, not
   production-grade** — `lib/rate-limit.ts` says so explicitly and
   defines a `RateLimiter` interface for the purpose; the shipped

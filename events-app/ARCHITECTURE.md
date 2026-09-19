@@ -201,33 +201,49 @@ Permission summary:
 | Export CSV | ✅ | ✅ | ❌ |
 | Scanner / manual check-in | ✅ | ✅ | ✅ |
 
-### 7a. Organization creation is currently a known, gated gap
+### 7a. Organization provisioning is controlled, at the database level
 
-`create_organization_with_owner` is `SECURITY DEFINER` and its
-`EXECUTE` is granted to `authenticated` (see §3/§10) — **at the
-database level, any signed-in user can currently call it directly and
-bootstrap a new organization**, becoming its `OWNER`. It can't be
-tightened the way `register_attendee`/`perform_checkin` are (grant
-`EXECUTE` only to `service_role`), because the function reads
-`auth.uid()` from the caller's own session to know who to make
-`OWNER` — a `service_role` call carries no end-user session, so it
-would have no `auth.uid()` to use. Properly closing this means
-reworking the function to take an explicit target user id and be
-invoked only by a trusted, authenticated-as-platform-admin server
-path — that's the future platform-admin invitation model, and
-deliberately not built in this pass.
+Organization creation is **not** self-service. There is no UI, server
+action, or RLS policy through which a signed-in user can create an
+organization or an `organization_users` row for themselves — a
+user with no membership simply sees an invite-only message at
+`/dashboard/onboarding` (localized, no form). This is enforced at the
+database level, not just hidden in the UI:
 
-For now, the only application path to this RPC —
-`/dashboard/onboarding` and its `createOrganization` server action —
-is gated behind `isSelfServiceOrgCreationEnabled()`
-(`lib/config.ts`), reading `ALLOW_SELF_SERVICE_ORG_CREATION`, which
-**defaults to off**. Both the onboarding page (which shows an
-"invite-only" message instead of the form when off) and the action
-itself (which refuses independently, since a server action is a
-reachable endpoint regardless of what the page renders) check it.
-This does not close the direct-RPC-call gap described above — it
-only removes the ordinary way through this app to reach it, and
-that residual gap is intentionally documented rather than hidden.
+- `organizations` has **no insert policy at all**, for any role.
+  `anon`/`authenticated` cannot `INSERT` into it under any
+  circumstance — RLS enabled with no matching policy means deny, for
+  every role except the ones service-role bypasses RLS for entirely.
+- `create_organization_with_owner` is `SECURITY DEFINER`, and its
+  `EXECUTE` is revoked from `anon`/`authenticated` and granted only to
+  `service_role` — the same treatment as `register_attendee` and
+  `perform_checkin` (§10). It cannot be invoked via PostgREST's
+  `/rpc/` endpoint with a public API key, only from trusted
+  server-side code holding the service-role key.
+- The function takes an explicit `p_owner_user_id` parameter rather
+  than reading `auth.uid()` from the caller's own session. This is a
+  deliberate redesign, not an oversight: the previous version *did*
+  read `auth.uid()`, which only "worked" because the function was
+  (incorrectly) callable by `authenticated` directly, with
+  `auth.uid()` resolving to the caller's own id — meaning any signed-in
+  user could name *themselves* `OWNER` of a brand-new organization. A
+  service-role call carries no end-user session at all, so `auth.uid()`
+  would simply be null; the caller (trusted server code) must say who
+  the owner is, and the function validates that id actually exists in
+  `auth.users` before using it (`OWNER_USER_NOT_FOUND` otherwise).
+  Because only service-role code can call this function in the first
+  place, an untrusted client can never supply that id.
+
+There is currently **no code path that calls
+`create_organization_with_owner`** — no Platform Admin flow exists yet
+to drive it (deliberately out of scope for now), so until one is
+built, provisioning a new organization is a manual, out-of-band
+operation (run the function directly as service_role — e.g. from the
+Supabase SQL editor, which connects as a privileged role — see the
+README's "How to create the first organization/admin"). The function
+exists so that manual step, and the future Platform Admin flow that
+replaces it, both have the correct shape already: an explicit,
+validated owner id, never a client-supplied one trusted at face value.
 
 ## 8. Email
 
@@ -323,21 +339,18 @@ inverse of `zonedTimeToUtc()`.
 - Errors shown to attendees/operators are always mapped to a small set
   of known states (see §22 of the brief); raw exceptions/stack traces
   are logged server-side only.
-- `register_attendee` and `perform_checkin` are `SECURITY DEFINER`
-  Postgres functions; execution is revoked from `anon`/`authenticated`
-  and granted only to `service_role`, so they cannot be invoked directly
-  through PostgREST's `/rpc/` endpoint with a public API key — only
-  server code holding the service-role key can call them, which is what
-  keeps app-level rate limiting and validation in the loop.
+- `register_attendee`, `perform_checkin`, and
+  `create_organization_with_owner` are all `SECURITY DEFINER` Postgres
+  functions; execution is revoked from `anon`/`authenticated` and
+  granted only to `service_role` for all three, so none of them can be
+  invoked directly through PostgREST's `/rpc/` endpoint with a public
+  API key — only server code holding the service-role key can call
+  them. `organizations` additionally has no insert policy for any
+  client role at all, so there is no weaker fallback path to creating
+  an organization even without going through that function. See §7a.
 - ID enumeration: organization and event **numeric** ordering isn't
   exposed anywhere; slugs are used in URLs, tokens are random. Listing
   endpoints are always scoped to the caller's organization.
-- `create_organization_with_owner` does **not** get the same
-  service-role-only grant as the two functions above (it can't — see
-  §7a for why) and remains callable by any `authenticated` user at the
-  database level. This is a known, documented residual gap, mitigated
-  today only by gating the application's one path to it behind
-  `ALLOW_SELF_SERVICE_ORG_CREATION` (default off), not eliminated.
 - A duplicate registration never returns or exposes the existing
   ticket's `public_token` — see §5a. Returning it would let anyone who
   merely knows a registered attendee's email obtain their ticket.

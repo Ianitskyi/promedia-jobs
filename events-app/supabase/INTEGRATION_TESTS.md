@@ -20,9 +20,12 @@ triggers, locking).
 - [ ] Fresh Supabase project (or `supabase start` locally) with
       `supabase db push` (or the SQL editor) applying
       `0001_init.sql` cleanly, no errors.
-- [ ] Two organizations, A and B, each created via
-      `create_organization_with_owner` (or direct insert) with a
-      distinct signed-up auth user as OWNER of each.
+- [ ] Two organizations, A and B, each provisioned by calling
+      `create_organization_with_owner(p_name, p_slug, p_owner_user_id)`
+      **as service_role** (the Supabase SQL editor's default connection,
+      or any call authenticated with the service-role key — not the
+      anon/authenticated key) with a distinct signed-up auth user's id
+      as `p_owner_user_id` for each.
 - [ ] In org A: one ADMIN user, one CHECKIN_STAFF user (insert rows
       into `organization_users` directly, or through a future invite
       flow).
@@ -167,22 +170,64 @@ Call directly via the **service-role** client (matching how
 - [ ] `POST /api/checkin` for that ticket → `TICKET_REVOKED`; no
       `checkins` row created.
 
-## 9. Organization creation (residual gap from the review)
+## 9. Organization provisioning is locked to service_role
 
-See `ARCHITECTURE.md` §7a. This isn't something to "pass" — it's
-tracked here so it's re-verified as the mitigation evolves, not
-forgotten:
+See `ARCHITECTURE.md` §7a — this closes what was previously documented
+there as a residual gap; these are the checks that prove it's actually
+closed, not just described as closed:
 
-- [ ] Confirm `create_organization_with_owner` **is** currently
-      callable directly via `POST /rest/v1/rpc/create_organization_with_owner`
-      with any authenticated user's JWT (not the service role key) —
-      i.e. confirm the documented gap is real and matches the
-      documentation, not narrower or wider than described.
-- [ ] Confirm `ALLOW_SELF_SERVICE_ORG_CREATION=false` (the default)
-      makes `/dashboard/onboarding` show the invite-only message and
-      makes the `createOrganization` server action refuse, **without**
-      changing the RPC-level exposure above (the app-level gate is not
-      a database-level fix, by design — see §7a).
+- [ ] **anon cannot create an organization.** `POST
+      /rest/v1/organizations` with the anon key (no session) →
+      rejected (no insert policy exists for `anon`, and RLS is enabled
+      with no policy means deny).
+- [ ] **An authenticated user cannot `INSERT` into `organizations`
+      directly**, PostgREST or a Supabase client alike — `insert into
+      organizations (...)` as a signed-in user with no matching policy
+      → rejected. (There is deliberately no `organizations_insert`
+      policy for any role at all, not even a narrowed one.)
+- [ ] **An authenticated user cannot invoke
+      `create_organization_with_owner`.** `POST
+      /rest/v1/rpc/create_organization_with_owner` with a signed-in
+      user's JWT (anon key + their session, not the service-role key)
+      → rejected outright (`EXECUTE` is revoked from
+      `anon`/`authenticated`; PostgREST returns a permission error
+      before the function body ever runs).
+- [ ] **An authenticated user cannot self-assign `OWNER`.** With no
+      path to create an organization row at all, there is also no path
+      to an `organization_users` row for one — confirm directly:
+      `insert into organization_users (organization_id, user_id, role)
+      values (<any org>, auth.uid(), 'OWNER')` as a signed-in
+      non-admin user → rejected (`organization_users_insert` requires
+      `is_org_admin`, which is false for a user with no existing
+      membership in that org).
+- [ ] **service_role can provision an organization and its initial
+      OWNER.** Calling `create_organization_with_owner('Org Name',
+      'org-slug', '<real auth.users id>')` as service_role → succeeds,
+      returns the new `organizations` row, and creates exactly one
+      `organization_users` row for that id with `role = 'OWNER'`.
+- [ ] Calling it with a `p_owner_user_id` that doesn't exist in
+      `auth.users` → raises `OWNER_USER_NOT_FOUND` (not a raw foreign-key
+      constraint error, and no organization row left behind — confirm
+      the `organizations` insert this function does earlier in its body
+      doesn't leave an orphaned org: the whole call is one transaction,
+      so it should roll back completely).
+- [ ] **The new OWNER can subsequently access that organization** —
+      sign in as the user named in `p_owner_user_id` above, confirm
+      `/dashboard` shows the organization (not the invite-only
+      onboarding page), and that they can read/manage events per the
+      normal OWNER permissions (§2 above).
+- [ ] **Cross-tenant isolation still works** after provisioning through
+      this new path — repeat the relevant checks from §1 (RLS
+      cross-tenant isolation) using an organization created via
+      `create_organization_with_owner` rather than direct insert, to
+      confirm the provisioning path doesn't produce rows that somehow
+      bypass the same RLS policies every other organization is subject
+      to.
+- [ ] A signed-in user with no organization membership visits
+      `/dashboard` (or any `/dashboard/*` route) → lands on
+      `/dashboard/onboarding`, sees the localized invite-only message
+      (in their platform locale), and is offered no form or other way
+      to create an organization from the UI.
 
 ## 10. Internationalization (uk/en)
 
