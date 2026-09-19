@@ -9,9 +9,14 @@ import { useI18n } from "@/lib/i18n/client";
 
 const initialState: AuthFormState = { error: null };
 
-export function LoginForm() {
+interface LoginFormProps {
+  /** Opens the form directly in its signup state, e.g. from the landing page's "Create account" CTA. */
+  initialMode?: "signin" | "signup";
+}
+
+export function LoginForm({ initialMode = "signin" }: LoginFormProps) {
   const { dict } = useI18n();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup">(initialMode);
   const action = mode === "signin" ? signIn : signUp;
   const [state, formAction, pending] = useActionState(action, initialState);
 

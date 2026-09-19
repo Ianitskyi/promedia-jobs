@@ -15,6 +15,18 @@ const uk: Dictionary = {
     genericError: "Щось пішло не так. Спробуйте ще раз за хвилину.",
     networkError: "Помилка мережі",
   },
+  landing: {
+    title: "ProMedia Events",
+    description: "Сервіс для створення подій, реєстрації учасників та контролю відвідування.",
+    supportingText:
+      "Створюйте сторінки подій, приймайте реєстрації, надсилайте QR-квитки та відмічайте учасників на вході.",
+    primaryCta: "Створити акаунт",
+    secondaryCta: "Увійти",
+    capabilityRegistration: "Реєстрація учасників",
+    capabilityQrTickets: "QR-квитки",
+    capabilityCheckIn: "Check-in",
+    capabilityExport: "Список та експорт учасників",
+  },
   auth: {
     signInTitle: "ProMedia Events",
     signInSubtitle: "Увійдіть у кабінет організатора.",
