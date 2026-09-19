@@ -286,9 +286,41 @@ Every tenant-owned table — `events`, `people`, `crm_organizations`,
 carries RLS scoped through `is_workspace_member(workspace_id)` /
 `is_workspace_admin(workspace_id)` (renamed from
 `is_org_member`/`is_org_admin`, same logic). This is the hard backstop
-against cross-tenant reads regardless of application bugs; role-specific
+against cross-tenant *reads* regardless of application bugs; role-specific
 write restrictions beyond that baseline are enforced in `lib/authz.ts`
 for friendlier error handling than a bare RLS denial gives.
+
+**RLS alone cannot guarantee cross-tenant *write* consistency**, because
+RLS is a filter on rows a policy applies to — it says nothing about
+whether the *values inside* a row a writer is allowed to insert are
+internally consistent, and it does not apply at all to a service-role
+connection (which every server-side write in this app, including
+`register_for_event`, uses). Nothing about RLS would have stopped a bug
+from inserting a `registrations` row whose `workspace_id` says A while
+its `event_id` actually points at an event in workspace B. This is
+closed with **composite foreign keys** instead, added in
+`0002_platform_refactor.sql`: every table that references another
+tenant-owned row also references that row's `workspace_id` in the same
+constraint —
+`foreign key (event_id, workspace_id) references events(id, workspace_id)`,
+and equivalently for `registrations.person_id`,
+`person_organization_relationships.person_id`/`organization_id`,
+`consents.person_id`, `activities.person_id`, and
+`tickets.registration_id` (which is checked against
+`registrations(id, event_id)`, so a ticket's own `event_id` must agree
+with its registration's real event — closing a gap the pre-existing
+`checkins_event_matches_ticket` trigger never covered, since that
+trigger only checks `checkins` against `tickets`, not `tickets` against
+`registrations`). This makes "workspace A cannot reference workspace
+B's rows" a real, always-enforced database constraint, true for
+`service_role` exactly as much as for `anon` — not a property that
+happens to hold only because application code and RLS are both
+currently careful. See `supabase/INTEGRATION_TESTS.md` §12 for the
+concrete negative tests (proving each of these actually rejects a
+cross-workspace insert) and §3 for the related person-creation
+concurrency guarantee — both executed against a real local Postgres
+instance as part of this section's own review, not left as an
+unverified checklist.
 
 **Workspace provisioning stays exactly as locked down as before this
 refactor** (brief §17: "Do not re-enable public Workspace creation."):

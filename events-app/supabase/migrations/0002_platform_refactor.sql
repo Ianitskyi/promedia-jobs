@@ -25,6 +25,25 @@
 -- preserves every existing workspace/owner relationship and any rows
 -- already created against 0001_init.sql. See the "safety" comment
 -- above each step for what it does and does not touch.
+--
+-- ATOMICITY: this entire file runs as one transaction (explicit BEGIN/
+-- COMMIT below). Every statement here is ordinary transactional DDL —
+-- nothing uses CREATE INDEX CONCURRENTLY or ALTER TYPE ... ADD VALUE
+-- (the one operation Postgres cannot run inside a transaction block
+-- together with using the new value). If ANY statement fails, the
+-- transaction aborts and Postgres rolls back everything that ran
+-- before it — the database is left exactly as it was before this file
+-- ran, not half-migrated. Do not run this file's statements one at a
+-- time by hand, and do not strip the BEGIN/COMMIT: a partial apply
+-- (e.g. "workspaces" renamed but the CRM tables not yet created) would
+-- otherwise look like success to whoever ran it, while leaving the
+-- schema in a state no code in this app expects. See README.md's
+-- "Database migrations" section for exactly how to apply this safely
+-- (via `supabase db push`, or `psql -v ON_ERROR_STOP=1 -f`, or pasted
+-- into the Supabase SQL editor as one script) against a project that
+-- already has 0001_init.sql applied.
+
+begin;
 
 -- =======================================================================
 -- STEP 1 — rename the tenant concept: organizations -> workspaces
@@ -47,6 +66,15 @@ alter type org_role rename to workspace_role;
 
 alter index organization_users_user_id_idx rename to workspace_members_user_id_idx;
 alter index events_organization_id_idx rename to events_workspace_id_idx;
+
+-- Composite-FK target for STEP 4's `registrations` table: lets
+-- `registrations` declare "my event_id AND workspace_id must both
+-- match one real events row" as a single declarative foreign key
+-- (STEP 2/§2-workspace-consistency below), rather than trusting
+-- application code to keep the two in sync. `id` alone is already
+-- unique (it's the primary key) — this adds nothing but the ability to
+-- use (id, workspace_id) as an FK target.
+alter table events add constraint events_id_workspace_id_key unique (id, workspace_id);
 
 -- Old RLS helper functions/policies are dropped and recreated under
 -- their new names in STEP 6, once every table they reference has been
@@ -92,7 +120,15 @@ create table people (
   communication_preferences jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (workspace_id, normalized_email)
+  unique (workspace_id, normalized_email),
+  -- Composite-FK target: lets every table that references a person
+  -- also declare "and it must be in this same workspace" as a single
+  -- foreign key (see person_organization_relationships, activities,
+  -- consents, registrations below) instead of trusting application
+  -- code to keep workspace_id in sync with the referenced person's own
+  -- workspace_id. `id` alone is already unique (primary key); this
+  -- exists only so (id, workspace_id) can be an FK target.
+  unique (id, workspace_id)
 );
 
 create index people_workspace_id_idx on people(workspace_id);
@@ -119,7 +155,9 @@ create table crm_organizations (
   tags jsonb not null default '[]'::jsonb,
   custom_fields jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  -- Composite-FK target — see the matching comment on people above.
+  unique (id, workspace_id)
 );
 
 create index crm_organizations_workspace_id_idx on crm_organizations(workspace_id);
@@ -131,11 +169,21 @@ create trigger crm_organizations_set_updated_at
 -- Person <-> Organization relationship (brief §4): a person may
 -- represent several organizations over time, an organization may have
 -- several people. Not populated by the Events module today.
+--
+-- WORKSPACE CONSISTENCY: person_id/organization_id deliberately have no
+-- plain single-column foreign key here — only the composite ones below,
+-- which force this row's workspace_id to equal BOTH the referenced
+-- person's AND the referenced organization's actual workspace_id. RLS
+-- cannot guarantee this on its own (a service-role connection bypasses
+-- RLS entirely, and even under RLS nothing stops a workspace-A admin
+-- from *trying* to insert a row naming a workspace-B person, only from
+-- *reading* workspace-B's rows) — this is a real, always-on database
+-- constraint, checked for every writer including service_role.
 create table person_organization_relationships (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references workspaces(id) on delete cascade,
-  person_id uuid not null references people(id) on delete cascade,
-  organization_id uuid not null references crm_organizations(id) on delete cascade,
+  person_id uuid not null,
+  organization_id uuid not null,
   role_title text,
   relationship_type text,
   start_date date,
@@ -143,7 +191,9 @@ create table person_organization_relationships (
   is_primary boolean not null default false,
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  foreign key (person_id, workspace_id) references people(id, workspace_id) on delete cascade,
+  foreign key (organization_id, workspace_id) references crm_organizations(id, workspace_id) on delete cascade
 );
 
 create index person_org_rel_workspace_id_idx on person_organization_relationships(workspace_id);
@@ -165,16 +215,23 @@ create trigger person_org_rel_set_updated_at
 -- one subject type in use today (events) is instead the job of the
 -- application code that writes these rows (the register_for_event and
 -- perform_checkin functions below), not a database constraint.
+--
+-- WORKSPACE CONSISTENCY: person_id has no plain single-column foreign
+-- key — only the composite one below, which forces
+-- activities.workspace_id to equal the referenced person's own
+-- workspace_id at all times, for every writer (see the matching
+-- comment on person_organization_relationships above).
 create table activities (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references workspaces(id) on delete cascade,
-  person_id uuid not null references people(id) on delete cascade,
+  person_id uuid not null,
   activity_type text not null,
   subject_type text,
   subject_id uuid,
   payload jsonb not null default '{}'::jsonb,
   occurred_at timestamptz not null default now(),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  foreign key (person_id, workspace_id) references people(id, workspace_id) on delete cascade
 );
 
 create index activities_workspace_id_idx on activities(workspace_id);
@@ -202,6 +259,21 @@ alter table consents
   add column source text;
 
 alter table consents alter column purpose drop default;
+
+-- WORKSPACE CONSISTENCY: person_id got a plain single-column FK above
+-- (`references people(id) on delete cascade`) when the column was
+-- added — that alone doesn't stop a row from naming a person_id in one
+-- workspace while workspace_id says another. Drop it and replace with
+-- the composite version, matching every other CRM table (see the
+-- comment on person_organization_relationships above). Both columns
+-- stay nullable (a pre-refactor consent row migrated with no matching
+-- attendee has neither set — see STEP 4); the constraint simply isn't
+-- checked when either side is null, and is enforced whenever both are
+-- set, which is always true for every consent this app writes today.
+alter table consents drop constraint consents_person_id_fkey;
+alter table consents
+  add constraint consents_person_workspace_fkey
+  foreign key (person_id, workspace_id) references people(id, workspace_id) on delete cascade;
 
 create index consents_workspace_id_idx on consents(workspace_id);
 create index consents_person_id_idx on consents(person_id);
@@ -263,11 +335,19 @@ update consents c
   join people_migration_map m on m.attendee_id = a.id
   where a.consent_id = c.id;
 
+-- WORKSPACE CONSISTENCY: event_id/person_id have no plain single-column
+-- foreign key — only the composite ones below, which force
+-- registrations.workspace_id to equal BOTH the referenced event's AND
+-- the referenced person's actual workspace_id, for every writer
+-- (including service_role, which bypasses RLS) — see the matching
+-- comment on person_organization_relationships above. `unique (id,
+-- event_id)` exists purely so tickets can declare, below, that its
+-- registration_id must belong to the same event as its own event_id.
 create table registrations (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references workspaces(id) on delete cascade,
-  event_id uuid not null references events(id) on delete cascade,
-  person_id uuid not null references people(id) on delete cascade,
+  event_id uuid not null,
+  person_id uuid not null,
   -- Event-specific answers, intentionally NOT promoted onto `people` or
   -- a CRM organization relationship: what someone entered as their
   -- employer/title for *this* event is a per-registration fact, not a
@@ -278,7 +358,10 @@ create table registrations (
   consent_id uuid references consents(id),
   status text not null default 'registered' check (status in ('registered', 'cancelled')),
   registered_at timestamptz not null default now(),
-  unique (event_id, person_id)
+  unique (event_id, person_id),
+  unique (id, event_id),
+  foreign key (event_id, workspace_id) references events(id, workspace_id) on delete cascade,
+  foreign key (person_id, workspace_id) references people(id, workspace_id) on delete cascade
 );
 
 create index registrations_workspace_id_idx on registrations(workspace_id);
@@ -306,8 +389,21 @@ alter table tickets add column registration_id uuid;
 update tickets set registration_id = attendee_id;
 alter table tickets alter column registration_id set not null;
 alter table tickets add constraint tickets_registration_id_key unique (registration_id);
+
+-- WORKSPACE/EVENT CONSISTENCY: composite, not `references
+-- registrations(id)` alone — this forces tickets.event_id to equal the
+-- referenced registration's own event_id for every writer, closing the
+-- one gap the pre-existing `checkins_event_matches_ticket` trigger
+-- doesn't cover (that trigger only checks checkins against tickets;
+-- nothing previously stopped a ticket itself from naming a
+-- registration that actually belongs to a different event). Requires
+-- `unique (id, event_id)` on registrations, added when that table was
+-- created above. Every existing ticket already satisfies this (its
+-- registration_id now equals attendee_id, and that row's event_id was
+-- copied from the very same attendee — see the registrations INSERT
+-- above), so this ALTER cannot fail against real 0001-era data.
 alter table tickets add constraint tickets_registration_id_fkey
-  foreign key (registration_id) references registrations(id) on delete cascade;
+  foreign key (registration_id, event_id) references registrations(id, event_id) on delete cascade;
 alter table tickets drop constraint tickets_attendee_id_key;
 alter table tickets drop constraint tickets_attendee_id_fkey;
 alter table tickets drop column attendee_id;
@@ -334,13 +430,17 @@ create type event_registration_result as (
 );
 
 -- register_for_event: the Events-module entry point for public
--- registration, rebuilt on top of the CRM core. Finds-or-creates the
--- workspace-scoped person by normalized email (never creating a
--- duplicate person for a repeat registration — brief §2), then creates
--- an event-specific registration + ticket + activity row. Locks the
--- event row for the duration of the call, same as 0001's
--- register_attendee, so concurrent registrations can't both slip past
--- the capacity check.
+-- registration, rebuilt on top of the CRM core. Atomically
+-- finds-or-creates the workspace-scoped person by normalized email via
+-- INSERT ... ON CONFLICT (never creating a duplicate person for a
+-- repeat registration, and safe even when the same email registers for
+-- two different events in this workspace at the same instant — see the
+-- CONCURRENCY comment further down — brief §2), then creates an
+-- event-specific registration + ticket + activity row. Locks the event
+-- row for the duration of the call, same as 0001's register_attendee,
+-- so concurrent registrations for the SAME event can't both slip past
+-- the capacity check (that lock alone does not cover the person
+-- find-or-create — see below).
 --
 -- SECURITY: identical to 0001's register_attendee — a duplicate
 -- registration (this person already registered for this event) must
@@ -383,19 +483,36 @@ begin
     raise exception 'INVALID_LANGUAGE';
   end if;
 
-  -- Find-or-create the person within this workspace. Reusing an
-  -- existing person never overwrites their stored name/language from a
-  -- prior registration — a later registration might be filled in by
-  -- someone else on their behalf, or a nickname, and should not
-  -- silently rewrite the CRM record of record.
-  select id into v_person_id
-    from people
-    where workspace_id = v_event.workspace_id and normalized_email = v_normalized_email;
+  -- Find-or-create the person within this workspace — CONCURRENCY:
+  -- the `for update` lock above only serializes registrations for THIS
+  -- event. Two concurrent registrations by the same email for two
+  -- DIFFERENT events in the same workspace take out no shared lock at
+  -- all before reaching this point, so a plain "SELECT, then INSERT if
+  -- not found" can let both transactions observe no existing person
+  -- and both attempt the INSERT — one succeeds, the other hits the
+  -- `people(workspace_id, normalized_email)` unique violation and the
+  -- whole registration fails instead of quietly reusing the winner's
+  -- person row. `insert ... on conflict do nothing returning` avoids
+  -- this: Postgres's unique-index insertion itself blocks a concurrent
+  -- inserter of the same key until the first inserter commits or rolls
+  -- back, then re-checks for a conflict — so this is a genuinely
+  -- atomic find-or-create, not just a narrower race window. On a
+  -- conflict (row already existed, whether from before this call or
+  -- from the concurrent transaction that just won), nothing is
+  -- written and the fallback SELECT below reads the now-committed row.
+  -- Either way, an existing person's stored name/language is never
+  -- overwritten by a later registration — a later registration might
+  -- be filled in by someone else on their behalf, or a nickname, and
+  -- should not silently rewrite the CRM record of record.
+  insert into people (workspace_id, first_name, last_name, email, preferred_language)
+    values (v_event.workspace_id, trim(p_first_name), trim(p_last_name), p_email, p_language)
+    on conflict (workspace_id, normalized_email) do nothing
+    returning id into v_person_id;
 
-  if not found then
-    insert into people (workspace_id, first_name, last_name, email, preferred_language)
-      values (v_event.workspace_id, trim(p_first_name), trim(p_last_name), p_email, p_language)
-      returning id into v_person_id;
+  if v_person_id is null then
+    select id into v_person_id
+      from people
+      where workspace_id = v_event.workspace_id and normalized_email = v_normalized_email;
   end if;
 
   select id into v_existing_registration_id
@@ -681,3 +798,5 @@ grant execute on function perform_checkin to service_role;
 grant execute on function create_workspace_with_owner to service_role;
 grant execute on function is_workspace_member to authenticated;
 grant execute on function is_workspace_admin to authenticated;
+
+commit;

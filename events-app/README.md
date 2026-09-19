@@ -109,6 +109,20 @@ both, in order, on a fresh project:
    (see the migration file's own comments for exactly how). Function
    names changed too: `register_attendee` → `register_for_event`,
    `create_organization_with_owner` → `create_workspace_with_owner`.
+   Cross-workspace referential integrity for every new CRM-core
+   relationship is enforced with composite foreign keys, not just RLS
+   (see `docs/ARCHITECTURE_V2.md` §9), and the person find-or-create in
+   `register_for_event` is now concurrency-safe under `INSERT ... ON
+   CONFLICT` (see the CONCURRENCY comment in the migration and
+   `supabase/INTEGRATION_TESTS.md` §3).
+
+**`0002_platform_refactor.sql` runs as a single transaction** (it wraps
+itself in `begin; ... commit;`) — if any statement in it fails partway
+through, Postgres rolls back everything that ran before the failure, so
+you never end up with a half-applied schema that merely *looks* like it
+succeeded. This was verified in review by deliberately breaking a copy
+of the file and confirming a full rollback (see
+`supabase/INTEGRATION_TESTS.md` §12). Apply it with one of:
 
 ```bash
 supabase login
@@ -116,8 +130,22 @@ supabase link --project-ref <your-project-ref>
 supabase db push
 ```
 
-Or paste each file's contents into the Supabase dashboard's SQL editor
-and run them once, in order.
+Or, applying by hand against an existing project:
+
+```bash
+psql "<your-connection-string>" -v ON_ERROR_STOP=1 -f supabase/migrations/0001_init.sql
+psql "<your-connection-string>" -v ON_ERROR_STOP=1 -f supabase/migrations/0002_platform_refactor.sql
+```
+
+`-v ON_ERROR_STOP=1` makes `psql` stop and report the error immediately
+instead of printing a wall of "current transaction is aborted" noise
+for every remaining line — but note the transaction wrapping inside
+`0002_platform_refactor.sql` itself is what actually guarantees
+atomicity; even without that flag, a mid-file error still leaves the
+whole migration rolled back, it's just noisier to read. If you instead
+paste the file into the Supabase dashboard's SQL editor, paste it as
+one script (don't split it into separate runs) so the `begin`/`commit`
+at its start/end stay together.
 
 **If you already have a project running only `0001_init.sql`** (e.g. a
 prior deployment of this app before the platform refactor): running
@@ -126,12 +154,14 @@ it's designed to run on top of that exact state. Back up first anyway
 (`pg_dump`, or a Supabase project snapshot) since this does drop the
 old `attendees` table once its data has been migrated. There is no real
 production attendee data to worry about losing as of this refactor —
-see `docs/ARCHITECTURE_V2.md` §19-equivalent discussion in the
-migration file's own header comment for the full reasoning — but if
-this is ever run against a project that does hold real registrants,
-verify the row counts in `people`/`registrations` match the old
-`attendees` count before dropping anything, and do it in a transaction
-you can roll back.
+see the migration file's own header comment for the full reasoning —
+but if this is ever run against a project that does hold real
+registrants, verify the row counts in `people`/`registrations` match
+the old `attendees` count before relying on it (the migration's own
+transaction wrapping means you don't additionally need to wrap it
+yourself, and a failure partway through cannot leave the old
+`attendees` table dropped while the new tables are missing — it's
+all-or-nothing).
 
 After applying both migrations, run through
 [`supabase/INTEGRATION_TESTS.md`](./supabase/INTEGRATION_TESTS.md)
