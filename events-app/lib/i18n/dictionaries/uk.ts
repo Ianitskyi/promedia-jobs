@@ -30,6 +30,10 @@ const uk: Dictionary = {
     invalidCredentials: "Неправильний email або пароль.",
     invalidSignupInput: "Введіть коректний email і пароль щонайменше з 8 символів.",
     checkEmailToConfirm: "Перевірте пошту, щоб підтвердити акаунт, а потім увійдіть.",
+    emailAlreadyRegistered: "Акаунт із цим email вже існує. Спробуйте увійти.",
+    serviceUnavailable:
+      "Не вдалося зʼєднатися із сервісом входу. Перевірте зʼєднання та повторіть спробу за мить.",
+    signupFailed: "Не вдалося створити акаунт. Спробуйте ще раз.",
   },
   dashboard: {
     navEvents: "Події",

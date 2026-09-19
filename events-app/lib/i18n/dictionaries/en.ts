@@ -33,6 +33,10 @@ const en = {
     invalidCredentials: "Invalid email or password.",
     invalidSignupInput: "Enter a valid email and a password of at least 8 characters.",
     checkEmailToConfirm: "Check your email to confirm your account, then sign in.",
+    emailAlreadyRegistered: "An account with this email already exists. Try signing in instead.",
+    serviceUnavailable:
+      "We couldn't reach the sign-in service. Please check your connection and try again in a moment.",
+    signupFailed: "We couldn't create your account. Please try again.",
   },
   dashboard: {
     navEvents: "Events",
