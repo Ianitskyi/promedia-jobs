@@ -5,9 +5,15 @@ import { setPlatformLocale } from "@/lib/i18n/actions";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { LoginForm } from "@/components/LoginForm";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string }>;
+}) {
   const locale = await getPlatformLocale();
   const dict = getDictionary(locale);
+  const { mode } = await searchParams;
+  const initialMode = mode === "signup" ? "signup" : "signin";
 
   return (
     <I18nProvider locale={locale} dict={dict}>
@@ -23,7 +29,7 @@ export default async function LoginPage() {
           </h1>
           <LanguageSwitcher locale={locale} setLocale={setPlatformLocale} />
         </div>
-        <LoginForm />
+        <LoginForm initialMode={initialMode} />
       </main>
     </I18nProvider>
   );

@@ -18,6 +18,18 @@ const en = {
     genericError: "Something went wrong. Please try again in a moment.",
     networkError: "Network error",
   },
+  landing: {
+    title: "ProMedia Events",
+    description: "A service for creating events, registering participants, and managing attendance.",
+    supportingText:
+      "Create event pages, accept registrations, send QR tickets, and check participants in at the entrance.",
+    primaryCta: "Create account",
+    secondaryCta: "Sign in",
+    capabilityRegistration: "Participant registration",
+    capabilityQrTickets: "QR tickets",
+    capabilityCheckIn: "Check-in",
+    capabilityExport: "Participant list and export",
+  },
   auth: {
     signInTitle: "ProMedia Events",
     signInSubtitle: "Sign in to your organizer dashboard.",
