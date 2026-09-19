@@ -97,7 +97,87 @@ Both go through the anon key and are subject to Row Level Security.
 A separate service-role client (`lib/supabase/admin.ts`) is used only in
 `lib/server/*`, for the handful of flows that are intentionally
 unauthenticated (public registration, ticket lookup by token, check-in
-by token) — see `ARCHITECTURE.md` §3 for why.
+by token) — see `ARCHITECTURE.md` §3 for why. Password recovery is
+**not** one of these flows — it always goes through the normal
+anon-key user session, never the service-role client (see below).
+
+## Password recovery
+
+A user who has forgotten their password can recover it from `/login`
+via the localized "Forgot password?" / "Забули пароль?" link:
+
+1. **Request** (`/auth/forgot-password`) — the user enters their email.
+   The server action (`app/auth/forgot-password/actions.ts`) validates
+   it, rate-limits by IP, and calls Supabase Auth's
+   `resetPasswordForEmail(email, { redirectTo })` using the normal
+   anon-key server client from `lib/supabase/server.ts` — the same
+   client `signIn`/`signUp` use, never `lib/supabase/admin.ts`. The
+   `redirectTo` is always built from `NEXT_PUBLIC_APP_URL`
+   (`lib/url.ts#getAppUrl()`), never from any request input, so it
+   can't be redirected off-site. Regardless of outcome — including
+   whether the email is actually registered, or most Supabase-side
+   errors — the response is always the same neutral message ("If an
+   account with this email address exists, we have sent password reset
+   instructions." / the Ukrainian equivalent), so this page can't be
+   used to enumerate registered accounts. A genuine network/transport
+   failure to reach Supabase is the one case shown differently (a
+   generic "network error" message), since that failure is symmetric
+   regardless of whether the email is registered.
+2. **Email** — Supabase Auth emails the user a recovery link pointing
+   back at `/auth/reset-password` (see **Supabase URL Configuration**
+   below for the dashboard settings this depends on).
+3. **Recovery link** (`/auth/reset-password`) — this app's installed
+   `@supabase/ssr` version (0.12.x) hard-codes `flowType: "pkce"` on
+   both its browser and server clients, so the recovery link's code
+   exchange completes **client-side**: `components/ResetPasswordForm.tsx`
+   creates a browser Supabase client and listens for the
+   `PASSWORD_RECOVERY` `onAuthStateChange` event, which fires once the
+   client has established a temporary recovery session from the URL.
+   There is no separate server route handler in this flow — that's a
+   property of the installed package version, not an assumption; see
+   `node_modules/@supabase/ssr/docs/design.md`, which documents
+   `PASSWORD_RECOVERY` as the event fired "when a recovery link
+   established a session." If the link is invalid, already used, or
+   expired, Supabase Auth instead redirects back with `error`/
+   `error_code` query parameters (no session), which the page detects
+   and shows as a localized "invalid or expired" error with a link to
+   request a new one. A short timeout also catches the case of someone
+   opening this page directly, with no token at all.
+4. **New password** — once the recovery session is established, the
+   user enters and confirms a new password (minimum 8 characters, same
+   as sign-up), validated client-side with a localized Zod schema
+   (`lib/validation/auth.ts`). Submission calls
+   `supabase.auth.updateUser({ password })` directly from the browser
+   client — the normal authenticated-user API, not an admin/service-role
+   call. A password Supabase itself rejects (`AuthWeakPasswordError`) is
+   shown as a localized, generic message — never Supabase's raw error
+   text, which can describe implementation details.
+5. **Success** — the recovery session is signed out immediately after
+   the password update succeeds (so it can't linger as a way into the
+   account), and the user sees a localized success message with a
+   button back to `/login` to sign in with their new password.
+
+Passwords, recovery tokens, and any other auth secrets are never
+logged anywhere in this flow.
+
+### Supabase URL Configuration (manual dashboard step)
+
+This app does not and cannot configure this itself — it must be set by
+hand in the Supabase dashboard for the production app
+(`https://promedia-events.vercel.app`) before password recovery emails
+will work correctly:
+
+- **Authentication → URL Configuration → Site URL**: set to
+  `https://promedia-events.vercel.app`.
+- **Authentication → URL Configuration → Redirect URLs**: must include
+  `https://promedia-events.vercel.app/auth/reset-password` (and, for
+  local development, `http://localhost:3000/auth/reset-password`).
+  Supabase rejects a `redirectTo` that isn't on this allow-list, so the
+  reset email's link would otherwise fail to reach the app at all.
+- Also set `NEXT_PUBLIC_APP_URL=https://promedia-events.vercel.app` in
+  the deployed app's environment variables (see **Required environment
+  variables** above) — this is what `resetPasswordForEmail`'s
+  `redirectTo` is built from.
 
 ## How to create the first organization/admin
 
@@ -269,6 +349,13 @@ Ukrainian (default) and English. Full design in
   consent text and its version are stored per-registration for audit;
   the schema keeps attendee data cleanly deletable per-row for a future
   anonymization/erasure flow (not built in this MVP).
+- **Password recovery never uses the service-role client** — it's the
+  user's own normal Supabase Auth session throughout (anon key, same
+  client `signIn`/`signUp` use). The request step always returns the
+  same neutral response regardless of whether the email is registered
+  (account-enumeration resistant), and the redirect target is always
+  built from `NEXT_PUBLIC_APP_URL` server-side, never from request
+  input (no open-redirect surface). See **Password recovery** above.
 
 ## Known MVP limitations
 
