@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import { signIn, signUp, type AuthFormState } from "@/app/login/actions";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
@@ -40,6 +41,15 @@ export function LoginForm() {
             required
           />
         </FormField>
+
+        {mode === "signin" && (
+          <Link
+            href="/auth/forgot-password"
+            className="-mt-2 self-start text-sm text-muted underline underline-offset-2 hover:text-foreground"
+          >
+            {dict.auth.forgotPasswordLink}
+          </Link>
+        )}
 
         {state.error && (
           <p role="alert" className="text-sm text-red-700">
