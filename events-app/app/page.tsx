@@ -17,28 +17,28 @@ export default async function HomePage() {
   const dict = getDictionary(locale);
 
   const capabilities = [
-    dict.landing.capabilityRegistration,
-    dict.landing.capabilityQrTickets,
-    dict.landing.capabilityCheckIn,
-    dict.landing.capabilityExport,
+    dict.landing.capabilityRegisterParticipants,
+    dict.landing.capabilityIssueQrTickets,
+    dict.landing.capabilitySelfCheckIn,
+    dict.landing.capabilityVerifyAtEntrance,
+    dict.landing.capabilityDownloadList,
   ];
 
   return (
     <I18nProvider locale={locale} dict={dict}>
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-12 sm:py-16">
         <div className="flex items-center justify-between gap-3">
-          <h1>
-            {/* eslint-disable-next-line @next/next/no-img-element -- static asset, no responsive sizing needed */}
-            <img
-              src="/brand/promedia-wordmark.svg"
-              alt={dict.landing.title}
-              className="h-9 w-auto"
-            />
-          </h1>
+          {/* eslint-disable-next-line @next/next/no-img-element -- static asset, no responsive sizing needed */}
+          <img
+            src="/brand/promedia-wordmark.svg"
+            alt={dict.landing.title}
+            className="h-9 w-auto"
+          />
           <LanguageSwitcher locale={locale} setLocale={setPlatformLocale} />
         </div>
 
-        <p className="mt-10 max-w-xl text-lg text-foreground">{dict.landing.description}</p>
+        <h1 className="mt-10 heading-display text-3xl">{dict.landing.title}</h1>
+        <p className="mt-4 max-w-xl text-lg text-foreground">{dict.landing.description}</p>
         <p className="mt-3 max-w-xl text-sm text-muted">{dict.landing.supportingText}</p>
 
         <div className="mt-8 flex flex-wrap gap-3">
@@ -50,13 +50,19 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        <div className="mt-14 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {capabilities.map((capability) => (
-            <div key={capability} className="card px-4 py-4 text-center text-sm font-medium">
-              {capability}
-            </div>
-          ))}
-        </div>
+        <section className="mt-14">
+          <h2 className="heading-display text-lg">{dict.landing.capabilitiesHeading}</h2>
+          <ul className="mt-4 flex flex-col gap-2.5 text-sm text-foreground">
+            {capabilities.map((capability) => (
+              <li key={capability} className="flex items-start gap-2.5">
+                <span aria-hidden="true" className="text-muted">
+                  ✓
+                </span>
+                <span>{capability}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
       </main>
     </I18nProvider>
   );
