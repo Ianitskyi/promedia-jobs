@@ -63,3 +63,23 @@ export function usesComponent(node: unknown, component: unknown): boolean {
   }
   return false;
 }
+
+/** Every element in the tree matching `predicate`, in document order. */
+export function findAll(
+  node: unknown,
+  predicate: (el: ElementLike) => boolean,
+  out: ElementLike[] = [],
+): ElementLike[] {
+  if (node == null || typeof node === "boolean") return out;
+  if (Array.isArray(node)) {
+    for (const child of node) findAll(child, predicate, out);
+    return out;
+  }
+  if (isElementLike(node)) {
+    if (predicate(node)) out.push(node);
+    findAll(node.props?.children, predicate, out);
+  }
+  return out;
+}
+
+export type { ElementLike };

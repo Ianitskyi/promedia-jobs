@@ -13,10 +13,12 @@ describe("landing dictionary — English", () => {
         "Create event pages, accept registrations, send QR tickets, and check participants in at the entrance.",
       primaryCta: "Create account",
       secondaryCta: "Sign in",
-      capabilityRegistration: "Participant registration",
-      capabilityQrTickets: "QR tickets",
-      capabilityCheckIn: "Check-in",
-      capabilityExport: "Participant list and export",
+      capabilitiesHeading: "What you can do with ProMedia Events",
+      capabilityRegisterParticipants: "Register participants for events",
+      capabilityIssueQrTickets: "Issue QR tickets to participants",
+      capabilitySelfCheckIn: "Let participants check themselves in",
+      capabilityVerifyAtEntrance: "Verify participant registration at the entrance",
+      capabilityDownloadList: "Download the participant list",
     });
   });
 });
@@ -30,10 +32,12 @@ describe("landing dictionary — Ukrainian", () => {
         "Створюйте сторінки подій, приймайте реєстрації, надсилайте QR-квитки та відмічайте учасників на вході.",
       primaryCta: "Створити акаунт",
       secondaryCta: "Увійти",
-      capabilityRegistration: "Реєстрація учасників",
-      capabilityQrTickets: "QR-квитки",
-      capabilityCheckIn: "Check-in",
-      capabilityExport: "Список та експорт учасників",
+      capabilitiesHeading: "Що можна робити з ProMedia Events",
+      capabilityRegisterParticipants: "Реєструвати учасників на події",
+      capabilityIssueQrTickets: "Видавати учасникам QR-квитки",
+      capabilitySelfCheckIn: "Дозволити учасникам самостійно пройти check-in",
+      capabilityVerifyAtEntrance: "Перевіряти реєстрацію учасників на вході",
+      capabilityDownloadList: "Завантажувати список учасників",
     });
   });
 
