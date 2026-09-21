@@ -31,6 +31,8 @@ const en = {
     capabilitySelfCheckIn: "Let participants check themselves in",
     capabilityVerifyAtEntrance: "Verify participant registration at the entrance",
     capabilityDownloadList: "Download the participant list",
+    upcomingEventsHeading: "Upcoming events",
+    onlineLabel: "Online", 
   },
   auth: {
     signInTitle: "ProMedia Events",
