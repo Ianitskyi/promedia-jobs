@@ -72,6 +72,8 @@ export interface PublicEventDiscoveryItem {
   city: string | null;
   region: string | null;
   country_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
   organization_name: string;
 }
 
