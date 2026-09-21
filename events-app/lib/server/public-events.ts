@@ -72,6 +72,8 @@ export interface PublicEventDiscoveryItem {
   city: string | null;
   region: string | null;
   country_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
   organization_name: string;
 }
 
@@ -79,7 +81,7 @@ export async function listPublishedEvents(limit = 12): Promise<PublicEventDiscov
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("events")
-    .select("id, slug, name_uk, name_en, event_language, start_date, start_time, timezone, cover_image_url, event_format, city, region, country_code, workspaces(name)")
+    .select("id, slug, name_uk, name_en, event_language, start_date, start_time, timezone, cover_image_url, event_format, city, region, country_code, latitude, longitude, workspaces(name)")
     .eq("status", "PUBLISHED")
     .order("start_date", { ascending: true })
     .order("start_time", { ascending: true })
