@@ -16,7 +16,7 @@ export interface EventPublicContentEvent {
   venue_name_uk: string | null;
   venue_name_en: string | null;
   address: string | null;
-  logo_url: string | null;
+  logo_url: string | null;\n  cover_image_url: string | null;\n  event_format: "offline" | "online" | "hybrid";\n  city: string | null;\n  region: string | null;\n  country_code: string | null;
 }
 
 interface EventPublicContentProps {
@@ -66,10 +66,17 @@ export function EventPublicContent({
         {showLanguageSwitcher && <LanguageSwitcher locale={locale} setLocale={onLocaleChange} />}
       </div>
 
+      {event.cover_image_url && (
+        // eslint-disable-next-line @next/next/no-img-element -- remote organizer-provided image
+        <img src={event.cover_image_url} alt="" className="mt-6 aspect-[16/9] w-full rounded-2xl border border-[var(--border)] object-cover" />
+      )}
       <h1 className="mt-6 heading-display text-3xl">{name}</h1>
       {description && <p className="mt-3 text-sm text-muted">{description}</p>}
       <p className="mt-4 text-sm">
         {dateLabel} ({event.timezone})
+      </p>
+      <p className="text-sm text-muted">
+        {event.event_format === "online" ? "Online" : [event.city, event.region, event.country_code].filter(Boolean).join(", ")}
       </p>
       {venueName && <p className="text-sm text-muted">{venueName}</p>}
       {event.address && <p className="text-sm text-muted">{event.address}</p>}
