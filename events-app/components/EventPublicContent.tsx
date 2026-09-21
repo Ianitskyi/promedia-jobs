@@ -16,7 +16,12 @@ export interface EventPublicContentEvent {
   venue_name_uk: string | null;
   venue_name_en: string | null;
   address: string | null;
-  logo_url: string | null;\n  cover_image_url: string | null;\n  event_format: "offline" | "online" | "hybrid";\n  city: string | null;\n  region: string | null;\n  country_code: string | null;
+  logo_url: string | null;
+  cover_image_url: string | null;
+  event_format: "offline" | "online" | "hybrid";
+  city: string | null;
+  region: string | null;
+  country_code: string | null;
 }
 
 interface EventPublicContentProps {
