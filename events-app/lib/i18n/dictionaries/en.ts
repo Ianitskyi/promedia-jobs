@@ -54,6 +54,7 @@ const en = {
   },
   dashboard: {
     navEvents: "Events",
+    workspaceLabel: "Workspace",
     onboardingInviteOnlyTitle: "Workspace creation is currently invite-only.",
     onboardingInviteOnlyMessage: "Contact your platform administrator to get set up.",
   },
@@ -117,6 +118,8 @@ const en = {
     scannerButton: "Scanner",
     kioskButton: "Kiosk",
     editButton: "Edit",
+    previewButton: "Preview",
+    openEventPageButton: "Open event page",
     exportCsvButton: "Export CSV",
     statRegistered: "Registered",
     statCheckedIn: "Checked in",
@@ -150,6 +153,7 @@ const en = {
     registering: "Registering…",
     consentText:
       "I agree that my information will be processed for the purpose of registration and participation in this event.",
+    previewNotice: "Preview — registration will not be submitted.",
     validationFirstNameRequired: "First name is required.",
     validationLastNameRequired: "Last name is required.",
     validationEmail: "Enter a valid email address.",

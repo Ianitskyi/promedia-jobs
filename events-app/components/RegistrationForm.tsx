@@ -7,16 +7,43 @@ import { FormField } from "@/components/FormField";
 import { useI18n } from "@/lib/i18n/client";
 import type { RegisterFormState } from "@/app/e/[slug]/actions";
 
-interface RegistrationFormProps {
-  action: (prev: RegisterFormState, formData: FormData) => Promise<RegisterFormState>;
+type RegistrationFormProps =
+  | {
+      /** Real registration: wired to the actual register() server action for a PUBLISHED event. */
+      preview?: false;
+      action: (prev: RegisterFormState, formData: FormData) => Promise<RegisterFormState>;
+    }
+  | {
+      /** Organizer draft preview (app/dashboard/events/[eventId]/preview): renders the same
+       * form but can never create a real registration — see the notice rendered below and
+       * the `handleSubmit` guard, both independent of one another (belt and suspenders). */
+      preview: true;
+      action?: undefined;
+    };
+
+/** Preview mode never calls a server action — this is never invoked. */
+async function previewNoopAction(prev: RegisterFormState): Promise<RegisterFormState> {
+  return prev;
 }
 
-export function RegistrationForm({ action }: RegistrationFormProps) {
+export function RegistrationForm(props: RegistrationFormProps) {
   const { dict } = useI18n();
-  const [state, formAction, pending] = useActionState(action, { error: null });
+  const [state, formAction, pending] = useActionState(
+    props.preview ? previewNoopAction : props.action,
+    { error: null },
+  );
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    if (props.preview) {
+      // Belt and suspenders: even though the button below is disabled
+      // and the wired action is a no-op, a draft preview must never be
+      // able to create a real registration under any circumstance.
+      event.preventDefault();
+    }
+  }
 
   return (
-    <form action={formAction} className="flex flex-col gap-5" noValidate>
+    <form action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       <div className="grid grid-cols-2 gap-4">
         <FormField label={dict.registration.firstName} htmlFor="first_name" required>
           <Input id="first_name" name="first_name" autoComplete="given-name" required />
@@ -68,7 +95,11 @@ export function RegistrationForm({ action }: RegistrationFormProps) {
         </p>
       )}
 
-      <Button type="submit" disabled={pending}>
+      {props.preview && (
+        <p className="text-xs text-muted">{dict.registration.previewNotice}</p>
+      )}
+
+      <Button type="submit" disabled={pending || props.preview}>
         {pending ? dict.registration.registering : dict.registration.register}
       </Button>
     </form>

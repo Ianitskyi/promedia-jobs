@@ -60,13 +60,19 @@ export default async function EventDetailPage({
             <StatusBadge tone={statusTone[event.status]}>{statusLabel[event.status]}</StatusBadge>
           </div>
           <p className="mt-2 text-sm text-muted">
-            {event.start_date} · {eventVenueName(event, locale) ?? dict.events.noVenueSet} ·{" "}
-            <Link href={`/e/${event.slug}`} className="underline underline-offset-2" target="_blank">
-              /e/{event.slug}
-            </Link>
+            {event.start_date} · {eventVenueName(event, locale) ?? dict.events.noVenueSet}
           </p>
         </div>
         <div className="flex gap-2">
+          {event.status === "DRAFT" ? (
+            <Link href={`/dashboard/events/${event.id}/preview`}>
+              <Button variant="secondary">{dict.events.previewButton}</Button>
+            </Link>
+          ) : (
+            <Link href={`/e/${event.slug}`} target="_blank">
+              <Button variant="secondary">{dict.events.openEventPageButton}</Button>
+            </Link>
+          )}
           <Link href={`/dashboard/events/${event.id}/scanner`}>
             <Button variant="secondary">{dict.events.scannerButton}</Button>
           </Link>
