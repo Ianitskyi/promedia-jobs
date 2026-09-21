@@ -8,6 +8,7 @@ import { createEventFormSchema } from "@/lib/validation/event";
 import { getPlatformLocale } from "@/lib/i18n/server";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { EventFormState } from "@/components/EventForm";
+import { geocodeEventLocation } from "@/lib/server/geocode";
 
 export async function updateEvent(
   eventId: string,
@@ -18,7 +19,7 @@ export async function updateEvent(
   const supabase = await createClient();
   const { data: event } = await supabase
     .from("events")
-    .select("workspace_id")
+    .select("workspace_id, event_format, address, city, region, country_code, latitude, longitude")
     .eq("id", eventId)
     .single();
 
@@ -33,6 +34,24 @@ export async function updateEvent(
     return { error: parsed.error.issues[0]?.message ?? dict.common.genericError };
   }
   const values = parsed.data;
+
+  const locationUnchanged =
+    event.event_format === values.event_format &&
+    (event.address ?? undefined) === values.address &&
+    (event.city ?? undefined) === values.city &&
+    (event.region ?? undefined) === values.region &&
+    (event.country_code ?? undefined) === values.country_code;
+
+  const coordinates = values.event_format === "online"
+    ? null
+    : locationUnchanged && event.latitude !== null && event.longitude !== null
+      ? { latitude: event.latitude, longitude: event.longitude }
+      : await geocodeEventLocation({
+          address: values.address,
+          city: values.city,
+          region: values.region,
+          countryCode: values.country_code,
+        });
 
   const registrationDeadline = values.registration_deadline
     ? zonedTimeToUtc(
@@ -60,6 +79,8 @@ export async function updateEvent(
       country_code: values.country_code ?? null,
       region: values.region ?? null,
       city: values.city ?? null,
+      latitude: coordinates?.latitude ?? null,
+      longitude: coordinates?.longitude ?? null,
       venue_name_uk: values.venue_name_uk ?? null,
       venue_name_en: values.venue_name_en ?? null,
       address: values.address ?? null,
