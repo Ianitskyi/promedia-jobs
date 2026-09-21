@@ -17,7 +17,8 @@ import { formatEventDateTime } from "@/lib/format-event-time";
  */
 export default async function HomePage() {
   const locale = await getPlatformLocale();
-  const dict = getDictionary(locale);\n  const publishedEvents = await listPublishedEvents();
+  const dict = getDictionary(locale);
+  const publishedEvents = await listPublishedEvents();
 
   const capabilities = [
     dict.landing.capabilityRegisterParticipants,
