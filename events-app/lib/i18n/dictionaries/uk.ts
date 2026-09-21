@@ -28,6 +28,8 @@ const uk: Dictionary = {
     capabilitySelfCheckIn: "Дозволити учасникам самостійно пройти check-in",
     capabilityVerifyAtEntrance: "Перевіряти реєстрацію учасників на вході",
     capabilityDownloadList: "Завантажувати список учасників",
+    upcomingEventsHeading: "Найближчі події",
+    onlineLabel: "Онлайн", 
   },
   auth: {
     signInTitle: "ProMedia Events",
