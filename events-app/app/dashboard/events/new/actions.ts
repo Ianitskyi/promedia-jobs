@@ -68,8 +68,6 @@ export async function createEvent(
         country_code: values.country_code ?? null,
         region: values.region ?? null,
         city: values.city ?? null,
-      latitude: coordinates?.latitude ?? null,
-      longitude: coordinates?.longitude ?? null,
         latitude: coordinates?.latitude ?? null,
         longitude: coordinates?.longitude ?? null,
         venue_name_uk: values.venue_name_uk ?? null,
