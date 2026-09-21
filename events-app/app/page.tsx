@@ -5,6 +5,9 @@ import { setPlatformLocale } from "@/lib/i18n/actions";
 import { I18nProvider } from "@/lib/i18n/client";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/Button";
+import { listPublishedEvents } from "@/lib/server/public-events";
+import { eventName } from "@/lib/i18n/event-content";
+import { formatEventDateTime } from "@/lib/format-event-time";
 
 /**
  * Public landing page for ProMedia Events. Both CTAs route into the
@@ -15,6 +18,7 @@ import { Button } from "@/components/Button";
 export default async function HomePage() {
   const locale = await getPlatformLocale();
   const dict = getDictionary(locale);
+  const publishedEvents = await listPublishedEvents();
 
   const capabilities = [
     dict.landing.capabilityRegisterParticipants,
@@ -63,6 +67,29 @@ export default async function HomePage() {
             ))}
           </ul>
         </section>
+        {publishedEvents.length > 0 && (
+          <section className="mt-16">
+            <h2 className="heading-display text-xl">{dict.landing.upcomingEventsHeading}</h2>
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
+              {publishedEvents.map((event) => (
+                <Link key={event.id} href={`/e/${event.slug}`} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white">
+                  {event.cover_image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element -- remote organizer-provided image
+                    <img src={event.cover_image_url} alt="" className="aspect-[16/9] w-full object-cover" />
+                  )}
+                  <div className="p-5">
+                    <p className="heading-display text-lg">{eventName(event, locale)}</p>
+                    <p className="mt-2 text-sm text-muted">{formatEventDateTime(event.start_date, event.start_time, event.timezone)}</p>
+                    <p className="mt-1 text-sm text-muted">
+                      {event.event_format === "online" ? dict.landing.onlineLabel : [event.city, event.region].filter(Boolean).join(", ")}
+                    </p>
+                    <p className="mt-3 text-xs text-muted">{event.organization_name}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </I18nProvider>
   );

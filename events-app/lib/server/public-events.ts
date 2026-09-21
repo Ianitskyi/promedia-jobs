@@ -56,3 +56,37 @@ export async function getPublicEventBySlug(slug: string): Promise<PublicEvent | 
 
   return { event: event as Event, organization, state };
 }
+
+
+export interface PublicEventDiscoveryItem {
+  id: string;
+  slug: string;
+  name_uk: string | null;
+  name_en: string | null;
+  event_language: "uk" | "en" | "bilingual";
+  start_date: string;
+  start_time: string;
+  timezone: string;
+  cover_image_url: string | null;
+  event_format: "offline" | "online" | "hybrid";
+  city: string | null;
+  region: string | null;
+  country_code: string | null;
+  organization_name: string;
+}
+
+export async function listPublishedEvents(limit = 12): Promise<PublicEventDiscoveryItem[]> {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("events")
+    .select("id, slug, name_uk, name_en, event_language, start_date, start_time, timezone, cover_image_url, event_format, city, region, country_code, workspaces(name)")
+    .eq("status", "PUBLISHED")
+    .order("start_date", { ascending: true })
+    .order("start_time", { ascending: true })
+    .limit(limit);
+
+  return (data ?? []).map((row) => {
+    const workspace = (row as unknown as { workspaces: { name: string } | null }).workspaces;
+    return { ...row, organization_name: workspace?.name ?? "" } as unknown as PublicEventDiscoveryItem;
+  });
+}
