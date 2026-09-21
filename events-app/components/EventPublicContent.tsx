@@ -81,7 +81,7 @@ export function EventPublicContent({
         {dateLabel} ({event.timezone})
       </p>
       <p className="text-sm text-muted">
-        {event.event_format === "online" ? "Online" : [event.city, event.region, event.country_code].filter(Boolean).join(", ")}
+        {event.event_format === "online" ? (locale === "uk" ? "Онлайн" : "Online") : [event.city, event.region, event.country_code].filter(Boolean).join(", ")}
       </p>
       {venueName && <p className="text-sm text-muted">{venueName}</p>}
       {event.address && <p className="text-sm text-muted">{event.address}</p>}
