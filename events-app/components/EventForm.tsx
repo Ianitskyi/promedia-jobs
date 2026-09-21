@@ -149,6 +149,31 @@ export function EventForm({ action, defaultValues, submitLabel }: EventFormProps
       </FormField>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <FormField label={dict.events.fieldEventFormat} htmlFor="event_format" required>
+          <select id="event_format" name="event_format" defaultValue={defaultValues?.event_format ?? "offline"} className="w-full rounded-sm border border-[var(--border)] bg-background px-3 py-2.5 text-sm">
+            <option value="offline">{dict.events.eventFormatOffline}</option>
+            <option value="online">{dict.events.eventFormatOnline}</option>
+            <option value="hybrid">{dict.events.eventFormatHybrid}</option>
+          </select>
+        </FormField>
+        <FormField label={dict.events.fieldCoverImageUrl} htmlFor="cover_image_url" hint={dict.events.fieldCoverImageUrlHint}>
+          <Input id="cover_image_url" name="cover_image_url" type="url" defaultValue={defaultValues?.cover_image_url ?? ""} />
+        </FormField>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <FormField label={dict.events.fieldCountryCode} htmlFor="country_code">
+          <Input id="country_code" name="country_code" maxLength={2} placeholder="UA" defaultValue={defaultValues?.country_code ?? ""} />
+        </FormField>
+        <FormField label={dict.events.fieldRegion} htmlFor="region">
+          <Input id="region" name="region" defaultValue={defaultValues?.region ?? ""} />
+        </FormField>
+        <FormField label={dict.events.fieldCity} htmlFor="city">
+          <Input id="city" name="city" defaultValue={defaultValues?.city ?? ""} />
+        </FormField>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField label={dict.events.fieldVenueNameUk} htmlFor="venue_name_uk">
           <Input
             id="venue_name_uk"
