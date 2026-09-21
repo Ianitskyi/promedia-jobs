@@ -9,6 +9,7 @@ import { createEventFormSchema } from "@/lib/validation/event";
 import { getPlatformLocale } from "@/lib/i18n/server";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { EventFormState } from "@/components/EventForm";
+import { geocodeEventLocation } from "@/lib/server/geocode";
 
 export async function createEvent(
   _prev: EventFormState,
@@ -28,6 +29,15 @@ export async function createEvent(
   const supabase = await createClient();
   const slugSource = values.name_uk || values.name_en || "event";
   let slug = slugify(slugSource) || "event";
+
+  const coordinates = values.event_format === "online"
+    ? null
+    : await geocodeEventLocation({
+        address: values.address,
+        city: values.city,
+        region: values.region,
+        countryCode: values.country_code,
+      });
 
   const registrationDeadline = values.registration_deadline
     ? zonedTimeToUtc(
@@ -58,6 +68,10 @@ export async function createEvent(
         country_code: values.country_code ?? null,
         region: values.region ?? null,
         city: values.city ?? null,
+      latitude: coordinates?.latitude ?? null,
+      longitude: coordinates?.longitude ?? null,
+        latitude: coordinates?.latitude ?? null,
+        longitude: coordinates?.longitude ?? null,
         venue_name_uk: values.venue_name_uk ?? null,
         venue_name_en: values.venue_name_en ?? null,
         address: values.address ?? null,
