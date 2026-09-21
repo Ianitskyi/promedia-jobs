@@ -51,6 +51,7 @@ const uk: Dictionary = {
   },
   dashboard: {
     navEvents: "Події",
+    workspaceLabel: "Робочий простір",
     onboardingInviteOnlyTitle: "Наразі створення робочих просторів доступне лише за запрошенням.",
     onboardingInviteOnlyMessage: "Зверніться до адміністратора платформи, щоб отримати доступ.",
   },
@@ -114,6 +115,8 @@ const uk: Dictionary = {
     scannerButton: "Сканер",
     kioskButton: "Кіоск",
     editButton: "Редагувати",
+    previewButton: "Попередній перегляд",
+    openEventPageButton: "Відкрити сторінку події",
     exportCsvButton: "Експорт CSV",
     statRegistered: "Зареєстровано",
     statCheckedIn: "Відмітились",
@@ -147,6 +150,7 @@ const uk: Dictionary = {
     registering: "Реєстрація…",
     consentText:
       "Я погоджуюсь, що мої дані будуть оброблені з метою реєстрації та участі в цій події.",
+    previewNotice: "Попередній перегляд — реєстрація не буде надіслана.",
     validationFirstNameRequired: "Вкажіть ім'я.",
     validationLastNameRequired: "Вкажіть прізвище.",
     validationEmail: "Введіть коректну електронну адресу.",
