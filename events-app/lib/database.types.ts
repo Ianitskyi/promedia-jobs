@@ -56,6 +56,13 @@ export type Event = {
   venue_name_uk: string | null;
   venue_name_en: string | null;
   address: string | null;
+  event_format: "offline" | "online" | "hybrid";
+  cover_image_url: string | null;
+  country_code: string | null;
+  region: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
   capacity: number | null;
   registration_deadline: string | null;
   status: EventStatus;
