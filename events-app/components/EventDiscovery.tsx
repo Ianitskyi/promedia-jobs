@@ -103,7 +103,9 @@ export function EventDiscovery({ events, locale, labels }: {
             </div>
           </Link>
         ))}</div>
-        <h3 className="mt-10 heading-display text-lg">{labels.map}</h3><EventMap events={filtered} locale={locale} />
+        {filtered.some((e) => e.latitude !== null && e.longitude !== null) && (
+          <><h3 className="mt-10 heading-display text-lg">{labels.map}</h3><EventMap events={filtered} locale={locale} /></>
+        )}
       </>}
     </section>
   );
